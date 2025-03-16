@@ -1,0 +1,12 @@
+com\dinethdf\ClinicManagementSystem\config\SecurityConfig.class
+com\dinethdf\ClinicManagementSystem\Controller\UserController.class
+com\dinethdf\ClinicManagementSystem\Model\UserPrincipal.class
+com\dinethdf\ClinicManagementSystem\ClinicManagementSystemApplication.class
+com\dinethdf\ClinicManagementSystem\Model\User.class
+com\dinethdf\ClinicManagementSystem\Repo\UserRepo.class
+com\dinethdf\ClinicManagementSystem\Service\JWTService.class
+com\dinethdf\ClinicManagementSystem\Controller\StudentController.class
+com\dinethdf\ClinicManagementSystem\Controller\HelloController.class
+com\dinethdf\ClinicManagementSystem\Service\MyUserDetailsService.class
+com\dinethdf\ClinicManagementSystem\Model\Student.class
+com\dinethdf\ClinicManagementSystem\Service\UserService.class

@@ -24,7 +24,6 @@ public class StudentController {
 
     @GetMapping("/students")
     public List<Student> getStudent(){
-        System.out.println("get Result");
         return students;
     }
 
