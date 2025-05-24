@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Model;
+package com.dinethdf.ClinicManagementSystem.Model.Users;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,8 +16,18 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+//        return Collections.singleton(new SimpleGrantedAuthority(Role.ADMIN.name()));
+         return Collections.singleton(new SimpleGrantedAuthority(user.getRole().getName()));
     }
+
+
+//    public String getName() {
+//        return user.getName();
+//    }
+//
+//    public UserRole getRole() {
+//        return user.getRole();
+//    }
 
     @Override
     public String getPassword() {
@@ -26,7 +36,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return user.getEmail();
     }
 
     @Override

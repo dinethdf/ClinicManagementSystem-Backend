@@ -1,11 +1,11 @@
 package com.dinethdf.ClinicManagementSystem.Repo;
 
-import com.dinethdf.ClinicManagementSystem.Model.User;
+import com.dinethdf.ClinicManagementSystem.Model.Users.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepo extends JpaRepository<User, Integer> {
 
-    User findByUsername(String username);
+    User findByEmail(String email);
 }

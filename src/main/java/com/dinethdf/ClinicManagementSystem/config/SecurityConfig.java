@@ -1,5 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.config;
 
+import com.dinethdf.ClinicManagementSystem.Model.Users.Role;
+import com.dinethdf.ClinicManagementSystem.config.AuthConfig.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,8 +36,11 @@ public class SecurityConfig {
          return http
                  .csrf(AbstractHttpConfigurer::disable)
                  .authorizeHttpRequests(request -> request
-                         .requestMatchers("register", "login").permitAll()
-                         .anyRequest().authenticated())
+                         .requestMatchers("register", "login", "signIn", "refresh", "validate-token").permitAll()
+//                         .anyRequest().authenticated()
+                         .requestMatchers("students/bcd").hasAnyAuthority(Role.USER.name())
+                         .requestMatchers("students/aa").hasAnyAuthority(Role.ADMIN.name())
+                 )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->
                          session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

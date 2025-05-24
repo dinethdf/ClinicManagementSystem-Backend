@@ -1,8 +1,8 @@
-package com.dinethdf.ClinicManagementSystem.config;
+package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 
-import com.dinethdf.ClinicManagementSystem.Service.JWTService;
-import com.dinethdf.ClinicManagementSystem.Service.MyUserDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(username);
+            UserDetails userDetails = context.getBean(UserDetailsService.class).loadUserByUsername(username);
             if (jwtService.validateToken(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource()

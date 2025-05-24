@@ -1,16 +1,28 @@
-package com.dinethdf.ClinicManagementSystem.Model;
+package com.dinethdf.ClinicManagementSystem.Model.Users;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 
 @Entity
 public class User {
 
     @Id
     private int Id;
-    private String username;
+    private String email;
     private String name;
     private String password;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @ManyToOne
+    @JoinColumn(name = "role", referencedColumnName = "id")
+    private UserRole role;
 
     public int getId() {
         return Id;
@@ -20,13 +32,6 @@ public class User {
         Id = id;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
 
     public String getName() {
         return name;
@@ -44,13 +49,22 @@ public class User {
         this.password = password;
     }
 
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+
     @Override
     public String toString() {
         return "User{" +
                 "Id=" + Id +
-                ", username='" + username + '\'' +
+                ", username='" + email + '\'' +
                 ", name='" + name + '\'' +
                 ", password='" + password + '\'' +
+                ", role=" + role +
                 '}';
     }
 }

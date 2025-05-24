@@ -1,10 +1,14 @@
-package com.dinethdf.ClinicManagementSystem.Service;
+package com.dinethdf.ClinicManagementSystem.Service.AuthService;
 
 
+import com.dinethdf.ClinicManagementSystem.Model.Users.User;
+import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +24,9 @@ import java.util.function.Function;
 @Service
 public class JWTService {
 
+//
+    @Autowired
+    UserDetailsService userDetailsService;
 
     private String secretkey = "";
 
@@ -35,15 +42,16 @@ public class JWTService {
     }
 
 
-    public String generateToken(String userName) {
+    public String generateToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", "UserRole");
-        claims.put("userId", "123");
+        User user = userDetailsService.getUserByEmail(userEmail);
+        claims.put("userName", user.getName());
+        claims.put("role", user.getRole().getName());
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(userName)
+                .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
                 .and()
@@ -76,14 +84,29 @@ public class JWTService {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String userName = extractUserName(token);
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return (userName.equals(userDetails.getUsername()) && isTokenExpired(token));
+    }
+
+    public boolean isRouteValidateToken(String token) {
+        return (isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return !extractExpiration(token).before(new Date());
     }
 
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public String generateRefreshToken(HashMap<String, Object> extraClaims, User user) {
+
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(user.getEmail())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 604800000))
+                .signWith(getKey())
+                .compact();
     }
 }
