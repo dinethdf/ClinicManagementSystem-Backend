@@ -121,9 +121,8 @@ public class UserService {
 
 
     public Map<String, Object> validateToken(String authHeader) {
-        Map<String, Object> response = new HashMap<>();
 
-
+    Map<String, Object> response = new HashMap<>();
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 response.put("valid", false);
                 return response;
