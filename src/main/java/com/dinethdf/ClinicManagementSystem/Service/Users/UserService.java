@@ -94,9 +94,19 @@ public class UserService {
         }
     }
 
-    public JwtAuthenticationResponse refreshToken (RefreshTokenRequest refreshTokenRequest){
 
-      String userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
+    public JwtAuthenticationResponse refreshToken (RefreshTokenRequest refreshTokenRequest) {
+        String userEmail ;
+        try {
+            userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
+        }catch (RuntimeException e){
+            System.out.println("asdasd");
+            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.werwe", null, "User not found in the system"), "dasd");
+        }catch (Exception e){
+            System.out.println("asdasd");
+            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.asda", null, "User not found in the system"), "ewrwerwer");
+        }
+
 
         try {
             UserDetails user = userDetailsService.loadUserByUsername(userEmail);
