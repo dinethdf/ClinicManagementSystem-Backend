@@ -1,11 +1,14 @@
 package com.dinethdf.ClinicManagementSystem.Service.Users;
 
+import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
+import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
 import com.dinethdf.ClinicManagementSystem.Repo.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +36,8 @@ public class UserService {
     @Autowired
     AuthenticationManager authManager;
 
+
+
     @Autowired
     UserDetailsService userDetailsService;
 
@@ -47,37 +52,23 @@ public class UserService {
     }
 
 
-// for the refresh tcken not use that
-
-//    public String login(User user) {
-//        try {
-//            Authentication auth = authManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
-//            );
-//            return jwtService.generateToken(user.getEmail());
-//        } catch (BadCredentialsException e) {
-//            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"));
-//        } catch (AuthenticationException e) {
-//            throw new ValidationException(messageSourceUtil.getMessage("auth.failed"));
-//        }
-////        catch (BadCredentialsException e) {
-////            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.found", null, "User not found in the system"));
-////
-////        }
-//    }
 
 
-
-    public JwtAuthenticationResponse signIn(User user){
+    public JwtAuthenticationResponse signIn(LoginRequest request){
 
         try {
+            CustomAuthToken authToken = new CustomAuthToken(
+                    request.getUsername(),
+                    request.getPassword(),
+                    request.getLoginType()
+            );
 
-         Authentication authentication =
-              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            Authentication auth = authManager.authenticate(authToken);
+//         Authentication authentication =
+//              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
-
-           var jwt = jwtService.generateToken(user.getEmail());
-           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+           var jwt = jwtService.generateUserToken(request.getUsername());
+           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
 
            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
            jwtAuthenticationResponse.setAccessToken(jwt);
@@ -93,6 +84,7 @@ public class UserService {
             throw new IllegalArgumentException("Invalid Email Or password");
         }
     }
+
 
 
     public JwtAuthenticationResponse refreshToken (RefreshTokenRequest refreshTokenRequest) {
@@ -112,7 +104,7 @@ public class UserService {
             UserDetails user = userDetailsService.loadUserByUsername(userEmail);
 
             if (jwtService.validateToken(refreshTokenRequest.getToken(), user)){
-                var jwt = jwtService.generateToken(user.getUsername());
+                var jwt = jwtService.generateUserToken(user.getUsername());
                 JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
                 jwtAuthenticationResponse.setAccessToken(jwt);
                 jwtAuthenticationResponse.setRefreshToken(refreshTokenRequest.getToken());
