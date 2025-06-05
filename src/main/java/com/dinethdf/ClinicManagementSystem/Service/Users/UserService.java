@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Users;
 
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
+import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
 import com.dinethdf.ClinicManagementSystem.Repo.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
@@ -77,13 +78,35 @@ public class UserService {
 
 
            var jwt = jwtService.generateToken(user.getEmail());
-           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user.getEmail());
 
            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
            jwtAuthenticationResponse.setAccessToken(jwt);
            jwtAuthenticationResponse.setRefreshToken(refreshToken);
 
            return jwtAuthenticationResponse;
+
+        }catch (BadCredentialsException e) {
+            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");
+        } catch (AuthenticationException e) {
+            throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "true");
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid Email Or password");
+        }
+    }
+
+    public JwtAuthenticationResponse patientSignIn(Patient patient){
+
+        try {
+           Authentication authentication =
+                    authManager.authenticate(new UsernamePasswordAuthenticationToken(patient.getEmail(), patient.getPassword()));
+
+//            var jwt = jwtService.generateToken(patient.getEmail());
+//            var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), patient.getEmail());
+            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
+            jwtAuthenticationResponse.setAccessToken("asdasd");
+            jwtAuthenticationResponse.setRefreshToken("asdasdasd");
+            return jwtAuthenticationResponse;
 
         }catch (BadCredentialsException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");

@@ -99,11 +99,11 @@ public class JWTService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public String generateRefreshToken(HashMap<String, Object> extraClaims, User user) {
+    public String generateRefreshToken(HashMap<String, Object> extraClaims, String userEmail) {
 
         return Jwts.builder()
                 .claims(extraClaims)
-                .subject(user.getEmail())
+                .subject(userEmail)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 604800000))
                 .signWith(getKey())
