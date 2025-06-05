@@ -1,13 +1,16 @@
 package com.dinethdf.ClinicManagementSystem.Service.Users;
 
+import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
 import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.PatientRepo;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class PatientService {
 
@@ -71,25 +75,33 @@ public class PatientService {
 //        }
 //    }
 
-    public JwtAuthenticationResponse patientSignIn(Patient patient){
+    public JwtAuthenticationResponse patientSignIn(LoginRequest request){
 
         try {
-           Authentication authentication =
-                    authManager.authenticate(new UsernamePasswordAuthenticationToken(patient.getEmail(), patient.getPassword()));
+            CustomAuthToken authToken = new CustomAuthToken(
+                    request.getUsername(),
+                    request.getPassword(),
+                    request.getLoginType()
+            );
 
-//            var jwt = jwtService.generateToken(patient.getEmail());
-//            var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), patient.getEmail());
+//         Authentication authentication =
+//              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+
+            var jwt = jwtService.generatePatientToken(request.getUsername());
+         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
+
             JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-            jwtAuthenticationResponse.setAccessToken("asdasd");
-            jwtAuthenticationResponse.setRefreshToken("asdasdasd");
+            jwtAuthenticationResponse.setAccessToken(jwt);
+            jwtAuthenticationResponse.setRefreshToken(refreshToken);
+
             return jwtAuthenticationResponse;
 
         }catch (BadCredentialsException e) {
-            throw new ValidationException(messageSourceUtil.getMessage("patient.invalid.credentials"),  "true");
+            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");
         } catch (AuthenticationException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "true");
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid patient Email Or password");
+            throw new IllegalArgumentException("Invalid Email Or password");
         }
     }
 

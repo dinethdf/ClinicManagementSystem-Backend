@@ -41,7 +41,7 @@ public class SecurityConfig {
                  .authorizeHttpRequests(request -> request
                          .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
-                         .requestMatchers("/login").permitAll()
+                         .requestMatchers("/userSignIn","/patientSignIn").permitAll()
                          .requestMatchers("students/bcd").hasAnyAuthority(Role.USER.name())
                          .requestMatchers("students/aa").hasAnyAuthority(Role.ADMIN.name())
                  )

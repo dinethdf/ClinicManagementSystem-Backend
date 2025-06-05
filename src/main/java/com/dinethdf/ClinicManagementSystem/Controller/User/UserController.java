@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Controller.User;
 
+import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
 import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
@@ -33,14 +34,14 @@ public class UserController {
 //      return userService.login(user);
 //    }
 
-    @PostMapping("signIn")
-    public ResponseEntity<JwtAuthenticationResponse> signIn (@RequestBody User user){
-        return ResponseEntity.ok(userService.signIn(user));
+    @PostMapping("userSignIn")
+    public ResponseEntity<JwtAuthenticationResponse> signIn (@RequestBody LoginRequest request){
+        return ResponseEntity.ok(userService.signIn(request));
     }
 
     @PostMapping("patientSignIn")
-    public ResponseEntity<JwtAuthenticationResponse> patientSignIn (@RequestBody Patient patient){
-        return ResponseEntity.ok(patientService.patientSignIn(patient));
+    public ResponseEntity<JwtAuthenticationResponse> patientSignIn (@RequestBody LoginRequest request){
+        return ResponseEntity.ok(patientService.patientSignIn(request));
     }
 
     @PostMapping("refresh")

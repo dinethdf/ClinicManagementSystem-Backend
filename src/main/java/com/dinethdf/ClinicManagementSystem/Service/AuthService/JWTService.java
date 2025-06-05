@@ -1,7 +1,9 @@
 package com.dinethdf.ClinicManagementSystem.Service.AuthService;
 
 
+import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
+import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
 import io.jsonwebtoken.Claims;
@@ -28,6 +30,9 @@ public class JWTService {
     @Autowired
     UserDetailsService userDetailsService;
 
+    @Autowired
+    PatientDetailsService patientDetailsService;
+
     private String secretkey = "";
 
     public JWTService() {
@@ -42,7 +47,7 @@ public class JWTService {
     }
 
 
-    public String generateToken(String userEmail) {
+    public String generateUserToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
         User user = userDetailsService.getUserByEmail(userEmail);
         claims.put("userName", user.getName());
@@ -52,6 +57,23 @@ public class JWTService {
                 .claims()
                 .add(claims)
                 .subject(user.getEmail())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
+                .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String generatePatientToken(String userEmail) {
+        Map<String, Object> claims = new HashMap<>();
+        Patient patient = patientDetailsService.getUserByEmail(userEmail);
+        claims.put("userName", patient.getName());
+        claims.put("role", patient.getRole().getName());
+
+        return Jwts.builder()
+                .claims()
+                .add(claims)
+                .subject(patient.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
                 .and()

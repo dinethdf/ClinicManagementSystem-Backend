@@ -31,16 +31,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String rawPassword = authentication.getCredentials().toString();
         String loginType = ((CustomAuthToken) authentication).getLoginType();
 
+        System.out.println();
         UserDetails user;
         if ("PATIENT".equalsIgnoreCase(loginType)) {
             user = patientDetailsService.loadUserByUsername(username);
-        } else if (true) {
+        } else if ("USER".equalsIgnoreCase(loginType)) {
             user = userDetailsService.loadUserByUsername("dineth@dd.com");
         } else {
             throw new BadCredentialsException("Unknown login type: " + loginType);
         }
-        System.out.println(user.toString());
-        System.out.println(rawPassword);
+        System.out.println("user name " +user.getUsername());
+        System.out.println("password " + user.getPassword());
+        System.out.println("type " + loginType);
+
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new BadCredentialsException("Invalid username or password");
         }
