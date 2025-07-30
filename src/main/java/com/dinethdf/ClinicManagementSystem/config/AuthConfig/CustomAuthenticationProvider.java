@@ -36,13 +36,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         if ("PATIENT".equalsIgnoreCase(loginType)) {
             user = patientDetailsService.loadUserByUsername(username);
         } else if ("USER".equalsIgnoreCase(loginType)) {
-            user = userDetailsService.loadUserByUsername("dineth@dd.com");
+            user = userDetailsService.loadUserByUsername(username);
         } else {
             throw new BadCredentialsException("Unknown login type: " + loginType);
         }
-        System.out.println("user name " +user.getUsername());
-        System.out.println("password " + user.getPassword());
-        System.out.println("type " + loginType);
+
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new BadCredentialsException("Invalid username or password");

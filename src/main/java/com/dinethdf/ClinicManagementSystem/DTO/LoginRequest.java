@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Dto;
+package com.dinethdf.ClinicManagementSystem.DTO;
 
 import lombok.Data;
 

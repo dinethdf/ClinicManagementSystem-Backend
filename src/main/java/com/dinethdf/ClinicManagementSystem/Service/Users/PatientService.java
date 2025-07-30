@@ -1,8 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Users;
 
-import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
+import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
-import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
 import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.PatientRepo;
 
@@ -14,15 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -86,13 +82,17 @@ public class PatientService {
 
 //         Authentication authentication =
 //              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            Authentication auth = authManager.authenticate(authToken);
+
+            // hear add api call to user details and with the requst send user details for FE
+
 
             var jwt = jwtService.generatePatientToken(request.getUsername());
-         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
+//         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
 
             JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
             jwtAuthenticationResponse.setAccessToken(jwt);
-            jwtAuthenticationResponse.setRefreshToken(refreshToken);
+            jwtAuthenticationResponse.setRefreshToken("refreshToken");
 
             return jwtAuthenticationResponse;
 
