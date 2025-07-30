@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,14 +33,24 @@ public class JwtFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
+        String role = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             username = jwtService.extractUserName(token);
+            role = jwtService.extractUserRole(token);
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = context.getBean(UserDetailsService.class).loadUserByUsername(username);
+            UserDetails userDetails;
+
+            if ("PATIENT".equals(role)) {
+                userDetails = context.getBean(PatientDetailsService.class).loadUserByUsername(username);
+            } else {
+                userDetails = context.getBean(UserDetailsService.class).loadUserByUsername(username);
+            }
+
+
             if (jwtService.validateToken(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource()
