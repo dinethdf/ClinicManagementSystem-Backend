@@ -1,8 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.User;
 
-import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
+import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
 import com.dinethdf.ClinicManagementSystem.Service.Users.PatientService;
 import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
