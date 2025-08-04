@@ -48,7 +48,7 @@ public class SecurityConfig {
                          .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
-                         .requestMatchers("api/good/**").hasAnyAuthority("USER")
+                         .requestMatchers("api/good/**").permitAll()
                          .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
                  )
                  .httpBasic(Customizer.withDefaults())
