@@ -45,11 +45,11 @@ public class SecurityConfig {
                  .cors(Customizer.withDefaults())
                  .csrf(AbstractHttpConfigurer::disable)
                  .authorizeHttpRequests(request -> request
-                         .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "api/**", "validate-token").permitAll()
+                         .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
-                         .requestMatchers("students/bcd").hasAnyAuthority(Role.USER.name())
-                         .requestMatchers("students/aa").hasAnyAuthority(Role.ADMIN.name())
+                         .requestMatchers("api/good/**").hasAnyAuthority("USER")
+                         .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
                  )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->

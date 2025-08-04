@@ -23,6 +23,22 @@ public class TestController {
         return ResponseEntity.ok("Hello from GET 3 endpoint!");
     }
 
+    // GET endpoint
+    @GetMapping("/good")
+    public ResponseEntity<String> sayGood() {
+        return ResponseEntity.ok("good from GET endpoint!");
+    }
+
+    @GetMapping("/good/a")
+    public ResponseEntity<String> sayGood2() {
+        return ResponseEntity.ok("good from GET 2 endpoint!");
+    }
+
+    @GetMapping("/good/b")
+    public ResponseEntity<String> sayGood3() {
+        return ResponseEntity.ok("good from GET 3 endpoint!");
+    }
+
     // POST endpoint
     @PostMapping("/submit")
     public ResponseEntity<String> submitData(@RequestBody String data) {

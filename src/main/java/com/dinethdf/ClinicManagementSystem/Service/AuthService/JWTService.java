@@ -58,7 +58,7 @@ public class JWTService {
                 .add(claims)
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
+                .expiration(new Date(System.currentTimeMillis() + 604800000))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -89,6 +89,10 @@ public class JWTService {
     public String extractUserName(String token) throws RuntimeException{
         // extract the username from jwt token
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractUserRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class)); // custom claim
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {

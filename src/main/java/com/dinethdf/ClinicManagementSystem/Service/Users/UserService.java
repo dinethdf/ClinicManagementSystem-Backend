@@ -1,8 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Users;
 
-import com.dinethdf.ClinicManagementSystem.Dto.LoginRequest;
+import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.Users.User;
 import com.dinethdf.ClinicManagementSystem.Repo.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
@@ -11,10 +10,11 @@ import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -64,15 +64,20 @@ public class UserService {
             );
 
             Authentication auth = authManager.authenticate(authToken);
+
+
 //         Authentication authentication =
 //              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
            var jwt = jwtService.generateUserToken(request.getUsername());
-           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
+//           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
+
+            // hear add api call to user details and with the requst send user details for FE
+
 
            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
            jwtAuthenticationResponse.setAccessToken(jwt);
-           jwtAuthenticationResponse.setRefreshToken(refreshToken);
+           jwtAuthenticationResponse.setRefreshToken("refreshToken");
 
            return jwtAuthenticationResponse;
 
