@@ -1,15 +1,24 @@
-FROM ubuntu:latest AS build
+# ---- Build Stage ----
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-17-jdk -y
-COPY . .
+# Copy project files
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
 
-RUN ./gradlew bootJar --no-daemon
+# Build the JAR
+RUN mvn clean package -DskipTests
 
-FROM openjdk:17-jdk-slim
+# ---- Run Stage ----
+FROM eclipse-temurin:17-jre-alpine
 
+# Change this if your JAR name is different
+ARG JAR_FILE=target/*.jar
+
+# Copy the jar from the build stage
+COPY --from=build /app/${JAR_FILE} app.jar
+
+# Expose port (Render automatically listens to PORT env, but this is fine)
 EXPOSE 8080
 
-COPY --from=build /build/libs/demo-1.jar app.jar
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","/app.jar"]
