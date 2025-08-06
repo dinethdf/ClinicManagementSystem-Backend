@@ -1,6 +1,5 @@
 package com.dinethdf.ClinicManagementSystem.config;
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.Role;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthenticationProvider;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;

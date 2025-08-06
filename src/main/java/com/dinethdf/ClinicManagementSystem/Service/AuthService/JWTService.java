@@ -50,7 +50,7 @@ public class JWTService {
     public String generateUserToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
         User user = userDetailsService.getUserByEmail(userEmail);
-        claims.put("userName", user.getName());
+        claims.put("userName", "UserIDNo");
         claims.put("role", user.getRole().getName());
 
         return Jwts.builder()
@@ -67,7 +67,7 @@ public class JWTService {
     public String generatePatientToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
         Patient patient = patientDetailsService.getUserByEmail(userEmail);
-        claims.put("userName", patient.getName());
+        claims.put("userName", "PatientIDNo");
         claims.put("role", patient.getRole().getName());
 
         return Jwts.builder()

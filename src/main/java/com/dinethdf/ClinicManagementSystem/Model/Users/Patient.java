@@ -1,9 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Users;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 @Entity
 public class Patient {
@@ -11,8 +8,18 @@ public class Patient {
     @Id
     private int Id;
     private String email;
-    private String name;
     private String password;
+
+    private Boolean isEnable;
+
+    public Boolean getEnable() {
+        return isEnable;
+    }
+    public void setEnable(Boolean enable) {
+        isEnable = enable;
+    }
+
+
 
     public String getEmail() {
         return email;
@@ -35,13 +42,6 @@ public class Patient {
     }
 
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getPassword() {
         return password;
@@ -64,7 +64,7 @@ public class Patient {
         return "User{" +
                 "Id=" + Id +
                 ", username='" + email + '\'' +
-                ", name='" + name + '\'' +
+                ", isEnable='" + isEnable + '\'' +
                 ", password='" + password + '\'' +
                 ", role=" + role +
                 '}';
