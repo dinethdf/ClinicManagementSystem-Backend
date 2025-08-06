@@ -57,6 +57,6 @@ public class PatientPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return patient.getEnable();
     }
 }
