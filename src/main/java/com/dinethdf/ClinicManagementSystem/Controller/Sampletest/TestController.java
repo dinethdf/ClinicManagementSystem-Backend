@@ -26,7 +26,7 @@ public class TestController {
     // GET endpoint
     @GetMapping("/good")
     public ResponseEntity<String> sayGood() {
-        return ResponseEntity.ok("good from GET endpoint!");
+        return ResponseEntity.ok("good from this is test 2 hewck endpoint!");
     }
 
     @GetMapping("/good/a")
