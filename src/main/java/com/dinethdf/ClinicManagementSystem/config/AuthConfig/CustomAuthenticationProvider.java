@@ -1,8 +1,8 @@
 package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;

@@ -1,11 +1,8 @@
-package com.dinethdf.ClinicManagementSystem.Service.Users;
+package com.dinethdf.ClinicManagementSystem.Service.UsersAuth;
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
-import com.dinethdf.ClinicManagementSystem.Model.Users.PatientPrincipal;
-import com.dinethdf.ClinicManagementSystem.Model.Users.User;
-import com.dinethdf.ClinicManagementSystem.Model.Users.UserPrincipal;
-import com.dinethdf.ClinicManagementSystem.Repo.PatientRepo;
-import com.dinethdf.ClinicManagementSystem.Repo.UserRepo;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.Patient;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientPrincipal;
+import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.PatientRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
