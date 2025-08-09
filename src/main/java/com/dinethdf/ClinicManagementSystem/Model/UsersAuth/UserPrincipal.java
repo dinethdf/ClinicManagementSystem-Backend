@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Model.Users;
+package com.dinethdf.ClinicManagementSystem.Model.UsersAuth;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

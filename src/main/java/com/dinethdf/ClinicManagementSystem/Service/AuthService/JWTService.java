@@ -1,11 +1,10 @@
 package com.dinethdf.ClinicManagementSystem.Service.AuthService;
 
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
-import com.dinethdf.ClinicManagementSystem.Model.Users.User;
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.Patient;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
