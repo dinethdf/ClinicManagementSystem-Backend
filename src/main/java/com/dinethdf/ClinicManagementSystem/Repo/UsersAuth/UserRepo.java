@@ -1,6 +1,6 @@
-package com.dinethdf.ClinicManagementSystem.Repo;
+package com.dinethdf.ClinicManagementSystem.Repo.UsersAuth;
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.User;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,9 +1,9 @@
-package com.dinethdf.ClinicManagementSystem.Service.Users;
+package com.dinethdf.ClinicManagementSystem.Service.UsersAuth;
 
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
-import com.dinethdf.ClinicManagementSystem.Repo.PatientRepo;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.Patient;
+import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.PatientRepo;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
@@ -17,8 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
 
 @Slf4j
 @Service

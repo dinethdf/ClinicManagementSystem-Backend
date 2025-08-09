@@ -1,10 +1,10 @@
-package com.dinethdf.ClinicManagementSystem.Controller.User;
+package com.dinethdf.ClinicManagementSystem.Controller.UserAuth;
 
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
-import com.dinethdf.ClinicManagementSystem.Model.Users.User;
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserService;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
