@@ -1,10 +1,9 @@
-package com.dinethdf.ClinicManagementSystem.Model.Users;
+package com.dinethdf.ClinicManagementSystem.Model.UsersAuth;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-public class User {
+public class Patient {
 
     @Id
     private int Id;
@@ -16,10 +15,11 @@ public class User {
     public Boolean getEnable() {
         return isEnable;
     }
-
     public void setEnable(Boolean enable) {
         isEnable = enable;
     }
+
+
 
     public String getEmail() {
         return email;
@@ -40,6 +40,7 @@ public class User {
     public void setId(int id) {
         Id = id;
     }
+
 
 
     public String getPassword() {

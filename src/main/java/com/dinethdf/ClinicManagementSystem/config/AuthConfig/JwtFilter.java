@@ -2,8 +2,8 @@ package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
