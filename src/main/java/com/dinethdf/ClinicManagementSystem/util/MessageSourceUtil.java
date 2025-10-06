@@ -21,6 +21,10 @@ public class MessageSourceUtil {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
     }
 
+    public String getMessageCustom(String customMessage) {
+        return customMessage;
+    }
+
     public String getMessageOrCustom(String key, Object[] args, String customMessage) {
         try {
             return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());

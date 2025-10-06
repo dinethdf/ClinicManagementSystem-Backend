@@ -30,8 +30,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String rawPassword = authentication.getCredentials().toString();
         String loginType = ((CustomAuthToken) authentication).getLoginType();
-
-        System.out.println();
         UserDetails user;
         if ("PATIENT".equalsIgnoreCase(loginType)) {
             user = patientDetailsService.loadUserByUsername(username);

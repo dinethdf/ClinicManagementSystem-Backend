@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Controller.UserAuth;
+package com.dinethdf.ClinicManagementSystem.Controller.UsersAuth;
 
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 //@CrossOrigin(origins = "http://localhost:3000")
-public class UserController {
+public class AuthController {
 
     @Autowired
     UserService userService;

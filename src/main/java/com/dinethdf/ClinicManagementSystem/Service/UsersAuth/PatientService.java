@@ -95,11 +95,12 @@ public class PatientService {
             return jwtAuthenticationResponse;
 
         }catch (BadCredentialsException e) {
-            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");
+            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "INVALID_CREDENTIALS");
         } catch (AuthenticationException e) {
-            throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "true");
+            throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "INVALID_AUTHENTICATION");
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Email Or password");
+//            throw new IllegalArgumentException("Invalid Email Or password");
+            throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "INVALID_CREDENTIALS");
         }
     }
 
