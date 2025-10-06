@@ -20,24 +20,11 @@ public class PatientController {
     @Autowired
     PatientServiceImpl patientServiceImpl;
 
-    @GetMapping("/a/b")
-    public String getPatients(){
-        System.out.println("Hellos");
-        return "Patient";
-    }
 
-    @GetMapping("/a/c")
-    public String getPatients2(){
-        System.out.println("Hello");
-        return "Patient";
-    }
+    //    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'PATIENT', 'STAFF')")
+    @PostMapping("details/staff")
+    public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsByStaff(@RequestBody PatientDetails patientDetails){
 
-    @PreAuthorize("permitAll")
-    @PostMapping("details/self")
-    public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsBySelf(@RequestBody PatientDetails patientDetails){
-        System.out.println("Patient Details register Self");
-        System.out.println("Paatient details");
-        System.out.println(patientDetails.toString());
         PatientDetails patientDetailsCreated =  patientServiceImpl.addOrUpdatePatientDetailsByStaff(patientDetails);
         ApiResponse<PatientDetails> response = new ApiResponse<>(
                 true,
@@ -48,21 +35,22 @@ public class PatientController {
 
     }
 
-    @PreAuthorize("hasAnyAuthority('USER')")
-    @PostMapping("details/staff")
-    public ResponseEntity<ApiResponse<PatientResponseDto>> savePatientDetailsByStaff(){
-        System.out.println("Patient Details register Staff");
 
-        PatientResponseDto patientResponseDto = new PatientResponseDto(1L,"asd", "asd", "swaps");
+//    @PreAuthorize("hasAnyAuthority('PATIENT')")
+//    @PostMapping("details/self")
+//    public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsBySelf(@RequestBody PatientDetails patientDetails){
+//
+//        PatientDetails patientDetailsCreated =  patientServiceImpl.addOrUpdatePatientDetailsByStaff(patientDetails);
+//        ApiResponse<PatientDetails> response = new ApiResponse<>(
+//                true,
+//                "Patient registered successfully by self",
+//                patientDetailsCreated
+//        );
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//
+//    }
 
-        ApiResponse<PatientResponseDto> response = new ApiResponse<>(
-                true,
-                "Patient registered successfully By staff",
-                patientResponseDto
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
-    }
 
     @GetMapping("b/b")
     public String getPatients4(){

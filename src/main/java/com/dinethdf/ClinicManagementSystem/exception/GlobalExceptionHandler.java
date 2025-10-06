@@ -15,11 +15,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(ValidationException ex) {
         Map<String, Object> response = new HashMap<>();
-        response.put("error", true);
-        response.put("code", ex.isErrorCode());
-        response.put("status", ex.getStatus());
-        response.put("message", ex.getMessage());
+        response.put("errorCode", ex.getErrorCode());
+        response.put("params", ex.getParams() != null ? ex.getParams() : Map.of());
+        response.put("defaultMessage", ex.getDefaultMessage());
+        response.put("status", ex.getStatus().value());
 
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(ex.getStatus()).body(response);
     }
 }
