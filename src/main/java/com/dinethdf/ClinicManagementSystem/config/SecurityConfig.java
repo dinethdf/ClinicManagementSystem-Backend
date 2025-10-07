@@ -51,7 +51,7 @@ public class SecurityConfig {
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
                          .requestMatchers("api/good/**").hasAnyAuthority("ADMIN")
                          .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
-                        .requestMatchers("api/patient/details/staff").permitAll()
+//                        .requestMatchers("api/patient/details/staff").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
                  )
                  .httpBasic(Customizer.withDefaults())

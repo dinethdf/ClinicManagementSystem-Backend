@@ -21,7 +21,7 @@ public class PatientController {
     PatientServiceImpl patientServiceImpl;
 
 
-    //    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'PATIENT', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @PostMapping("details/staff")
     public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsByStaff(@RequestBody PatientDetails patientDetails){
 
@@ -51,7 +51,7 @@ public class PatientController {
 //    }
 
 
-
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     @GetMapping("b/b")
     public String getPatients4(){
         System.out.println("Hello2");
