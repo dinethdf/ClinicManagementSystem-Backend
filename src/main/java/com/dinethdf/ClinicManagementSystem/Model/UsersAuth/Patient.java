@@ -11,6 +11,7 @@ public class Patient {
     private String password;
 
     private Boolean isEnable;
+    private Boolean isTempCredential;
 
     public Boolean getEnable() {
         return isEnable;
@@ -59,12 +60,20 @@ public class Patient {
         this.role = role;
     }
 
+    public Boolean getTempCredential() {
+        return isTempCredential;
+    }
+
+    public void setTempCredential(Boolean tempCredential) {
+        isTempCredential = tempCredential;
+    }
     @Override
     public String toString() {
         return "User{" +
                 "Id=" + Id +
                 ", username='" + email + '\'' +
                 ", isEnable='" + isEnable + '\'' +
+                ", isTempCredential='" + isTempCredential + '\'' +
                 ", password='" + password + '\'' +
                 ", role=" + role +
                 '}';

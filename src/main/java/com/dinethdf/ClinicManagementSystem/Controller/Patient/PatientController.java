@@ -25,7 +25,7 @@ public class PatientController {
     @PostMapping("details/staff")
     public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsByStaff(@RequestBody PatientDetails patientDetails){
 
-        PatientDetails patientDetailsCreated =  patientServiceImpl.addOrUpdatePatientDetailsByStaff(patientDetails);
+        PatientDetails patientDetailsCreated =  patientServiceImpl.registerPatientByStaff(patientDetails);
         ApiResponse<PatientDetails> response = new ApiResponse<>(
                 true,
                 "Patient registered successfully by self",

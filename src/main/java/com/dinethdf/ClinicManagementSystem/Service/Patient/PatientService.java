@@ -31,7 +31,7 @@ public interface PatientService {
     /**
      * Add or update patient details by staff/admin
      */
-    PatientDetails addOrUpdatePatientDetailsByStaff(PatientDetails requestDto);
+    PatientDetails registerPatientByStaff(PatientDetails requestDto);
 
     /**
      * Edit patient details (patient or staff, depending on roles)

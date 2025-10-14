@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Patient;
 
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.Patient;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,8 +16,9 @@ public class PatientDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "patient_auth_id", nullable = false)
-    private Integer patientAuthId;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "patient_auth_id", referencedColumnName = "id")
+    private Patient patient;
 
     @Column(name = "patientNo", nullable = true, unique = true, length = 100)
     private String patientNo;
@@ -60,7 +62,7 @@ public class PatientDetails {
     @Column(name = "mobileNo", nullable = false, length = 20)
     private String mobileNo;
 
-    @Column(name = "landNo", nullable = false, length = 20)
+    @Column(name = "landNo", nullable = true, length = 20)
     private String landNo;
 
     @Column(name = "emergencyContactName", nullable = false, length = 100)
@@ -132,7 +134,7 @@ public class PatientDetails {
     public String toString() {
         return "PatientDetails{" +
                 "id=" + id +
-                ", patientAuthId=" + patientAuthId +
+                ", patientAuthId=" + patient +
                 ", patientNo='" + patientNo + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
