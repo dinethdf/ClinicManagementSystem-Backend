@@ -1,16 +1,16 @@
 package com.dinethdf.ClinicManagementSystem.Service.AuthService;
 
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.Patient;
-import com.dinethdf.ClinicManagementSystem.Model.Users.User;
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserService;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +33,10 @@ public class JWTService {
     @Autowired
     PatientDetailsService patientDetailsService;
 
-    private String secretkey = "";
+
+    @Value("${jwt.secret}")
+    private String secretkey;
+
 
     public JWTService() {
 
@@ -50,7 +53,7 @@ public class JWTService {
     public String generateUserToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
         User user = userDetailsService.getUserByEmail(userEmail);
-        claims.put("userName", user.getName());
+        claims.put("userName", "UserIDNo");
         claims.put("role", user.getRole().getName());
 
         return Jwts.builder()
@@ -58,7 +61,7 @@ public class JWTService {
                 .add(claims)
                 .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
+                .expiration(new Date(System.currentTimeMillis() + 604800000))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -66,14 +69,14 @@ public class JWTService {
 
     public String generatePatientToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
-        Patient patient = patientDetailsService.getUserByEmail(userEmail);
-        claims.put("userName", patient.getName());
-        claims.put("role", patient.getRole().getName());
+        PatientAuth patientAuth = patientDetailsService.getUserByEmail(userEmail);
+        claims.put("userName", "PatientIDNo");
+        claims.put("role", patientAuth.getRole().getName());
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(patient.getEmail())
+                .subject(patientAuth.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 604800000))
                 .and()
@@ -89,6 +92,10 @@ public class JWTService {
     public String extractUserName(String token) throws RuntimeException{
         // extract the username from jwt token
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractUserRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class)); // custom claim
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {

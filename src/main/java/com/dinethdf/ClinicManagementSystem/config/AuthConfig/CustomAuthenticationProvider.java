@@ -1,8 +1,8 @@
 package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 
-import com.dinethdf.ClinicManagementSystem.Service.Users.PatientDetailsService;
-import com.dinethdf.ClinicManagementSystem.Service.Users.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,19 +30,15 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String rawPassword = authentication.getCredentials().toString();
         String loginType = ((CustomAuthToken) authentication).getLoginType();
-
-        System.out.println();
         UserDetails user;
         if ("PATIENT".equalsIgnoreCase(loginType)) {
             user = patientDetailsService.loadUserByUsername(username);
         } else if ("USER".equalsIgnoreCase(loginType)) {
-            user = userDetailsService.loadUserByUsername("dineth@dd.com");
+            user = userDetailsService.loadUserByUsername(username);
         } else {
             throw new BadCredentialsException("Unknown login type: " + loginType);
         }
-        System.out.println("user name " +user.getUsername());
-        System.out.println("password " + user.getPassword());
-        System.out.println("type " + loginType);
+
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new BadCredentialsException("Invalid username or password");

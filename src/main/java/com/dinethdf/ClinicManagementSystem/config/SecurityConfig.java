@@ -1,6 +1,5 @@
 package com.dinethdf.ClinicManagementSystem.config;
 
-import com.dinethdf.ClinicManagementSystem.Model.Users.Role;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthenticationProvider;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,6 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity(prePostEnabled = true)
 @EnableWebSecurity
 public class SecurityConfig {
 
@@ -45,11 +46,14 @@ public class SecurityConfig {
                  .cors(Customizer.withDefaults())
                  .csrf(AbstractHttpConfigurer::disable)
                  .authorizeHttpRequests(request -> request
-                         .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "api/**", "validate-token").permitAll()
+                         .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
-                         .requestMatchers("students/bcd").hasAnyAuthority(Role.USER.name())
-                         .requestMatchers("students/aa").hasAnyAuthority(Role.ADMIN.name())
+                         .requestMatchers("api/good/**").permitAll()
+
+                         .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
+//                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
+                         .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
                  )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->
