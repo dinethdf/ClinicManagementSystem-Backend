@@ -9,16 +9,16 @@ import java.util.Collections;
 
 public class PatientPrincipal implements UserDetails {
 
-    private Patient patient;
+    private PatientAuth patientAuth;
 
-    public PatientPrincipal(Patient patient) {
-        this.patient = patient;
+    public PatientPrincipal(PatientAuth patientAuth) {
+        this.patientAuth = patientAuth;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 //        return Collections.singleton(new SimpleGrantedAuthority(Role.ADMIN.name()));
-         return Collections.singleton(new SimpleGrantedAuthority(patient.getRole().getName()));
+         return Collections.singleton(new SimpleGrantedAuthority(patientAuth.getRole().getName()));
     }
 
 
@@ -32,12 +32,12 @@ public class PatientPrincipal implements UserDetails {
 
     @Override
     public String getPassword() {
-        return patient.getPassword();
+        return patientAuth.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return patient.getEmail();
+        return patientAuth.getEmail();
     }
 
     @Override
@@ -57,6 +57,6 @@ public class PatientPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return patient.getEnable();
+        return patientAuth.getEnable();
     }
 }
