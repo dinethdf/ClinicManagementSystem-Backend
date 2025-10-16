@@ -30,7 +30,7 @@ INSERT INTO `user` (`password`, `email`, `isEnable`, `role`) VALUES ('$2a$12$Wrw
 
 
 
-CREATE TABLE patient (
+CREATE TABLE PatientAuth (
   id INT NOT NULL AUTO_INCREMENT,
   password VARCHAR(255) DEFAULT NULL,
   email VARCHAR(255) UNIQUE DEFAULT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE patient (
   FOREIGN KEY (role) REFERENCES user_role(id) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
-INSERT INTO Patient (`password`, `email`, `isEnable`, `isTempCredential`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '3');
+INSERT INTO PatientAuth (`password`, `email`, `isEnable`, `isTempCredential`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '3');
 
 
 
@@ -93,7 +93,7 @@ CREATE TABLE patient_details (
     updatedDate DATETIME,
     updatedBy VARCHAR(50),
 
-    CONSTRAINT fk_patient_auth FOREIGN KEY (patient_auth_id) REFERENCES patient(id) ON DELETE SET NULL,
+    CONSTRAINT fk_patient_auth FOREIGN KEY (patient_auth_id) REFERENCES PatientAuth(id) ON DELETE SET NULL,
     CONSTRAINT fk_insurance FOREIGN KEY (insurance_id) REFERENCES insurance(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

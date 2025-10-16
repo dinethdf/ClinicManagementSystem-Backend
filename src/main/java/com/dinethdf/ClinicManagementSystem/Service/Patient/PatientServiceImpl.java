@@ -11,13 +11,12 @@ import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PatientServiceImpl implements PatientService {
@@ -42,6 +41,18 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    public ApiResponse<PatientDetails> getPatientFullDetailsById(String id) {
+
+        PatientDetails patientDetails = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"ASDf"));
+        return new ApiResponse<>(
+                true,
+                messageSourceUtil.getMessage("patient.details.get.success"),
+                patientDetails
+        );
+
+    }
+
+    @Override
     public PatientResponseDto getPatientByAuthId(Long authId) {
         return null;
     }
@@ -53,7 +64,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional
-    public PatientDetails registerPatientByStaff(PatientDetails patientDetails) {
+    public ApiResponse<PatientDetails> registerPatientByStaff(PatientDetails patientDetails) {
         System.out.println(patientDetails.toString());
         validatePatient(patientDetails);
         try {
@@ -63,8 +74,11 @@ public class PatientServiceImpl implements PatientService {
 
             String patientNo = generatePatientNo(savedPatient.getId());
             savedPatient.setPatientNo(patientNo);
-
-            return patientDetailsRepo.save(savedPatient);
+            return new ApiResponse<>(
+                true,
+                 messageSourceUtil.getMessage("patient.self.register.success"),
+                 patientDetailsRepo.save(savedPatient)
+        );
 
         } catch (DataIntegrityViolationException e) {
             String rootCauseMessage = e.getMostSpecificCause().getMessage();
