@@ -28,7 +28,7 @@ jobs:
     needs: build
     runs-on: [clinic-system-be]
     steps:
-      - name: Pull Image from docker hub
+      - name: Pull Image from docker hub a
         run: docker pull murranvisualsweb/clinic-system-be:latest
       - name: Delete old container
         run: docker rm -f clinic-system-be-container
