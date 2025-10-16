@@ -49,9 +49,10 @@ public class SecurityConfig {
                          .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
-                         .requestMatchers("api/good/**").permitAll()
+                         .requestMatchers("api/good/a").hasAnyAuthority("ADMIN")
+                         .requestMatchers("api/good/b").hasAnyAuthority("PATIENT")
+                         .requestMatchers("api/hello/**").permitAll()
 
-                         .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
                  )
