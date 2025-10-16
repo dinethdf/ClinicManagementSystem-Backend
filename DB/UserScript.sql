@@ -70,7 +70,7 @@ CREATE TABLE patient_details (
     address TEXT NOT NULL,
     city VARCHAR(100),
     district VARCHAR(100),
-    email VARCHAR(150),
+    email VARCHAR(150) DEFAULT NULL UNIQUE,
     mobileNo VARCHAR(20) NOT NULL,
     landNo VARCHAR(20),
 
