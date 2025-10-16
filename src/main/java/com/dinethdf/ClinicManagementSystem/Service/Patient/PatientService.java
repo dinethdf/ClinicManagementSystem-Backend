@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
+import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDto;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.PatientDetails;
@@ -18,6 +19,7 @@ public interface PatientService {
      */
     PatientResponseDto getPatientById(Long patientId);
 
+    ApiResponse<PatientDetails> getPatientFullDetailsById(String id);
     /**
      * Get patient details by Auth ID (linked to login/user)
      */
@@ -31,7 +33,7 @@ public interface PatientService {
     /**
      * Add or update patient details by staff/admin
      */
-    PatientDetails addOrUpdatePatientDetailsByStaff(PatientDetails requestDto);
+    ApiResponse<PatientDetails> registerPatientByStaff(PatientDetails requestDto);
 
     /**
      * Edit patient details (patient or staff, depending on roles)

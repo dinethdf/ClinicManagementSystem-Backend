@@ -3,7 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.UsersAuth;
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
-import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientService;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserService;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
@@ -21,7 +21,7 @@ public class AuthController {
     UserService userService;
 
     @Autowired
-    PatientService patientService;
+    PatientAuthService patientAuthService;
 
     @PostMapping("register")
     public User registerUser(@RequestBody User user){
@@ -40,7 +40,7 @@ public class AuthController {
 
     @PostMapping("patientSignIn")
     public ResponseEntity<JwtAuthenticationResponse> patientSignIn (@RequestBody LoginRequest request){
-        return ResponseEntity.ok(patientService.patientSignIn(request));
+        return ResponseEntity.ok(patientAuthService.patientSignIn(request));
     }
 
     @PostMapping("refresh")

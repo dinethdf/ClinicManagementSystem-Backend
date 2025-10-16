@@ -5,18 +5,18 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDto;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.PatientDetails;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PatientServiceImpl implements PatientService {
@@ -27,6 +27,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private MessageSourceUtil messageSourceUtil;
 
+    @Autowired
+    PatientAuthService patientAuthService;
+
     @Override
     public List<PatientResponseDto> getAllPatients() {
         return List.of();
@@ -35,6 +38,18 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public PatientResponseDto getPatientById(Long patientId) {
         return null;
+    }
+
+    @Override
+    public ApiResponse<PatientDetails> getPatientFullDetailsById(String id) {
+
+        PatientDetails patientDetails = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"ASDf"));
+        return new ApiResponse<>(
+                true,
+                messageSourceUtil.getMessage("patient.details.get.success"),
+                patientDetails
+        );
+
     }
 
     @Override
@@ -49,8 +64,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional
-    public PatientDetails addOrUpdatePatientDetailsByStaff(PatientDetails patientDetails) {
-
+    public ApiResponse<PatientDetails> registerPatientByStaff(PatientDetails patientDetails) {
+        System.out.println(patientDetails.toString());
         validatePatient(patientDetails);
         try {
             System.out.println("Patient Save in Staff");
@@ -59,14 +74,17 @@ public class PatientServiceImpl implements PatientService {
 
             String patientNo = generatePatientNo(savedPatient.getId());
             savedPatient.setPatientNo(patientNo);
-
-            return patientDetailsRepo.save(savedPatient);
+            return new ApiResponse<>(
+                true,
+                 messageSourceUtil.getMessage("patient.self.register.success"),
+                 patientDetailsRepo.save(savedPatient)
+        );
 
         } catch (DataIntegrityViolationException e) {
             String rootCauseMessage = e.getMostSpecificCause().getMessage();
 
             // for Duplicate Field Error handle
-            handleDuplicateConstraintError(rootCauseMessage);
+            handleDataIntegrityViolation(rootCauseMessage);
 
             // Any other Database Level error Handle
             throw new ValidationException(messageSourceUtil.getMessage("patient.self.register.error"),  "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
@@ -147,32 +165,61 @@ public class PatientServiceImpl implements PatientService {
         }
     }
 
-    private void handleDuplicateConstraintError(String rootCauseMessage) {
-        if (rootCauseMessage == null) return;
-
-        rootCauseMessage = rootCauseMessage.toLowerCase();
-
-        if (rootCauseMessage.contains("nic")) {
+    private void handleDataIntegrityViolation(String rootCauseMessage) {
+        if (rootCauseMessage == null) {
+            // Throw a generic error if the message is null for some reason
             throw new ValidationException(
-                    messageSourceUtil.getMessage("patient.nic.exists.error"),
-                    "NIC_DUPLICATE",
+                    messageSourceUtil.getMessage("database.error.generic"),
+                    "DATABASE_ERROR",
+                    null,
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+
+        String lowerCaseMessage = rootCauseMessage.toLowerCase();
+        System.out.println(lowerCaseMessage); // For debugging
+
+        // 1. Check for Duplicate Entry errors
+        if (lowerCaseMessage.contains("duplicate entry")) {
+            if (lowerCaseMessage.contains("'nic'")) {
+                throw new ValidationException(
+                        messageSourceUtil.getMessage("patient.nic.exists.error"),
+                        "NIC_DUPLICATE",
+                        null,
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+            if (lowerCaseMessage.contains("email")) {
+                throw new ValidationException(
+                        messageSourceUtil.getMessage("patient.email.exists.error"),
+                        "EMAIL_DUPLICATE",
+                        null,
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+            // Generic duplicate error if a specific field isn't matched
+            throw new ValidationException(
+                    messageSourceUtil.getMessage("patient.self.register.error"),
+                    "DUPLICATE_ENTRY",
                     null,
                     HttpStatus.BAD_REQUEST
             );
         }
 
-        if (rootCauseMessage.contains("email")) {
+        // 2. Check for Not-Null Constraint errors
+        if (lowerCaseMessage.contains("cannot be null")) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("patient.email.exists.error"),
-                    "EMAIL_DUPLICATE",
+                    messageSourceUtil.getMessage("validation.field.notnull"), // e.g., "A required field was left empty."
+                    "NOT_NULL_VIOLATION",
                     null,
                     HttpStatus.BAD_REQUEST
             );
         }
 
+        // 3. Fallback for any other DataIntegrityViolationException
         throw new ValidationException(
-                messageSourceUtil.getMessage("patient.self.register.error"),
-                "DUPLICATE_ENTRY",
+                messageSourceUtil.getMessage("database.error.generic"),
+                "DATABASE_INTEGRITY_ERROR",
                 null,
                 HttpStatus.BAD_REQUEST
         );
