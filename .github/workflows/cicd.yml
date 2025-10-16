@@ -26,7 +26,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: [self-hosted]
+    runs-on: [clinic-system-be]
     steps:
       - name: Pull Image from docker hub
         run: docker pull murranvisualsweb/clinic-system-be:latest
