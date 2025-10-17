@@ -181,7 +181,7 @@ public class PatientServiceImpl implements PatientService {
 
         // 1. Check for Duplicate Entry errors
         if (lowerCaseMessage.contains("duplicate entry")) {
-            if (lowerCaseMessage.contains("'nic'")) {
+            if (lowerCaseMessage.contains("'nic'") || lowerCaseMessage.contains(".nic'")) {
                 throw new ValidationException(
                         messageSourceUtil.getMessage("patient.nic.exists.error"),
                         "NIC_DUPLICATE",

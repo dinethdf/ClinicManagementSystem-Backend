@@ -49,9 +49,10 @@ public class SecurityConfig {
                          .requestMatchers("register", "login", "signIn", "refresh","patientSignIn", "validate-token").permitAll()
 //                         .anyRequest().authenticated()
                          .requestMatchers("/userSignIn","/patientSignIn").permitAll()
-                         .requestMatchers("api/good/**").permitAll()
+                         .requestMatchers("api/good/a").hasAnyAuthority("ADMIN")
+                         .requestMatchers("api/good/b").hasAnyAuthority("PATIENT")
+                         .requestMatchers("api/hello/**").permitAll()
 
-                         .requestMatchers("api/hello/**").hasAnyAuthority("PATIENT")
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
                  )
@@ -68,7 +69,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://192.168.8.111:3000", "http://localhost:3000", "http://127.0.0.1:3000/"));
+        config.addAllowedOriginPattern("*");
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
