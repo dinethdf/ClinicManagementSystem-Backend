@@ -1,7 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.Model.Patient.PatientDetails;
+import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,27 +18,38 @@ public class PatientController {
     PatientServiceImpl patientServiceImpl;
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
-    @GetMapping("get-details/staff/{id}")
-    public ResponseEntity<ApiResponse<PatientDetails>> getPatients(@PathVariable String id){
-        ApiResponse<PatientDetails> response = patientServiceImpl.getPatientFullDetailsById(id);
+    @GetMapping("details/staff/{id}")
+    public ResponseEntity<ApiResponse<Patient>> getPatients(@PathVariable String id){
+        ApiResponse<Patient> response = patientServiceImpl.getPatientDetailsByIdStaff(id);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @PostMapping("details/staff")
-    public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsByStaff(@RequestBody PatientDetails patientDetails){
-
-//        PatientDetails patientDetailsCreated =  patientServiceImpl.registerPatientByStaff(patientDetails);
-//        ApiResponse<PatientDetails> response = new ApiResponse<>(
-//                true,
-//                "Patient registered successful",
-//                patientDetailsCreated
-//        );
-
-        ApiResponse<PatientDetails> response = patientServiceImpl.registerPatientByStaff(patientDetails);
-
+    public ResponseEntity<ApiResponse<Patient>> savePatientDetailsByStaff(@RequestBody Patient patient){
+        ApiResponse<Patient> response = patientServiceImpl.registerPatientByStaff(patient);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PutMapping("details/staff/{id}")
+    public ResponseEntity<ApiResponse<Patient>> updatePatientDetailsByStaff(@PathVariable Integer id, @RequestBody Patient patient){
+        ApiResponse<Patient> response = patientServiceImpl.updatePatientByStaff(id, patient);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PatchMapping("approve/staff/{id}")
+    public ResponseEntity<ApiResponse<String>> updatePatientDetailsByStaff(@PathVariable Integer id){
+        ApiResponse<String> response = patientServiceImpl.approvePatient(id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @DeleteMapping("delete/staff/{id}")
+    public ResponseEntity<ApiResponse<String>> deletePatientDetailsByStaff(@PathVariable Integer id){
+        ApiResponse<String> response = patientServiceImpl.deletePatient(id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 

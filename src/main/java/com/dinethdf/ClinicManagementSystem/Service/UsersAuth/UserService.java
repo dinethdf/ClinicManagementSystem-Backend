@@ -2,7 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.UsersAuth;
 
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
@@ -44,9 +44,9 @@ public class UserService {
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-    public User register(User user){
-        user.setPassword(encoder.encode(user.getPassword()));
-       return userRepo.save(user);
+    public UserAuth register(UserAuth userAuth){
+        userAuth.setPassword(encoder.encode(userAuth.getPassword()));
+       return userRepo.save(userAuth);
     }
 
 

@@ -1,9 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientRegistrationDto;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDto;
-import com.dinethdf.ClinicManagementSystem.Model.Patient.PatientDetails;
+import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 
 import java.util.List;
 
@@ -12,43 +10,26 @@ public interface PatientService {
     /**
      * Get all patients (for admin/staff)
      */
-    List<PatientResponseDto> getAllPatients();
+    List<Patient> getAllPatients();
 
+    ApiResponse<Patient> getPatientDetailsByIdStaff(String id);
     /**
-     * Get patient details by patient ID
+     * Add patient details by staff/admin
      */
-    PatientResponseDto getPatientById(Long patientId);
-
-    ApiResponse<PatientDetails> getPatientFullDetailsById(String id);
+    ApiResponse<Patient> registerPatientByStaff(Patient requestDto);
     /**
-     * Get patient details by Auth ID (linked to login/user)
+     * Update patient details by staff/admin
      */
-    PatientResponseDto getPatientByAuthId(Long authId);
-
-    /**
-     * Register patient details (self-service by patient)
-     */
-    PatientResponseDto registerPatientDetailsSelf(PatientRegistrationDto requestDto);
-
-    /**
-     * Add or update patient details by staff/admin
-     */
-    ApiResponse<PatientDetails> registerPatientByStaff(PatientDetails requestDto);
-
-    /**
-     * Edit patient details (patient or staff, depending on roles)
-     */
-    PatientResponseDto editPatientDetails(Long patientId, PatientRegistrationDto requestDto);
-
+    ApiResponse<Patient> updatePatientByStaff(Integer id, Patient patient);
     /**
      * Approve patient (e.g., after staff verification)
      */
-    PatientResponseDto approvePatient(Long patientId);
+    ApiResponse<String> approvePatient(Integer patientId) ;
 
     /**
      * Delete patient details (admin only)
      */
-    void deletePatient(Long patientId);
+    ApiResponse<String> deletePatient(Integer patientId);
 
 
 }
