@@ -47,6 +47,11 @@ public class PatientValidator {
             throw new ValidationException("Date of Birth cannot be in the future.", "INVALID_DOB", null, HttpStatus.BAD_REQUEST);
         }
 
+        // Validate guardian requirement based on patient type
+        if(patient.isGuardianRequired() && !patient.isDependent()){
+            throw new ValidationException(messageSourceUtil.getMessage("patient.child.require.guardian"),  "REQUIRED_GUARDIAN", null, HttpStatus.BAD_REQUEST);
+        }
+
         // Validate email, mobile, NIC only for non-dependent patients
         if (!patient.isDependent()) {
             if ((patient.getEmail() != null && !patient.getEmail().trim().isEmpty()) && !patient.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {

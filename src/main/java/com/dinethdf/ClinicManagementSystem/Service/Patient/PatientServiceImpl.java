@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
@@ -47,6 +48,16 @@ public class PatientServiceImpl implements PatientService {
                 messageSourceUtil.getMessage("patient.details.get.success"),
                 patient
         );
+    }
+
+    @Override
+    public List<GuardianResponseDTO> findGuardianByNicAndFullName(String nic, String fullName) {
+        List<GuardianResponseDTO> guardians = patientDetailsRepo.searchGuardianByNicAndFullName(nic, fullName);
+
+        if (guardians.isEmpty()) {
+            throw new ValidationException("No guardian found matching the provided details.", "GUARDIAN_NOT_FOUND");
+        }
+        return guardians;
     }
 
 

@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
@@ -9,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/patient")
@@ -22,6 +25,16 @@ public class PatientController {
     public ResponseEntity<ApiResponse<Patient>> getPatients(@PathVariable String id){
         ApiResponse<Patient> response = patientServiceImpl.getPatientDetailsByIdStaff(id);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @GetMapping("/search-guardian")
+    public ResponseEntity<List<GuardianResponseDTO>> searchGuardian(
+            @RequestParam(required = false) String nic,
+            @RequestParam(required = false) String fullName) {
+
+        List<GuardianResponseDTO> results = patientServiceImpl.findGuardianByNicAndFullName(nic, fullName);
+        return ResponseEntity.ok(results);
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
