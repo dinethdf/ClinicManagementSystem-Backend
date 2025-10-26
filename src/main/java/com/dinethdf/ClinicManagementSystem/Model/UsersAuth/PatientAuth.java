@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 public class PatientAuth {
 
     @Id
-    private int Id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
     private String email;
     private String password;
 
@@ -35,11 +37,11 @@ public class PatientAuth {
     private UserRole role;
 
     public int getId() {
-        return Id;
+        return id;
     }
 
     public void setId(int id) {
-        Id = id;
+        this.id = id;
     }
 
 
@@ -70,7 +72,7 @@ public class PatientAuth {
     @Override
     public String toString() {
         return "User{" +
-                "Id=" + Id +
+                "Id=" + id +
                 ", username='" + email + '\'' +
                 ", isEnable='" + isEnable + '\'' +
                 ", isTempCredential='" + isTempCredential + '\'' +
