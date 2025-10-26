@@ -3,9 +3,9 @@ package com.dinethdf.ClinicManagementSystem.Service.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
-import com.dinethdf.ClinicManagementSystem.Model.Doctor.DoctorDetails;
+import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 
-import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorDetailsRepo;
+import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
 
     @Autowired
-    DoctorDetailsRepo doctorDetailsRepo;
+    DoctorRepo doctorRepo;
 
     @Autowired
     private MessageSourceUtil messageSourceUtil;
@@ -37,13 +36,12 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public ApiResponse<DoctorDetails> getDoctorFullDetailsById(String id) {
+    public ApiResponse<Doctor> getDoctorFullDetailsById(String id) {
 
-        DoctorDetails doctorDetails = doctorDetailsRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("doctor.not.found"),"ASDf"));
-        return new ApiResponse<>(
-                true,
-                messageSourceUtil.getMessage("doctor.details.get.success"),
-                doctorDetails
+        Doctor doctor = doctorRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("doctor.not.found"),"ASDf"));
+        return ApiResponse.success(
+                doctor,
+                messageSourceUtil.getMessage("doctor.details.get.success")
         );
 
     }
@@ -60,16 +58,15 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     @Transactional
-    public ApiResponse<DoctorDetails> registerDoctor(DoctorDetails doctorDetails) {
-        System.out.println(doctorDetails.toString());
-        validateDoctor(doctorDetails);
+    public ApiResponse<Doctor> registerDoctor(Doctor doctor) {
+        System.out.println(doctor.toString());
+        validateDoctor(doctor);
         try {
-            DoctorDetails savedPatient = doctorDetailsRepo.save(doctorDetails);
-            return new ApiResponse<>(
-                true,
-                 messageSourceUtil.getMessage("doctor.register.success"),
-                 savedPatient
-        );
+            Doctor savedPatient = doctorRepo.save(doctor);
+            return ApiResponse.success(
+                    savedPatient,
+                    messageSourceUtil.getMessage("doctor.register.success")
+            );
 
         } catch (DataIntegrityViolationException e) {
             String rootCauseMessage = e.getMostSpecificCause().getMessage();
@@ -104,7 +101,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     }
 
-    public void validateDoctor(DoctorDetails doctor) {
+    public void validateDoctor(Doctor doctor) {
         String errorCode = null;
         String errorMessage = null;
 

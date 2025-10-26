@@ -9,10 +9,10 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "doctor_details")
+@Table(name = "doctor")
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class DoctorDetails extends CommonUserDetails {
+public class Doctor extends CommonUserDetails {
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "auth_id")

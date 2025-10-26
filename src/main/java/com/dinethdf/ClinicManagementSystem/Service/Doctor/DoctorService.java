@@ -3,8 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDto;
-import com.dinethdf.ClinicManagementSystem.Model.Doctor.DoctorDetails;
+import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 
 
 import java.util.List;
@@ -21,7 +20,7 @@ public interface DoctorService {
      */
     DoctorResponseDto getDoctorById(Long doctorId);
 
-    ApiResponse<DoctorDetails> getDoctorFullDetailsById(String id);
+    ApiResponse<Doctor> getDoctorFullDetailsById(String id);
     /**
      * Get patient details by Auth ID (linked to login/user)
      */
@@ -35,7 +34,7 @@ public interface DoctorService {
     /**
      * Add or update patient details by staff/admin
      */
-    ApiResponse<DoctorDetails> registerDoctor(DoctorDetails doctorDetails);
+    ApiResponse<Doctor> registerDoctor(Doctor doctor);
 
     /**
      * Edit patient details (patient or staff, depending on roles)

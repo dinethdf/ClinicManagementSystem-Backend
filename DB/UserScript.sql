@@ -143,12 +143,58 @@ CREATE TABLE doctor (
 	updatedDate DATETIME DEFAULT NULL,
     updatedBy VARCHAR(50),
     approvedDate DATETIME DEFAULT NULL,
-    approvedBy VARCHAR(50),
+    approvedBy VARCHAR(50)
 
     -- Relationships
-    CONSTRAINT fk_doctor_auth
-        FOREIGN KEY (auth_id) REFERENCES userAuth(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+
+--     CONSTRAINT fk_doctor_auth
+--         FOREIGN KEY (auth_id) REFERENCES userAuth(id)
+--         ON DELETE CASCADE
+--         ON UPDATE CASCADE
+
 );
+
+CREATE TABLE doctorSchedule (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    scheduleDate DATE NOT NULL,
+    scheduleTime TIME NOT NULL,
+    payment DECIMAL(10,2) NOT NULL,
+    maxPatientCount INT NOT NULL,
+    isActive TINYINT(1) DEFAULT 1,
+
+    -- System Columns
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+	updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    FOREIGN KEY (doctor_id) REFERENCES doctor(id)
+);
+
+INSERT INTO doctor (
+    id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address,
+    profileImg, registrationNumber, specialization, qualification, experienceYears, availability_status,
+    isApproved, createdDate, createdBy
+) VALUES
+(1, 10, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '801234567V', 'kamal.perera@clinic.com', '0711234567',
+ '123, Galle Road, Colombo', NULL, 'DOC001', 'Cardiology', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1,
+ NOW(), 'admin'),
+(2, 11, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851234567V', 'saman.fernando@clinic.com', '0779876543',
+ '45, Temple Road, Kandy', NULL, 'DOC002', 'Dermatology', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1,
+ NOW(), 'admin'),
+(3, 12, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234567V', 'nimali.jayasinghe@clinic.com', '0705674321',
+ '67, Main Street, Gampaha', NULL, 'DOC003', 'Pediatrics', 'MBBS, DCH', 8, 'ON_LEAVE', 1,
+ NOW(), 'admin');
+
+ INSERT INTO doctorSchedule (
+    id, doctor_id, scheduleDate, scheduleTime, payment, maxPatientCount, isActive,
+    createdDate, createdBy
+) VALUES
+(1, 1, '2025-10-21', '09:00:00', 3500.00, 15, 1, NOW(), 'kamal.perera'),
+(2, 1, '2025-10-22', '14:00:00', 3500.00, 12, 1, NOW(), 'kamal.perera'),
+(3, 2, '2025-10-20', '10:30:00', 2500.00, 10, 1, NOW(), 'saman.fernando'),
+(4, 3, '2025-10-25', '08:30:00', 3000.00, 8, 1, NOW(), 'nimali.jayasinghe');
 

@@ -43,10 +43,9 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
 
-        return new ApiResponse<>(
-                true,
-                messageSourceUtil.getMessage("patient.details.get.success"),
-                patient
+        return ApiResponse.success(
+                patient,
+                messageSourceUtil.getMessage("patient.details.get.success")
         );
     }
 
@@ -84,10 +83,9 @@ public class PatientServiceImpl implements PatientService {
 
             String patientNo = generatePatientNo(savedPatient.getId());
             savedPatient.setPatientNo(patientNo);
-            return new ApiResponse<>(
-                    true,
-                    messageSourceUtil.getMessage("patient.register.success"),
-                    patientDetailsRepo.save(savedPatient)
+            return ApiResponse.success(
+                    patientDetailsRepo.save(savedPatient),
+                    messageSourceUtil.getMessage("patient.register.success")
             );
 
         } catch (DataIntegrityViolationException e) {
@@ -155,10 +153,9 @@ public class PatientServiceImpl implements PatientService {
             existingPatient.setProfileImg(patientFromRequest.getProfileImg());
 
             Patient savedPatient = patientDetailsRepo.save(existingPatient);
-            return new ApiResponse<>(
-                    true,
-                    messageSourceUtil.getMessage("patient.update.success"),
-                    patientDetailsRepo.save(savedPatient)
+            return ApiResponse.success(
+                    patientDetailsRepo.save(savedPatient),
+                    messageSourceUtil.getMessage("patient.update.success")
             );
 
         } catch (DataIntegrityViolationException e) {
@@ -187,10 +184,9 @@ public class PatientServiceImpl implements PatientService {
         } else {
             existingPatient.setIsApproved(true);
             patientDetailsRepo.save(existingPatient);
-            return new ApiResponse<>(
-                    true,
-                    messageSourceUtil.getMessage("patient.approve.success"),
-                    existingPatient.getPatientNo()
+            return ApiResponse.success(
+                    existingPatient.getPatientNo(),
+                    messageSourceUtil.getMessage("patient.approve.success")
             );
         }
     }
@@ -206,10 +202,9 @@ public class PatientServiceImpl implements PatientService {
         } else {
             existingPatient.setIsApproved(true);
             patientDetailsRepo.deleteById(existingPatient.getId());
-            return new ApiResponse<>(
-                    true,
-                    messageSourceUtil.getMessage("patient.delete.success"),
-                    existingPatient.getPatientNo()
+            return ApiResponse.success(
+                    existingPatient.getPatientNo(),
+                    messageSourceUtil.getMessage("patient.delete.success")
             );
         }
 
