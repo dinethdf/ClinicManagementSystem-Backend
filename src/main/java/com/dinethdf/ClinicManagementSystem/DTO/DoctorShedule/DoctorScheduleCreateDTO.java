@@ -10,7 +10,8 @@ public class DoctorScheduleCreateDTO {
     // We only need the ID, not the whole Doctor object
     private Long doctorId;
     private LocalDate scheduleDate;
-    private LocalTime scheduleTime;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private BigDecimal payment;
     private Integer maxPatientCount;
 }

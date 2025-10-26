@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule;
 
-import com.dinethdf.ClinicManagementSystem.Model.Appoinment.DoctorSchedule;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
@@ -9,6 +9,7 @@ import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorScheduleMapper;
+import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,40 +27,70 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     private final DoctorScheduleRepo doctorScheduleRepo;
     private final DoctorRepo doctorRepo;
     private final DoctorScheduleMapper mapper; // Use a mapper for DTO conversion
+    private final MessageSourceUtil messageSourceUtil;
 
     @Override
     public DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO) {
         // 1. Validate DTO input
-        validateCreateDTO(createDTO);
+        validateCreateDTO(createDTO); // This helper is also updated (see below)
 
         // 2. Find the associated Doctor
         Doctor doctor = findDoctorById(createDTO.getDoctorId());
 
-        // 3. Perform business logic validation
+        // 3. Perform business logic validation (Date)
         if (createDTO.getScheduleDate().isBefore(LocalDate.now())) {
             throw new ValidationException("Schedule date cannot be in the past", "PAST_DATE", HttpStatus.BAD_REQUEST);
         }
 
-        boolean exists = doctorScheduleRepo.existsByDoctorIdAndScheduleDateAndScheduleTime(
-                createDTO.getDoctorId(), createDTO.getScheduleDate(), createDTO.getScheduleTime());
+        // 4. Perform business logic validation (Time Overlap)
+        // We now call our new repository method
+        boolean exists = doctorScheduleRepo.existsOverlappingSchedule(
+                createDTO.getDoctorId(),
+                createDTO.getScheduleDate(),
+                createDTO.getStartTime(),
+                createDTO.getEndTime()
+        );
 
         if (exists) {
-            throw new ValidationException("Doctor already has a schedule at this date and time", "DUPLICATE_SCHEDULE", HttpStatus.CONFLICT);
+            // Throw an updated error message
+            throw new ValidationException(
+                    messageSourceUtil.getMessage(
+                            "schedule.error.duplicate.range", // Use a new message key
+                            new Object[] { createDTO.getScheduleDate(), createDTO.getStartTime(), createDTO.getEndTime() }
+                    ),
+                    "DUPLICATE_SCHEDULE_RANGE",
+                    HttpStatus.CONFLICT
+            );
         }
 
-        // 4. Map DTO to Entity
+        // 5. Map DTO to Entity
+        // We now set startTime and endTime
         DoctorSchedule newSchedule = DoctorSchedule.builder()
                 .doctor(doctor)
                 .scheduleDate(createDTO.getScheduleDate())
-                .scheduleTime(createDTO.getScheduleTime())
+                .startTime(createDTO.getStartTime()) // Updated
+                .endTime(createDTO.getEndTime())     // Updated
                 .payment(createDTO.getPayment())
                 .maxPatientCount(createDTO.getMaxPatientCount())
-                .isActive(true) // Default to active
+                .isActive(true)
                 .build();
 
-        // 5. Save and return DTO
+        // 6. Save and return DTO
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(newSchedule);
         return mapper.toResponseDTO(savedSchedule);
+    }
+
+    /**
+     * --- NEW BATCH METHOD IMPLEMENTATION ---
+     */
+    @Override
+    @Transactional // This is explicit, but inherits from the class anyway
+    public List<DoctorScheduleResponseDTO> createBatchSchedules(List<DoctorScheduleCreateDTO> createDTOs) {
+
+        // This re-uses all your validation for every item. and call the 'createSchedule' method for each one.
+        return createDTOs.stream()
+                .map(this::createSchedule)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -115,13 +146,20 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     }
 
     @Override
+    @Transactional // Make sure your method is transactional
     public DoctorScheduleResponseDTO updateSchedule(Long id, DoctorScheduleUpdateDTO updateDTO) {
         // 1. Find existing schedule
         DoctorSchedule existingSchedule = findScheduleById(id);
 
-        // 2. Validate new data
-        if (updateDTO.getScheduleTime() == null) {
-            throw new ValidationException("Schedule time is required", "TIME_REQUIRED", HttpStatus.BAD_REQUEST);
+        // 2. Validate new DTO data
+        if (updateDTO.getStartTime() == null) {
+            throw new ValidationException("Start time is required", "START_TIME_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+        if (updateDTO.getEndTime() == null) {
+            throw new ValidationException("End time is required", "END_TIME_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+        if (updateDTO.getStartTime().isAfter(updateDTO.getEndTime()) || updateDTO.getStartTime().equals(updateDTO.getEndTime())) {
+            throw new ValidationException("End time must be after start time", "INVALID_TIME_RANGE", HttpStatus.BAD_REQUEST);
         }
         if (updateDTO.getMaxPatientCount() == null || updateDTO.getMaxPatientCount() <= 0) {
             throw new ValidationException("Max patient count must be greater than 0", "INVALID_PATIENT_COUNT", HttpStatus.BAD_REQUEST);
@@ -130,12 +168,34 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new ValidationException("Payment must be >= 0", "INVALID_PAYMENT", HttpStatus.BAD_REQUEST);
         }
 
-        // 3. Update fields
-        existingSchedule.setScheduleTime(updateDTO.getScheduleTime());
+        // 3. NEW: Check for overlapping time conflicts with *other* schedules
+        // We use the date and doctor from the *existing* schedule
+        boolean exists = doctorScheduleRepo.existsOverlappingScheduleForUpdate(
+                existingSchedule.getDoctor().getId(),
+                existingSchedule.getScheduleDate(),
+                updateDTO.getStartTime(),
+                updateDTO.getEndTime(),
+                id // The ID of the schedule we are updating
+        );
+
+        if (exists) {
+            throw new ValidationException(
+                    messageSourceUtil.getMessage(
+                            "schedule.error.duplicate.range.update", // A new message key
+                            new Object[] { existingSchedule.getScheduleDate(), updateDTO.getStartTime(), updateDTO.getEndTime() }
+                    ),
+                    "DUPLICATE_SCHEDULE_RANGE",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        // 4. Update fields
+        existingSchedule.setStartTime(updateDTO.getStartTime());
+        existingSchedule.setEndTime(updateDTO.getEndTime());
         existingSchedule.setPayment(updateDTO.getPayment());
         existingSchedule.setMaxPatientCount(updateDTO.getMaxPatientCount());
 
-        // 4. Save and return DTO
+        // 5. Save and return DTO
         DoctorSchedule updatedSchedule = doctorScheduleRepo.save(existingSchedule);
         return mapper.toResponseDTO(updatedSchedule);
     }
@@ -213,9 +273,19 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (schedule.getScheduleDate() == null) {
             throw new ValidationException("Schedule date is required", "DATE_REQUIRED", HttpStatus.BAD_REQUEST);
         }
-        if (schedule.getScheduleTime() == null) {
-            throw new ValidationException("Schedule time is required", "TIME_REQUIRED", HttpStatus.BAD_REQUEST);
+
+        // --- Updated Time Checks ---
+        if (schedule.getStartTime() == null) {
+            throw new ValidationException("Start time is required", "START_TIME_REQUIRED", HttpStatus.BAD_REQUEST);
         }
+        if (schedule.getEndTime() == null) {
+            throw new ValidationException("End time is required", "END_TIME_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+        if (schedule.getStartTime().isAfter(schedule.getEndTime()) || schedule.getStartTime().equals(schedule.getEndTime())) {
+            throw new ValidationException("End time must be after start time", "INVALID_TIME_RANGE", HttpStatus.BAD_REQUEST);
+        }
+        // --- End Updated Time Checks ---
+
         if (schedule.getMaxPatientCount() == null || schedule.getMaxPatientCount() <= 0) {
             throw new ValidationException("Max patient count must be greater than 0", "INVALID_PATIENT_COUNT", HttpStatus.BAD_REQUEST);
         }

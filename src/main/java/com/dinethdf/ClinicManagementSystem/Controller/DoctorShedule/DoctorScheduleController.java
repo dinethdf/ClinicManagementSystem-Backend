@@ -46,6 +46,29 @@ public class DoctorScheduleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+
+    /**
+     * --- NEW BATCH ENDPOINT ---
+     * This accepts a list of schedules and returns a list of created schedules.
+     */
+    @PostMapping("/batch")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> createBatchSchedules(
+            @RequestBody List<DoctorScheduleCreateDTO> createDTOs) {
+
+        // 1. Call the new service method
+        List<DoctorScheduleResponseDTO> newSchedules = doctorScheduleService.createBatchSchedules(createDTOs);
+
+        // 2. Create the success response
+        ApiResponse<List<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+                newSchedules,
+                messageSourceUtil.getMessage("schedule.batchcreate.success")
+        );
+
+        // 3. Return 201 Created
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     /**
      * Get a specific schedule by its ID.
      * Accessible by all authenticated users.

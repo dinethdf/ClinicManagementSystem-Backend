@@ -17,6 +17,11 @@ public interface DoctorScheduleService {
     DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO);
 
     /**
+     * --- NEW BATCH METHOD SIGNATURE ---
+     */
+    List<DoctorScheduleResponseDTO> createBatchSchedules(List<DoctorScheduleCreateDTO> createDTOs);
+
+    /**
      * Finds a schedule by its ID.
      * @param id The ID of the schedule.
      * @return The schedule as a Response DTO.

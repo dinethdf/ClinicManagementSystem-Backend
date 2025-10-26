@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Model.Appoinment;
+package com.dinethdf.ClinicManagementSystem.Model.DoctorShedule;
 
 import com.dinethdf.ClinicManagementSystem.Model.AuditWrapper;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
@@ -29,8 +29,11 @@ public class DoctorSchedule extends AuditWrapper {
     @Column(name = "scheduleDate", nullable = false)
     private LocalDate scheduleDate;
 
-    @Column(name = "scheduleTime", nullable = false)
-    private LocalTime scheduleTime;
+    @Column(name = "startTime", nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = "endTime", nullable = false)
+    private LocalTime endTime;
 
     @Column(name = "payment", nullable = false, precision = 10, scale = 2)
     private BigDecimal payment;

@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
+import com.dinethdf.ClinicManagementSystem.mapper.DoctorMapper;
 
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -14,7 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
@@ -24,6 +27,9 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Autowired
     private MessageSourceUtil messageSourceUtil;
+
+    @Autowired
+    DoctorMapper doctorMapper;
 
     @Override
     public List<DoctorResponseDto> getAllDoctors() {
@@ -36,19 +42,53 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public ApiResponse<Doctor> getDoctorFullDetailsById(String id) {
+    public ApiResponse<DoctorResponseDto> getDoctorFullDetailsById(String id) {
 
         Doctor doctor = doctorRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("doctor.not.found"),"ASDf"));
         return ApiResponse.success(
-                doctor,
+                doctorMapper.toResponseDTO(doctor),
                 messageSourceUtil.getMessage("doctor.details.get.success")
         );
 
     }
 
     @Override
-    public DoctorResponseDto getDoctorByAuthId(Long authId) {
-        return null;
+    public ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email) {
+
+        if (email == null || email.isEmpty()) {
+            // This should not happen if Spring Security is working, but it's good practice
+            throw new ValidationException(messageSourceUtil.getMessage("token.invalid"), "INVALID_TOKEN", null, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 1. Use the new repo method to find the doctor by email
+        Doctor doctor = doctorRepo.findByUserAuthEmail(email)
+                .orElseThrow(() -> new ValidationException(
+                        messageSourceUtil.getMessage("doctor.not.found.for.user"), // e.g., "No doctor profile is linked to this user account."
+                        "DOCTOR_PROFILE_NOT_FOUND",
+                        null,
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // 2. Return the success response, just like your other function
+        return ApiResponse.success(
+                doctorMapper.toResponseDTO(doctor),
+                messageSourceUtil.getMessage("doctor.details.get.success")
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true) // Mark as read-only for performance
+    public List<DoctorResponseDto> searchDoctors(String query) {
+        // If the query is empty, return an empty list immediately
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Call the new repository method
+        List<DoctorResponseDto> doctors = doctorRepo.searchDoctors(query.trim());
+
+        // Map the list of Doctor entities to a list of DTOs
+        return doctors;
     }
 
     @Override

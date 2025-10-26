@@ -20,11 +20,11 @@ public interface DoctorService {
      */
     DoctorResponseDto getDoctorById(Long doctorId);
 
-    ApiResponse<Doctor> getDoctorFullDetailsById(String id);
-    /**
-     * Get patient details by Auth ID (linked to login/user)
-     */
-    DoctorResponseDto getDoctorByAuthId(Long authId);
+    ApiResponse<DoctorResponseDto> getDoctorFullDetailsById(String id);
+
+    ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email);
+
+    List<DoctorResponseDto> searchDoctors(String query);
 
     /**
      * Register patient details (self-service by patient)

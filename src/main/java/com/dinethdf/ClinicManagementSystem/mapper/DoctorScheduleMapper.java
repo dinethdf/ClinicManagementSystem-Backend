@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.mapper;
 
-import com.dinethdf.ClinicManagementSystem.Model.Appoinment.DoctorSchedule;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,8 @@ public class DoctorScheduleMapper {
         DoctorScheduleResponseDTO dto = new DoctorScheduleResponseDTO();
         dto.setId(schedule.getId());
         dto.setScheduleDate(schedule.getScheduleDate());
-        dto.setScheduleTime(schedule.getScheduleTime());
+        dto.setStartTime(schedule.getStartTime());
+        dto.setEndTime(schedule.getEndTime());
         dto.setPayment(schedule.getPayment());
         dto.setMaxPatientCount(schedule.getMaxPatientCount());
         dto.setIsActive(schedule.getIsActive());
