@@ -92,7 +92,7 @@ public class DoctorScheduleController {
      * ADMIN/STAFF can see all (active and inactive).
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getAllSchedules(
             @RequestParam(defaultValue = "false") boolean includeInactive) {
 
