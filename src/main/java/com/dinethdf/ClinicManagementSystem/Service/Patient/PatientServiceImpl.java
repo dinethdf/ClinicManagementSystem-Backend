@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
@@ -57,6 +58,30 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException("No guardian found matching the provided details.", "GUARDIAN_NOT_FOUND");
         }
         return guardians;
+    }
+
+    @Override
+    public List<PatientResponseDTO> findPatientBySearching(String patientNo, String nic, String fullName, String mobileNo) {
+
+        boolean isPatientNoValid = (patientNo != null && patientNo.length() > 2);
+        boolean isNicValid = (nic != null && nic.length() > 3);
+        boolean isFullNameValid = (fullName != null && fullName.length() > 2);
+        boolean isMobileNoValid = (mobileNo != null && mobileNo.length() > 2);
+
+        // If NONE of the search terms are valid (i.e., long enough), throw an error.
+        if (!isPatientNoValid && !isNicValid && !isFullNameValid && !isMobileNoValid) {
+            throw new ValidationException(
+                    "Please provide at least one search term with more than 3 characters.",
+                    "INSUFFICIENT_SEARCH_CRITERIA"
+            );
+        }
+
+        List<PatientResponseDTO> patient = patientDetailsRepo.searchPatient(patientNo, nic, fullName, mobileNo);
+
+        if (patient.isEmpty()) {
+            throw new ValidationException("No Patient found matching the provided details.", "PATIENT_NOT_FOUND");
+        }
+        return patient;
     }
 
 

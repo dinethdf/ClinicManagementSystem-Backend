@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
@@ -34,6 +35,18 @@ public class PatientController {
             @RequestParam(required = false) String fullName) {
 
         List<GuardianResponseDTO> results = patientServiceImpl.findGuardianByNicAndFullName(nic, fullName);
+        return ResponseEntity.ok(results);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @GetMapping("/search-patient")
+    public ResponseEntity<List<PatientResponseDTO>> searchPatient(
+            @RequestParam(required = false) String patientNo,
+            @RequestParam(required = false) String nic,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String mobileNo) {
+
+        List<PatientResponseDTO> results = patientServiceImpl.findPatientBySearching(patientNo, nic, mobileNo, fullName);
         return ResponseEntity.ok(results);
     }
 

@@ -13,7 +13,7 @@ public interface DoctorService {
     /**
      * Get all patients (for admin/staff)
      */
-    List<DoctorResponseDto> getAllDoctors();
+    List<Doctor> getAllDoctors();
 
     /**
      * Get patient details by patient ID

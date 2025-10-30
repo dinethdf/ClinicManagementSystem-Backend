@@ -23,7 +23,22 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long> 
     List<DoctorSchedule> findByIsActiveTrue();
 
     // Find active schedules for a doctor on or after a certain date
+    // call this minus day need to add
     List<DoctorSchedule> findByDoctorIdAndScheduleDateAfterAndIsActiveTrue(Long doctorId, LocalDate date);
+
+    @Query("SELECT s FROM DoctorSchedule s " +
+            "WHERE s.doctor.id = :doctorId " +
+            "AND s.isActive = true " +
+            "AND ( " +
+            "    (s.scheduleDate = :today AND s.endTime > :now) " +  // Condition for today
+            "    OR " +
+            "    (s.scheduleDate > :today) " +                     // Condition for future dates
+            ")")
+    List<DoctorSchedule> findUpcomingSchedules(
+            @Param("doctorId") Long doctorId,
+            @Param("today") LocalDate today,
+            @Param("now") LocalTime now
+    );
 
     // Find all active schedules on or after a certain date (for finding upcoming)
     List<DoctorSchedule> findByScheduleDateAfterAndIsActiveTrue(LocalDate date);

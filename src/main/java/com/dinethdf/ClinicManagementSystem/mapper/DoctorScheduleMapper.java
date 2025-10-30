@@ -15,12 +15,14 @@ public class DoctorScheduleMapper {
         dto.setEndTime(schedule.getEndTime());
         dto.setPayment(schedule.getPayment());
         dto.setMaxPatientCount(schedule.getMaxPatientCount());
+        dto.setRegisteredPatientCount(schedule.getRegisteredPatientCount());
         dto.setIsActive(schedule.getIsActive());
 
         if (schedule.getDoctor() != null) {
             dto.setDoctorId(schedule.getDoctor().getId());
             // Assuming Doctor entity has getName()
             dto.setDoctorName(schedule.getDoctor().getFirstName() + " " + schedule.getDoctor().getLastName());
+            dto.setSpecialization(schedule.getDoctor().getSpecialization().getName());
         }
         return dto;
     }

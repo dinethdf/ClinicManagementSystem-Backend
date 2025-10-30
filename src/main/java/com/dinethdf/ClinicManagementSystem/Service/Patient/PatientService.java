@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 
 import java.util.List;
@@ -16,6 +17,8 @@ public interface PatientService {
     ApiResponse<Patient> getPatientDetailsByIdStaff(String id);
 
     List<GuardianResponseDTO> findGuardianByNicAndFullName(String nic, String fullName);
+
+    List<PatientResponseDTO> findPatientBySearching(String patientNo, String nic, String fullName, String mobileNo);
 
     /**
      * Add patient details by staff/admin

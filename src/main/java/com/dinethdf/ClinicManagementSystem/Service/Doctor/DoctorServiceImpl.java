@@ -32,8 +32,16 @@ public class DoctorServiceImpl implements DoctorService {
     DoctorMapper doctorMapper;
 
     @Override
-    public List<DoctorResponseDto> getAllDoctors() {
-        return List.of();
+    @Transactional(readOnly = true)
+    public List<Doctor> getAllDoctors() {
+        try {
+            List<Doctor> doctors = doctorRepo.findAllWithSpecialization();
+            return doctors;
+        } catch(Exception e){
+            System.out.println(e.getMessage());
+            throw new ValidationException(messageSourceUtil.getMessage("token.invalid"), "ERROR ", null, HttpStatus.UNAUTHORIZED);
+        }
+
     }
 
     @Override
@@ -176,7 +184,7 @@ public class DoctorServiceImpl implements DoctorService {
         }else if (doctor.getSlmcNumber() == null || doctor.getSlmcNumber().isEmpty()) {
             errorCode = "SLMC_INVALID";
             errorMessage = "SLMC Number is required.";
-        }else if (doctor.getSpecialization() == null || doctor.getSpecialization().isEmpty()) {
+        }else if (doctor.getSpecialization().getId() == null) {
             errorCode = "SPECIALIZATION_EMPTY";
             errorMessage = "Specialization is required.";
         }
