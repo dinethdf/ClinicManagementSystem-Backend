@@ -22,12 +22,7 @@ CREATE TABLE userAuth (
   FOREIGN KEY (role) REFERENCES user_role(id) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
-INSERT INTO user_role (name) VALUES ('ADMIN'), ('USER'), ('DOCTOR'),('PATIENT'),('STAFF');
 
-INSERT INTO `userAuth` (`password`, `email`, `isEnable`, `role`) VALUES ('$2a$12$Z/h2MTBuOrefYxbKkQGhcOxc5in8vvq0JY0yyxUnCncw8uL7HQQNm', 'dineth@admin.com', '1', '1');
-INSERT INTO `userAuth` (`password`, `email`, `isEnable`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@user.com', '1', '2');
-INSERT INTO `userAuth` (`password`, `email`, `isEnable`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor.com', '1', '3');
-INSERT INTO `userAuth` (`password`, `email`, `isEnable`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@staff.com', '1', '5');
 
 CREATE TABLE patientAuth (
   id INT NOT NULL AUTO_INCREMENT,
@@ -40,7 +35,7 @@ CREATE TABLE patientAuth (
   FOREIGN KEY (role) REFERENCES user_role(id) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
-INSERT INTO PatientAuth (`password`, `email`, `isEnable`, `isTempCredential`, `role`) VALUES ('$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '3');
+
 
 CREATE TABLE insurance (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -115,6 +110,10 @@ CREATE TABLE patient_chronic_diseases (
     FOREIGN KEY (patient_details_id) REFERENCES patient(id) ON DELETE CASCADE
 );
 
+CREATE TABLE specialization (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    note VARCHAR(100));
 
 CREATE TABLE doctor (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -136,7 +135,7 @@ CREATE TABLE doctor (
     profileImg VARCHAR(255),
 
     slmcNumber VARCHAR(50) UNIQUE,
-    specialization VARCHAR(100),
+    specialization_id INT NOT NULL,
     qualification VARCHAR(255),
     experienceYears INT,
     availability_status ENUM('AVAILABLE', 'ON_LEAVE', 'UNAVAILABLE') DEFAULT 'AVAILABLE' NOT NULL,
@@ -148,14 +147,16 @@ CREATE TABLE doctor (
 	updatedDate DATETIME DEFAULT NULL,
     updatedBy VARCHAR(50),
     approvedDate DATETIME DEFAULT NULL,
-    approvedBy VARCHAR(50)
+    approvedBy VARCHAR(50),
 
     -- Relationships
 
 --     CONSTRAINT fk_doctor_auth
 --         FOREIGN KEY (auth_id) REFERENCES userAuth(id)
 --         ON DELETE CASCADE
---         ON UPDATE CASCADE
+--         ON UPDATE CASCADE\
+
+		CONSTRAINT fk_doctor_specialization FOREIGN KEY (specialization_id) REFERENCES specialization(id) ON DELETE CASCADE ON UPDATE CASCADE
 
 );
 
@@ -167,6 +168,7 @@ CREATE TABLE doctorSchedule (
     endTime TIME NOT NULL,
     payment DECIMAL(10,2) NOT NULL,
     maxPatientCount INT NOT NULL,
+    registeredPatientCount INT  NOT NULL default 0,
     isActive TINYINT(1) DEFAULT 1,
     isApproved TINYINT(1) NOT NULL DEFAULT 0,
 
@@ -181,27 +183,120 @@ CREATE TABLE doctorSchedule (
     FOREIGN KEY (doctor_id) REFERENCES doctor(id)
 );
 
-INSERT INTO doctor (
-    id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address,
-    profileImg, slmcNumber, specialization, qualification, experienceYears, availability_status,
-    isApproved, createdDate, createdBy
-) VALUES
-(1, 3, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '809934567V', 'kamal.perera@clinic.com', '0711234567',
- '123, Galle Road, Colombo', NULL, 'DOC001', 'Cardiology', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1,
- NOW(), 'admin'),
-(2, 11, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851299567V', 'saman.fernando@clinic.com', '0779876543',
- '45, Temple Road, Kandy', NULL, 'DOC002', 'Dermatology', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1,
- NOW(), 'admin'),
-(3, 12, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234599V', 'nimali.jayasinghe@clinic.com', '0705674321',
- '67, Main Street, Gampaha', NULL, 'DOC003', 'Pediatrics', 'MBBS, DCH', 8, 'ON_LEAVE', 1,
- NOW(), 'admin');
+CREATE TABLE appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointmentNumber VARCHAR(50) NOT NULL UNIQUE,
+    queuePosition INT NOT NULL,
+    note TEXT NULL,
+    status ENUM(
+    'PENDING_PAYMENT', -- New status (replaces 'Booked')
+    'BOOKED',       -- New status (after payment)
+    'COMPLETED',
+    'CANCELLED',
+    'NOSHOW'
+) NOT NULL DEFAULT 'PENDING_PAYMENT',
+    doctor_schedule_id INT NOT NULL,
+    patient_id INT NOT NULL,
 
- INSERT INTO doctorSchedule (
-    id, doctor_id, scheduleDate, startTime, endTime, payment, maxPatientCount, isActive,
-    createdDate, createdBy
-) VALUES
-(1, 1, '2025-10-21', '09:00:00','12:00:00', 3500.00, 15, 1, NOW(), 'kamal.perera'),
-(2, 1, '2025-10-22', '14:00:00', '16:00:00', 3500.00, 12, 1, NOW(), 'kamal.perera'),
-(3, 2, '2025-10-20', '10:30:00', '12:00:00', 2500.00, 10, 1, NOW(), 'saman.fernando'),
-(4, 3, '2025-10-25', '08:30:00', '10:00:00',3000.00, 8, 1, NOW(), 'nimali.jayasinghe');
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50) DEFAULT NULL,
 
+    CONSTRAINT fk_appointment_schedule
+        FOREIGN KEY (doctor_schedule_id)
+        REFERENCES doctorSchedule(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointment_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES patient(id)
+        ON DELETE RESTRICT,
+
+    INDEX idx_schedule_patient (doctor_schedule_id, patient_id),
+    INDEX idx_patient (patient_id)
+
+) ENGINE=InnoDB;
+
+CREATE TABLE invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    status ENUM('UNPAID', 'PAID', 'PARTIAL', 'CANCELLED') NOT NULL DEFAULT 'UNPAID',
+    totalAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    dueDate DATE NULL,
+
+    -- Your System Columns
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50) DEFAULT NULL,
+
+    -- Link to the patient table
+    CONSTRAINT fk_invoice_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES patient(id)
+        ON DELETE RESTRICT,
+
+    -- Index for fast lookup
+    INDEX idx_patient (patient_id)
+
+) ENGINE=InnoDB;
+
+CREATE TABLE item_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    -- 'APPOINTMENT', 'LABTEST', 'SUBSCRIPTION', 'PHARMACY', DOCTOR_DISCOUNT, CLINIC_DISCOUNT
+    typeName VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE invoice_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_id INT NOT NULL,
+    item_type_id INT NOT NULL,
+    item_id INT NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50) DEFAULT NULL,
+
+    CONSTRAINT fk_item_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_item_type FOREIGN KEY (item_type_id) REFERENCES item_types(id) ON DELETE RESTRICT,
+
+    INDEX idx_invoice (invoice_id),
+    INDEX idx_item (item_type_id, item_id)
+
+) ENGINE=InnoDB;
+
+
+CREATE TABLE payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_id INT NOT NULL,
+    amountPaid DECIMAL(10, 2) NOT NULL,
+    paymentMethod ENUM('Cash', 'Card', 'OnlineGateway', 'Insurance') NOT NULL,
+    paymentStatus ENUM('Pending', 'Completed', 'Failed', 'Refunded') NOT NULL DEFAULT 'Pending',
+    transactionId VARCHAR(255) NULL,
+    paymentTimestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50) DEFAULT NULL,
+
+    CONSTRAINT fk_payment_invoice
+        FOREIGN KEY (invoice_id)
+        REFERENCES invoices(id)
+        ON DELETE RESTRICT,
+
+    INDEX idx_invoice (invoice_id)
+
+) ENGINE=InnoDB;
