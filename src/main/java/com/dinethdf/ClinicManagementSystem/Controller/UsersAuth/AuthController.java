@@ -2,7 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.UsersAuth;
 
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserService;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
@@ -24,8 +24,8 @@ public class AuthController {
     PatientAuthService patientAuthService;
 
     @PostMapping("register")
-    public User registerUser(@RequestBody User user){
-        return userService.register(user);
+    public UserAuth registerUser(@RequestBody UserAuth userAuth){
+        return userService.register(userAuth);
     }
 
 //    @PostMapping("login")

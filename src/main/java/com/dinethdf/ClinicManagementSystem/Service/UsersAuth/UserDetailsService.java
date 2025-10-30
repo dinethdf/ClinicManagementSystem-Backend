@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.UsersAuth;
 
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,23 +16,23 @@ public class UserDetailsService implements org.springframework.security.core.use
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = repo.findByEmail(email);
+        UserAuth userAuth = repo.findByEmail(email);
 
-        if (user == null){
+        if (userAuth == null){
             System.out.println("User Not Found");
             throw new UsernameNotFoundException("user Not Found");
         }
 
-        return new UserPrincipal(user);
+        return new UserPrincipal(userAuth);
     }
 
-    public User getUserByEmail(String email) throws UsernameNotFoundException {
-        User user = repo.findByEmail(email);
+    public UserAuth getUserByEmail(String email) throws UsernameNotFoundException {
+        UserAuth userAuth = repo.findByEmail(email);
 
-        if (user == null){
+        if (userAuth == null){
             System.out.println("User Not Found");
             throw new UsernameNotFoundException("user Not Found");
         }
-        return user;
+        return userAuth;
     }
 }

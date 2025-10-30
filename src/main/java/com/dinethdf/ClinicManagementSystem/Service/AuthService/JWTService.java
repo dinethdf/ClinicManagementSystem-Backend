@@ -2,7 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.AuthService;
 
 
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.User;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import io.jsonwebtoken.Claims;
@@ -52,14 +52,14 @@ public class JWTService {
 
     public String generateUserToken(String userEmail) {
         Map<String, Object> claims = new HashMap<>();
-        User user = userDetailsService.getUserByEmail(userEmail);
+        UserAuth userAuth = userDetailsService.getUserByEmail(userEmail);
         claims.put("userName", "UserIDNo");
-        claims.put("role", user.getRole().getName());
+        claims.put("role", userAuth.getRole().getName());
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(user.getEmail())
+                .subject(userAuth.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 604800000))
                 .and()

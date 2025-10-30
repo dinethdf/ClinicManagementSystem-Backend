@@ -55,6 +55,10 @@ public class SecurityConfig {
 
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
+                         .requestMatchers("api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("api/schedules/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("api/appointments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+
                  )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->

@@ -3,8 +3,8 @@ package com.dinethdf.ClinicManagementSystem.Model.UsersAuth;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "user")
-public class User {
+@Table(name = "userAuth")
+public class UserAuth {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
