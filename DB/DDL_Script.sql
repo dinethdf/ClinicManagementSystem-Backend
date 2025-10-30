@@ -20,7 +20,7 @@ CREATE TABLE userAuth (
   role INT DEFAULT NULL,
   PRIMARY KEY (id),
   FOREIGN KEY (role) REFERENCES user_role(id) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB;
 
 
 
@@ -91,7 +91,7 @@ CREATE TABLE patient (
     approvedBy VARCHAR(50),
 
 	CONSTRAINT fk_patient_guardian FOREIGN KEY (guardian_id) REFERENCES patient(id),
-    CONSTRAINT fk_patient_auth FOREIGN KEY (patient_auth_id) REFERENCES PatientAuth(id) ON DELETE SET NULL,
+    CONSTRAINT fk_patient_auth FOREIGN KEY (patient_auth_id) REFERENCES patientAuth(id) ON DELETE SET NULL,
     CONSTRAINT fk_insurance FOREIGN KEY (insurance_id) REFERENCES insurance(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -222,6 +222,7 @@ CREATE TABLE appointments (
 CREATE TABLE invoices (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
+    appointment_id INT NULL DEFAULT NULL,
     status ENUM('UNPAID', 'PAID', 'PARTIAL', 'CANCELLED') NOT NULL DEFAULT 'UNPAID',
     totalAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     dueDate DATE NULL,
@@ -235,11 +236,8 @@ CREATE TABLE invoices (
     approvedBy VARCHAR(50) DEFAULT NULL,
 
     -- Link to the patient table
-    CONSTRAINT fk_invoice_patient
-        FOREIGN KEY (patient_id)
-        REFERENCES patient(id)
-        ON DELETE RESTRICT,
-
+    CONSTRAINT fk_invoice_patient FOREIGN KEY (patient_id) REFERENCES patient(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_invoice_appointment FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT,
     -- Index for fast lookup
     INDEX idx_patient (patient_id)
 

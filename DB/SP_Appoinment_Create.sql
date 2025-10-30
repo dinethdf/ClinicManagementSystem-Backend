@@ -1,4 +1,5 @@
 DELIMITER $$
+
 DROP PROCEDURE IF EXISTS sp_BookAppointment$$
 
 CREATE PROCEDURE sp_BookAppointment(
@@ -6,14 +7,13 @@ CREATE PROCEDURE sp_BookAppointment(
     IN p_doctor_schedule_id INT,
     IN p_patient_id INT,
     IN p_note TEXT,
-
     OUT o_queuePosition INT,
     OUT o_appointmentNumber VARCHAR(50),
     OUT o_newInvoiceId INT,
     OUT o_statusMessage VARCHAR(50)
 )
 BEGIN
-    -- DECLARE VARIABLES
+    -- == 1. DECLARE VARIABLES ==
     DECLARE v_maxPatientCount INT;
     DECLARE v_currentBookedCount INT;
     DECLARE v_isScheduleActive TINYINT(1);
@@ -25,7 +25,7 @@ BEGIN
     DECLARE v_appointmentItemTypeId INT;
     DECLARE v_now DATETIME;
 
-    -- ERROR HANDLING
+    -- == 2. ERROR HANDLING ==
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -34,14 +34,14 @@ BEGIN
 
     -- == 3. SET VARIABLES & START TRANSACTION ==
     SET v_now = NOW();
-
     START TRANSACTION;
+
     -- == 4. LOCK SCHEDULE & GET CURRENT DATA ==
     SELECT
         maxPatientCount,
         registeredPatientCount,
         isActive,
-        payment
+        payment -- Your 'payment' column
     INTO
         v_maxPatientCount,
         v_currentBookedCount,
@@ -70,7 +70,7 @@ BEGIN
         FROM appointments
         WHERE doctor_schedule_id = p_doctor_schedule_id
           AND patient_id = p_patient_id
-          AND status = 'Booked';
+          AND status IN ('Booked', 'PENDING_PAYMENT'); -- Corrected check
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
@@ -102,11 +102,12 @@ BEGIN
                 p_patient_id,
                 v_newQueuePosition,
                 p_note,
-                'PENDING_PAYMENT',
+                'PENDING_PAYMENT', -- Set to PENDING_PAYMENT
                 v_now,
                 p_createdBy
             );
 
+            -- Get the new appointment's ID to link the invoice
             SET v_newAppointmentId = LAST_INSERT_ID();
 
             -- b. Update the schedule's patient count
@@ -124,12 +125,14 @@ BEGIN
             -- d. Create the master invoice
             INSERT INTO invoices (
                 patient_id,
+                appointment_id, -- <-- THIS IS THE UPDATE
                 status,
                 totalAmount,
                 createdDate,
                 createdBy
             ) VALUES (
                 p_patient_id,
+                v_newAppointmentId, -- <-- Link it to the new appointment
                 'UNPAID',
                 v_consultationFee,
                 v_now,
@@ -169,5 +172,4 @@ BEGIN
 
 END$$
 
--- 3. Reset the delimiter back to ;
 DELIMITER ;
