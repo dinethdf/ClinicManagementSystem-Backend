@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,6 +74,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .endTime(createDTO.getEndTime())     // Updated
                 .payment(createDTO.getPayment())
                 .maxPatientCount(createDTO.getMaxPatientCount())
+                .registeredPatientCount(0)
                 .isActive(true)
                 .build();
 
@@ -134,11 +137,12 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<DoctorScheduleResponseDTO> getUpcomingSchedulesByDoctorId(Long doctorId) {
-        // Ensure doctor exists
+
         findDoctorById(doctorId);
 
-        List<DoctorSchedule> schedules = doctorScheduleRepo.findByDoctorIdAndScheduleDateAfterAndIsActiveTrue(
-                doctorId, LocalDate.now().minusDays(1)); // .minusDays(1) to include today
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        List<DoctorSchedule> schedules = doctorScheduleRepo.findUpcomingSchedules(
+                doctorId, LocalDate.now(), now); // .minusDays(1) to include today
 
         return schedules.stream()
                 .map(mapper::toResponseDTO)

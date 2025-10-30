@@ -14,4 +14,5 @@ public class DoctorScheduleCreateDTO {
     private LocalTime endTime;
     private BigDecimal payment;
     private Integer maxPatientCount;
+    private Integer registeredPatientCount;
 }

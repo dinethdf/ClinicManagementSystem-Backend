@@ -25,15 +25,12 @@ public class DoctorScheduleController {
     // Inject your message utility
     private final MessageSourceUtil messageSourceUtil;
 
-    /**
-     * Create a new doctor schedule.
-     * Accessible by ADMIN or STAFF.
-     */
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> createSchedule(
             @RequestBody DoctorScheduleCreateDTO createDTO) {
 
+        System.out.println("this is run");
         DoctorScheduleResponseDTO newSchedule = doctorScheduleService.createSchedule(createDTO);
 
         // Use the static helper method
@@ -47,12 +44,9 @@ public class DoctorScheduleController {
     }
 
 
-    /**
-     * --- NEW BATCH ENDPOINT ---
-     * This accepts a list of schedules and returns a list of created schedules.
-     */
+
     @PostMapping("/batch")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR', 'USER')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> createBatchSchedules(
             @RequestBody List<DoctorScheduleCreateDTO> createDTOs) {
 
@@ -69,10 +63,7 @@ public class DoctorScheduleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get a specific schedule by its ID.
-     * Accessible by all authenticated users.
-     */
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> getScheduleById(@PathVariable Long id) {
@@ -87,10 +78,7 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get all schedules.
-     * ADMIN/STAFF can see all (active and inactive).
-     */
+
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getAllSchedules(
@@ -106,10 +94,7 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get all schedules for a specific doctor.
-     * Accessible by all authenticated users.
-     */
+
     @GetMapping("/by-doctor/{doctorId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getSchedulesByDoctor(
@@ -126,10 +111,7 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get all UPCOMING schedules for a specific doctor.
-     * This is most useful for patients/users.
-     */
+
     @GetMapping("/by-doctor/{doctorId}/upcoming")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getUpcomingSchedulesByDoctor(@PathVariable Long doctorId) {
@@ -144,10 +126,7 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Update an existing schedule's details.
-     * Accessible by ADMIN or STAFF.
-     */
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> updateSchedule(
@@ -164,10 +143,7 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Deactivate a schedule (soft delete).
-     * Accessible by ADMIN or STAFF.
-     */
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> deactivateSchedule(@PathVariable Long id) {

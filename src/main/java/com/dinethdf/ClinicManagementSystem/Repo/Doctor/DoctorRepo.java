@@ -13,18 +13,27 @@ import java.util.Optional; // <-- Import this
 @Repository
 public interface DoctorRepo extends JpaRepository<Doctor, Long> {
 
+    // Cant Use Find all Because USe Lazy load then it work Only this way
+    @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.specialization")
+    List<Doctor> findAllWithSpecialization();
+
     /**
      * Finds a Doctor entity by joining with the UserAuth entity
      */
     Optional<Doctor> findByUserAuthEmail(String email);
 
-    @Query("SELECT new com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto(" +
-            "d.id, d.firstName, d.lastName, d.email, d.mobileNo, d.city, d.nic, d.dob, " +
-            "d.nameWithInitials, d.slmcNumber, d.specialization, d.qualification, " +
-            "d.experienceYears, d.profileImg) " +
-            "FROM Doctor d WHERE " +
-            "LOWER(d.nameWithInitials) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "LOWER(CONCAT(d.firstName, ' ', d.lastName)) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto(
+        d.id, d.firstName, d.lastName, d.email, d.mobileNo, d.city, d.nic, d.dob,
+        d.nameWithInitials, d.slmcNumber, d.specialization,
+        d.qualification, d.experienceYears, d.profileImg
+    )
+    FROM Doctor d
+    LEFT JOIN d.specialization s
+    WHERE
+        LOWER(d.nameWithInitials) LIKE LOWER(CONCAT('%', :query, '%')) OR
+        LOWER(CONCAT(d.firstName, ' ', d.lastName)) LIKE LOWER(CONCAT('%', :query, '%'))
+""")
     List<DoctorResponseDto> searchDoctors(@Param("query") String query);
 }
 

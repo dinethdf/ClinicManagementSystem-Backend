@@ -24,8 +24,9 @@ public class Doctor extends CommonUserDetails {
     @Column(name = "slmcNumber", unique = true, length = 50)
     private String slmcNumber;
 
-    @Column(name = "specialization", length = 100)
-    private String specialization;
+    @ManyToOne
+    @JoinColumn(name = "specialization_id")
+    private Specialization specialization;
 
     @Column(name = "qualification", length = 100)
     private String qualification;

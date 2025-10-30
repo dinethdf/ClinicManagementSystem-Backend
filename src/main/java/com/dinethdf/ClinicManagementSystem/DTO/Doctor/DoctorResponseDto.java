@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.DTO.Doctor;
 
+import com.dinethdf.ClinicManagementSystem.Model.Doctor.Specialization;
 import lombok.Data;
 import lombok.NoArgsConstructor; // Make sure to keep this
 import java.time.LocalDate;
@@ -18,7 +19,7 @@ public class DoctorResponseDto {
     private LocalDate dob;
     private String nameWithInitials;
     private String slmcNumber;
-    private String specialization;
+    private Specialization specialization;
     private String qualification;
     private Integer experienceYears;
     private String profileImg;
@@ -28,7 +29,7 @@ public class DoctorResponseDto {
     public DoctorResponseDto(Long id, String firstName, String lastName, String email,
                              String mobileNo, String city, String nic, LocalDate dob,
                              String nameWithInitials, String slmcNumber,
-                             String specialization, String qualification,
+                             Specialization specialization, String qualification,
                              Integer experienceYears, String profileImg) {
         this.id = id;
         this.firstName = firstName;
