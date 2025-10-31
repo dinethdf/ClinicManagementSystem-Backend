@@ -1,0 +1,138 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_AppointmentPaymentProcess$$
+
+CREATE PROCEDURE sp_AppointmentPaymentProcess(
+    IN p_invoice_id INT,
+    IN p_payment_method VARCHAR(50),
+    IN p_transaction_code VARCHAR(255),
+    IN p_created_by VARCHAR(50),
+    IN p_discounts_json JSON,
+    OUT o_new_payment_id INT,
+    OUT o_status_message VARCHAR(50)
+)
+BEGIN
+    -- == 1. DECLARE VARIABLES ==
+    DECLARE v_total_amount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_appointment_id INT;
+    DECLARE v_invoice_status VARCHAR(50);
+    DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_now DATETIME;
+
+    -- == 2. ERROR HANDLING ==
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET o_status_message = 'ERROR_SQL_EXCEPTION';
+    END;
+
+    -- == 3. SET VARIABLES & START TRANSACTION ==
+    SET v_now = NOW();
+    START TRANSACTION;
+
+    -- == 4. LOCK INVOICE & GET DATA ==
+    SELECT
+        totalAmount, status, appointment_id
+    INTO
+        v_total_amount, v_invoice_status, v_appointment_id
+    FROM
+        invoices
+    WHERE
+        id = p_invoice_id
+    FOR UPDATE; -- Lock the row
+
+    -- == 5. VALIDATE INVOICE ==
+    IF v_invoice_status IS NULL THEN -- <-- NEW FIX 2
+        SET o_status_message = 'ERROR_INVALID_INVOICE';
+        ROLLBACK;
+    ELSEIF v_invoice_status = 'PAID' THEN
+        SET o_status_message = 'ERROR_INVOICE_PAID';
+        ROLLBACK;
+    ELSE
+        -- == 6. PROCESS DISCOUNTS (IF ANY) ==
+        IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
+
+            INSERT INTO invoice_items (
+                invoice_id,
+                item_type_id,
+                item_id, -- <-- This will now accept the NULL
+                description,
+                amount,
+                createdDate,
+                createdBy
+            )
+            SELECT
+                p_invoice_id,
+                it.id,
+                NULL,  -- <-- MAIN FIX 1: This is allowed now
+                j.description,
+                j.amount * -1,
+                v_now,
+                p_created_by
+            FROM
+                JSON_TABLE(
+                    p_discounts_json,
+                    '$[*]' COLUMNS (
+                        discountType VARCHAR(50) PATH '$.discountType',
+                        amount DECIMAL(10, 2) PATH '$.amount',
+                        description VARCHAR(255) PATH '$.description'
+                    )
+                ) AS j
+            JOIN
+                item_types it ON j.discountType = it.typeName;
+
+            -- Calculate total discount
+            SELECT SUM(amount) INTO v_total_discount
+            FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
+
+            -- Update final amount
+            SET v_total_amount = v_total_amount - v_total_discount;
+        END IF;
+
+        -- == 7. CREATE THE PAYMENT RECORD ==
+        INSERT INTO payments (
+            invoice_id,
+            amountPaid,
+            paymentMethod,
+            paymentStatus,
+            transactionId,
+            createdDate,
+            createdBy
+        ) VALUES (
+            p_invoice_id,
+            v_total_amount,
+            p_payment_method,
+            'Completed',
+            p_transaction_code,
+            v_now,
+            p_created_by
+        );
+
+        SET o_new_payment_id = LAST_INSERT_ID();
+
+        -- == 8. UPDATE THE INVOICE ==
+        UPDATE invoices
+        SET
+            status = 'PAID',
+            totalAmount = v_total_amount
+        WHERE
+            id = p_invoice_id;
+
+        -- == 9. UPDATE THE APPOINTMENT ==
+        IF v_appointment_id IS NOT NULL THEN
+            UPDATE appointments
+            SET
+                status = 'Booked'
+            WHERE
+                id = v_appointment_id;
+        END IF;
+
+        -- == 10. SUCCESS ==
+        SET o_status_message = 'PAYMENT_SUCCESS';
+        COMMIT;
+
+    END IF;
+
+END$$
+
+DELIMITER ;
