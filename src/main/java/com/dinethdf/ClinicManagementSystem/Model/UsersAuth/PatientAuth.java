@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Model.UsersAuth;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "patientAuth")
 public class PatientAuth {
 
     @Id
