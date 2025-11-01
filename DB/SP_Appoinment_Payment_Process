@@ -42,7 +42,7 @@ BEGIN
     FOR UPDATE; -- Lock the row
 
     -- == 5. VALIDATE INVOICE ==
-    IF v_invoice_status IS NULL THEN -- <-- NEW FIX 2
+    IF v_invoice_status IS NULL THEN
         SET o_status_message = 'ERROR_INVALID_INVOICE';
         ROLLBACK;
     ELSEIF v_invoice_status = 'PAID' THEN
@@ -55,7 +55,7 @@ BEGIN
             INSERT INTO invoice_items (
                 invoice_id,
                 item_type_id,
-                item_id, -- <-- This will now accept the NULL
+                item_id,
                 description,
                 amount,
                 createdDate,
@@ -64,9 +64,9 @@ BEGIN
             SELECT
                 p_invoice_id,
                 it.id,
-                NULL,  -- <-- MAIN FIX 1: This is allowed now
+                NULL,
                 j.description,
-                j.amount * -1,
+                COALESCE(j.amount, 0) * -1, -- Use COALESCE for safety
                 v_now,
                 p_created_by
             FROM
@@ -79,10 +79,15 @@ BEGIN
                     )
                 ) AS j
             JOIN
-                item_types it ON j.discountType = it.typeName;
+                item_types it
+            -- *********** THIS IS YOUR FIX ***********
+            ON
+                j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
+            -- ****************************************
 
             -- Calculate total discount
-            SELECT SUM(amount) INTO v_total_discount
+            SELECT
+                COALESCE(SUM(amount), 0) INTO v_total_discount
             FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
 
             -- Update final amount
