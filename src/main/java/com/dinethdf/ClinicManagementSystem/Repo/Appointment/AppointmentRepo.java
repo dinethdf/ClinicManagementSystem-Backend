@@ -22,5 +22,5 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("p_note") String note
     );
 
-    Optional<Appointment> findByAppointmentNumber(String appointmentNumber);
+//    Optional<Appointment> findByAppointmentNumber(String appointmentNumber);
 }

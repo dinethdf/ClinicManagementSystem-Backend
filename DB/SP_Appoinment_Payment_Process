@@ -13,7 +13,8 @@ CREATE PROCEDURE sp_AppointmentPaymentProcess(
 )
 BEGIN
     -- == 1. DECLARE VARIABLES ==
-    DECLARE v_total_amount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_subtotal_amount DECIMAL(10, 2) DEFAULT 0; -- Renamed
+    DECLARE v_final_amount DECIMAL(10, 2) DEFAULT 0;    -- New
     DECLARE v_appointment_id INT;
     DECLARE v_invoice_status VARCHAR(50);
     DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
@@ -32,9 +33,9 @@ BEGIN
 
     -- == 4. LOCK INVOICE & GET DATA ==
     SELECT
-        totalAmount, status, appointment_id
+        subtotalAmount, status, appointment_id -- <-- RENAMED
     INTO
-        v_total_amount, v_invoice_status, v_appointment_id
+        v_subtotal_amount, v_invoice_status, v_appointment_id
     FROM
         invoices
     WHERE
@@ -52,23 +53,14 @@ BEGIN
         -- == 6. PROCESS DISCOUNTS (IF ANY) ==
         IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
 
+            -- Insert all discount line items
             INSERT INTO invoice_items (
-                invoice_id,
-                item_type_id,
-                item_id,
-                description,
-                amount,
-                createdDate,
-                createdBy
+                invoice_id, item_type_id, item_id, description,
+                amount, createdDate, createdBy
             )
             SELECT
-                p_invoice_id,
-                it.id,
-                NULL,
-                j.description,
-                COALESCE(j.amount, 0) * -1, -- Use COALESCE for safety
-                v_now,
-                p_created_by
+                p_invoice_id, it.id, NULL, j.description,
+                COALESCE(j.amount, 0) * -1, v_now, p_created_by
             FROM
                 JSON_TABLE(
                     p_discounts_json,
@@ -80,32 +72,25 @@ BEGIN
                 ) AS j
             JOIN
                 item_types it
-            -- *********** THIS IS YOUR FIX ***********
             ON
                 j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
-            -- ****************************************
 
             -- Calculate total discount
             SELECT
                 COALESCE(SUM(amount), 0) INTO v_total_discount
             FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
-
-            -- Update final amount
-            SET v_total_amount = v_total_amount - v_total_discount;
         END IF;
 
-        -- == 7. CREATE THE PAYMENT RECORD ==
+        -- == 7. CALCULATE FINAL AMOUNT ==
+        SET v_final_amount = v_subtotal_amount - v_total_discount;
+
+        -- == 8. CREATE THE PAYMENT RECORD ==
         INSERT INTO payments (
-            invoice_id,
-            amountPaid,
-            paymentMethod,
-            paymentStatus,
-            transactionId,
-            createdDate,
-            createdBy
+            invoice_id, amountPaid, paymentMethod, paymentStatus,
+            transactionId, createdDate, createdBy
         ) VALUES (
             p_invoice_id,
-            v_total_amount,
+            v_final_amount, -- Pay the final discounted amount
             p_payment_method,
             'Completed',
             p_transaction_code,
@@ -115,24 +100,24 @@ BEGIN
 
         SET o_new_payment_id = LAST_INSERT_ID();
 
-        -- == 8. UPDATE THE INVOICE ==
+        -- == 9. UPDATE THE INVOICE ==
         UPDATE invoices
         SET
             status = 'PAID',
-            totalAmount = v_total_amount
+            totalDiscount = v_total_discount, -- Set the discount amount
+            finalAmount = v_final_amount    -- Set the final amount
+            -- We NEVER change subtotalAmount
         WHERE
             id = p_invoice_id;
 
-        -- == 9. UPDATE THE APPOINTMENT ==
+        -- == 10. UPDATE THE APPOINTMENT ==
         IF v_appointment_id IS NOT NULL THEN
             UPDATE appointments
-            SET
-                status = 'Booked'
-            WHERE
-                id = v_appointment_id;
+            SET status = 'Booked'
+            WHERE id = v_appointment_id;
         END IF;
 
-        -- == 10. SUCCESS ==
+        -- == 11. SUCCESS ==
         SET o_status_message = 'PAYMENT_SUCCESS';
         COMMIT;
 

@@ -19,7 +19,7 @@ public class AppointmentMapper {
 
         // 3. Manually set all the fields
         dto.setId(appointment.getId());
-        dto.setAppointmentNumber(appointment.getAppointmentNumber());
+//        dto.setAppointmentId(appointment.getId());
         dto.setQueuePosition(appointment.getQueuePosition());
         dto.setStatus(appointment.getStatus().toString()); // Convert Enum to String
         dto.setNote(appointment.getNote());

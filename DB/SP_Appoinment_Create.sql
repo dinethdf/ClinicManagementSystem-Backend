@@ -8,7 +8,7 @@ CREATE PROCEDURE sp_BookAppointment(
     IN p_patient_id INT,
     IN p_note TEXT,
     OUT o_queuePosition INT,
-    OUT o_appointmentNumber VARCHAR(50),
+    OUT o_newAppointmentId Long, -- <-- 1. ADDED THIS PARAMETER
     OUT o_newInvoiceId INT,
     OUT o_statusMessage VARCHAR(50)
 )
@@ -16,11 +16,12 @@ BEGIN
     -- == 1. DECLARE VARIABLES ==
     DECLARE v_maxPatientCount INT;
     DECLARE v_currentBookedCount INT;
-    DECLARE v_isScheduleActive TINYINT(1);
-    DECLARE v_consultationFee DECIMAL(10, 2);
+    DECLARE v_isScheduleActive TINYINT;
+    DECLARE v_doctorFee DECIMAL(10, 2);
+    DECLARE v_clinicFee DECIMAL(10, 2);
+    DECLARE v_totalFee DECIMAL(10, 2);
     DECLARE v_patientBookingCount INT;
     DECLARE v_newQueuePosition INT;
-    DECLARE v_newAppointmentNumber VARCHAR(50);
     DECLARE v_newAppointmentId INT;
     DECLARE v_appointmentItemTypeId INT;
     DECLARE v_now DATETIME;
@@ -41,12 +42,14 @@ BEGIN
         maxPatientCount,
         registeredPatientCount,
         isActive,
-        payment -- Your 'payment' column
+        doctorFee,
+        clinicFee
     INTO
         v_maxPatientCount,
         v_currentBookedCount,
         v_isScheduleActive,
-        v_consultationFee
+        v_doctorFee,
+        v_clinicFee
     FROM
         doctorSchedule
     WHERE
@@ -70,7 +73,7 @@ BEGIN
         FROM appointments
         WHERE doctor_schedule_id = p_doctor_schedule_id
           AND patient_id = p_patient_id
-          AND status IN ('Booked', 'PENDING_PAYMENT'); -- Corrected check
+          AND status IN ('Booked', 'PENDING_PAYMENT');
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
@@ -79,16 +82,8 @@ BEGIN
             -- == 7. ALL CHECKS PASSED - CREATE BOOKING ==
             SET v_newQueuePosition = v_currentBookedCount + 1;
 
-            SET v_newAppointmentNumber = CONCAT(
-                'AP-',
-                LPAD(CONV(p_doctor_schedule_id, 10, 36), 4, '0'),
-                '-',
-                v_newQueuePosition
-            );
-
             -- a. Insert the new appointment
             INSERT INTO appointments (
-                appointmentNumber,
                 doctor_schedule_id,
                 patient_id,
                 queuePosition,
@@ -97,17 +92,15 @@ BEGIN
                 createdDate,
                 createdBy
             ) VALUES (
-                v_newAppointmentNumber,
                 p_doctor_schedule_id,
                 p_patient_id,
                 v_newQueuePosition,
                 p_note,
-                'PENDING_PAYMENT', -- Set to PENDING_PAYMENT
+                'PENDING_PAYMENT',
                 v_now,
                 p_createdBy
             );
 
-            -- Get the new appointment's ID to link the invoice
             SET v_newAppointmentId = LAST_INSERT_ID();
 
             -- b. Update the schedule's patient count
@@ -116,8 +109,8 @@ BEGIN
             WHERE id = p_doctor_schedule_id;
 
             -- == 8. AUTOMATIC INVOICE CREATION ==
+            SET v_totalFee = v_doctorFee + v_clinicFee;
 
-            -- c. Find the 'APPOINTMENT' item type ID
             SELECT id INTO v_appointmentItemTypeId
             FROM item_types
             WHERE typeName = 'APPOINTMENT' LIMIT 1;
@@ -125,16 +118,20 @@ BEGIN
             -- d. Create the master invoice
             INSERT INTO invoices (
                 patient_id,
-                appointment_id, -- <-- THIS IS THE UPDATE
+                appointment_id,
                 status,
-                totalAmount,
+                subtotalAmount,
+                totalDiscount,
+                finalAmount,
                 createdDate,
                 createdBy
             ) VALUES (
                 p_patient_id,
-                v_newAppointmentId, -- <-- Link it to the new appointment
+                v_newAppointmentId,
                 'UNPAID',
-                v_consultationFee,
+                v_totalFee,
+                0.00,
+                v_totalFee,
                 v_now,
                 p_createdBy
             );
@@ -155,14 +152,14 @@ BEGIN
                 v_appointmentItemTypeId,
                 v_newAppointmentId,
                 'Doctor Consultation',
-                v_consultationFee,
+                v_totalFee,
                 v_now,
                 p_createdBy
             );
 
             -- == 9. SUCCESS! ==
             SET o_queuePosition = v_newQueuePosition;
-            SET o_appointmentNumber = v_newAppointmentNumber;
+            SET o_newAppointmentId = v_newAppointmentId; -- <-- 2. ADDED THIS LINE
             SET o_statusMessage = 'BOOKED_SUCCESS';
 
             COMMIT;

@@ -44,10 +44,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         // 4. On success, get the new appointment number
-        String newAppointmentNumber = (String) spResult.get("o_appointmentNumber");
+        Long newAppointmentNumber = (Long) spResult.get("o_newAppointmentId");
 
         // 5. Fetch the new appointment from the DB
-        Appointment newAppointment = appointmentRepo.findByAppointmentNumber(newAppointmentNumber)
+        Appointment newAppointment = appointmentRepo.findById(newAppointmentNumber)
                 .orElseThrow(() -> new ValidationException(
                         "Failed to retrieve new appointment",
                         "APPOINTMENT_NOT_FOUND",
