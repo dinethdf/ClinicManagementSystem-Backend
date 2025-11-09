@@ -14,6 +14,8 @@ public class InvoicePaymentDTO {
     // Optional: for card payments
     private String transactionCode;
 
+//    private
+
     // Can be an empty list or null if no discounts
     private List<DiscountDTO> discounts;
 }

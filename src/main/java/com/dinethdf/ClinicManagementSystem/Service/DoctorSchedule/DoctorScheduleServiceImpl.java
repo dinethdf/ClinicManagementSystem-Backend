@@ -72,7 +72,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .scheduleDate(createDTO.getScheduleDate())
                 .startTime(createDTO.getStartTime()) // Updated
                 .endTime(createDTO.getEndTime())     // Updated
-                .payment(createDTO.getPayment())
+                .doctorFee(createDTO.getDoctorFee())
+                .clinicFee(createDTO.getClinicFee())
                 .maxPatientCount(createDTO.getMaxPatientCount())
                 .registeredPatientCount(0)
                 .isActive(true)
@@ -168,8 +169,11 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (updateDTO.getMaxPatientCount() == null || updateDTO.getMaxPatientCount() <= 0) {
             throw new ValidationException("Max patient count must be greater than 0", "INVALID_PATIENT_COUNT", HttpStatus.BAD_REQUEST);
         }
-        if (updateDTO.getPayment() == null || updateDTO.getPayment().doubleValue() < 0) {
-            throw new ValidationException("Payment must be >= 0", "INVALID_PAYMENT", HttpStatus.BAD_REQUEST);
+        if (updateDTO.getDoctorFee() == null || updateDTO.getDoctorFee().doubleValue() < 0) {
+            throw new ValidationException("Doctor Fee must be > 0", "INVALID_DOCTOR_FEE", HttpStatus.BAD_REQUEST);
+        }
+        if (updateDTO.getClinicFee() == null || updateDTO.getClinicFee().doubleValue() < 0) {
+            throw new ValidationException("Clinic Fee must be > 0", "INVALID_CLINIC_FEE", HttpStatus.BAD_REQUEST);
         }
 
         // 3. NEW: Check for overlapping time conflicts with *other* schedules
@@ -196,7 +200,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         // 4. Update fields
         existingSchedule.setStartTime(updateDTO.getStartTime());
         existingSchedule.setEndTime(updateDTO.getEndTime());
-        existingSchedule.setPayment(updateDTO.getPayment());
+        existingSchedule.setDoctorFee(updateDTO.getDoctorFee());
+        existingSchedule.setClinicFee(updateDTO.getClinicFee());
         existingSchedule.setMaxPatientCount(updateDTO.getMaxPatientCount());
 
         // 5. Save and return DTO
@@ -293,8 +298,11 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (schedule.getMaxPatientCount() == null || schedule.getMaxPatientCount() <= 0) {
             throw new ValidationException("Max patient count must be greater than 0", "INVALID_PATIENT_COUNT", HttpStatus.BAD_REQUEST);
         }
-        if (schedule.getPayment() == null || schedule.getPayment().doubleValue() < 0) {
-            throw new ValidationException("Payment must be >= 0", "INVALID_PAYMENT", HttpStatus.BAD_REQUEST);
+        if (schedule.getDoctorFee() == null || schedule.getDoctorFee().doubleValue() < 0) {
+            throw new ValidationException("Doctor Fee must be > 0", "INVALID_DOCTOR_FEE", HttpStatus.BAD_REQUEST);
+        }
+        if (schedule.getClinicFee() == null || schedule.getClinicFee().doubleValue() < 0) {
+            throw new ValidationException("Clinic Fee must be > 0", "INVALID_CLINIC_FEE", HttpStatus.BAD_REQUEST);
         }
     }
 }

@@ -10,6 +10,7 @@ public class DoctorScheduleUpdateDTO {
     // not the doctor or date, as that's a "new" schedule.
     private LocalTime startTime;
     private LocalTime endTime;
-    private BigDecimal payment;
+    private BigDecimal doctorFee;
+    private BigDecimal clinicFee;
     private Integer maxPatientCount;
 }

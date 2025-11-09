@@ -107,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
     private void handleSpError(String statusMessage) {
         if ("ERROR_INVOICE_PAID".equals(statusMessage)) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("payment.error.paid"),
+                    messageSourceUtil.getMessage("appointment.already.paid"),
                     "INVOICE_PAID",
                     HttpStatus.CONFLICT
             );

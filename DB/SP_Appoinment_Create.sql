@@ -8,7 +8,7 @@ CREATE PROCEDURE sp_BookAppointment(
     IN p_patient_id INT,
     IN p_note TEXT,
     OUT o_queuePosition INT,
-    OUT o_newAppointmentId Long, -- <-- 1. ADDED THIS PARAMETER
+    OUT o_newAppointmentId INT,
     OUT o_newInvoiceId INT,
     OUT o_statusMessage VARCHAR(50)
 )
@@ -17,9 +17,9 @@ BEGIN
     DECLARE v_maxPatientCount INT;
     DECLARE v_currentBookedCount INT;
     DECLARE v_isScheduleActive TINYINT;
-    DECLARE v_doctorFee DECIMAL(10, 2);
-    DECLARE v_clinicFee DECIMAL(10, 2);
-    DECLARE v_totalFee DECIMAL(10, 2);
+    DECLARE v_doctorFee DECIMAL(10, 2); -- NEW
+    DECLARE v_clinicFee DECIMAL(10, 2); -- NEW
+    DECLARE v_totalFee DECIMAL(10, 2);  -- NEW: To hold the sum
     DECLARE v_patientBookingCount INT;
     DECLARE v_newQueuePosition INT;
     DECLARE v_newAppointmentId INT;
@@ -42,14 +42,14 @@ BEGIN
         maxPatientCount,
         registeredPatientCount,
         isActive,
-        doctorFee,
-        clinicFee
+        doctorFee,  -- Get doctor fee
+        clinicFee   -- Get clinic fee
     INTO
         v_maxPatientCount,
         v_currentBookedCount,
         v_isScheduleActive,
-        v_doctorFee,
-        v_clinicFee
+        v_doctorFee,  -- Store doctor fee
+        v_clinicFee   -- Store clinic fee
     FROM
         doctorSchedule
     WHERE
@@ -109,6 +109,8 @@ BEGIN
             WHERE id = p_doctor_schedule_id;
 
             -- == 8. AUTOMATIC INVOICE CREATION ==
+
+            -- Calculate the total fee here
             SET v_totalFee = v_doctorFee + v_clinicFee;
 
             SELECT id INTO v_appointmentItemTypeId
@@ -129,9 +131,9 @@ BEGIN
                 p_patient_id,
                 v_newAppointmentId,
                 'UNPAID',
-                v_totalFee,
+                v_totalFee, -- Use the sum here
                 0.00,
-                v_totalFee,
+                v_totalFee, -- Use the sum here
                 v_now,
                 p_createdBy
             );
@@ -152,14 +154,14 @@ BEGIN
                 v_appointmentItemTypeId,
                 v_newAppointmentId,
                 'Doctor Consultation',
-                v_totalFee,
+                v_totalFee, -- Use the sum here
                 v_now,
                 p_createdBy
             );
 
             -- == 9. SUCCESS! ==
             SET o_queuePosition = v_newQueuePosition;
-            SET o_newAppointmentId = v_newAppointmentId; -- <-- 2. ADDED THIS LINE
+            SET o_newAppointmentId = v_newAppointmentId;
             SET o_statusMessage = 'BOOKED_SUCCESS';
 
             COMMIT;

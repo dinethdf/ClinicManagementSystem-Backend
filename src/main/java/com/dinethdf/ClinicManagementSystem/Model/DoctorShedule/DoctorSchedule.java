@@ -35,8 +35,11 @@ public class DoctorSchedule extends AuditWrapper {
     @Column(name = "endTime", nullable = false)
     private LocalTime endTime;
 
-    @Column(name = "payment", nullable = false, precision = 10, scale = 2)
-    private BigDecimal payment;
+    @Column(name = "doctorFee", nullable = false, precision = 10, scale = 2)
+    private BigDecimal doctorFee;
+
+    @Column(name = "clinicFee", nullable = false, precision = 10, scale = 2)
+    private BigDecimal clinicFee;
 
     @Column(name = "maxPatientCount", nullable = false)
     private Integer maxPatientCount;

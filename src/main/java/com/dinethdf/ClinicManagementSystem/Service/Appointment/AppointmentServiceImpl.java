@@ -2,8 +2,11 @@ package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.InvoiceAppointmentFlatDTO;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.AppointmentMapper;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -13,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 // import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +62,81 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // 6. Map to DTO and return
         return appointmentMapper.toResponseDTO(newAppointment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentInvoiceViewDTO> getInvoicesByAppointmentId(Long appointmentId) {
+
+
+        if (appointmentId == null || appointmentId <= 0) {
+            throw new ValidationException("Invalid appointment ID.", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
+        }
+
+        // 2. Fast Existence & Status Check (Combined)
+        // We fetch JUST the status. If it's empty, the appointment doesn't exist.
+        Appointment.AppointmentStatus status = appointmentRepo.findStatusById(appointmentId)
+                .orElseThrow(() -> new ValidationException("Appointment not found.", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (status == Appointment.AppointmentStatus.CANCELLED || status == Appointment.AppointmentStatus.Booked) {
+            throw new ValidationException("Appointment is already " + status + ".", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        }
+
+        List<InvoiceAppointmentFlatDTO> rawData = appointmentRepo.findRawInvoicesByAppointmentId(appointmentId);
+
+        if (rawData.isEmpty()) {
+            throw new ValidationException("No invoices generated for this appointment yet.", "NO_INVOICES", HttpStatus.NOT_FOUND);
+        }
+
+        Map<Long, List<InvoiceAppointmentFlatDTO>> groupedByInvoice = rawData.stream()
+                .collect(Collectors.groupingBy(InvoiceAppointmentFlatDTO::getInvoiceId));
+
+        List<AppointmentInvoiceViewDTO> resultList = new ArrayList<>();
+
+        for (Map.Entry<Long, List<InvoiceAppointmentFlatDTO>> entry : groupedByInvoice.entrySet()) {
+            List<InvoiceAppointmentFlatDTO> invoiceRows = entry.getValue();
+            InvoiceAppointmentFlatDTO header = invoiceRows.getFirst();
+
+            // Map Header
+            AppointmentInvoiceViewDTO dto = new AppointmentInvoiceViewDTO();
+            dto.setInvoiceId(header.getInvoiceId());
+            dto.setDateIssued(header.getInvoiceDate().toLocalDate());
+            dto.setStatus(header.getInvoiceStatus());
+            dto.setSubtotal(header.getSubtotal());
+            dto.setTotalDiscount(header.getTotalDiscount());
+            dto.setFinalAmount(header.getFinalAmount());
+
+            // Map Patient
+            dto.setPatientNo(header.getPatientNo());
+            dto.setPatientName(header.getPatientFirstName() + " " + header.getPatientLastName());
+            dto.setPatientAddress((header.getPatientAddress() != null ? header.getPatientAddress() : "") +
+                    (header.getPatientCity() != null ? ", " + header.getPatientCity() : ""));
+            dto.setPatientDob(header.getPatientDob());
+            dto.setPatientContactNo(header.getPatientMobile());
+
+            // Map Appointment (they all share the same appt info in this case)
+            dto.setAppointmentId(header.getApptId());
+            dto.setAppointmentNumber(header.getApptNumber());
+            dto.setAppointmentNote(header.getApptNote());
+            dto.setDoctorName("Dr. " + header.getDoctorFirstName() + " " + header.getDoctorLastName());
+            dto.setDoctorSpecialization(header.getDoctorSpec());
+
+            // Map Items for THIS specific invoice
+            List<InvoiceItemViewDTO> items = invoiceRows.stream().map(row -> {
+                InvoiceItemViewDTO item = new InvoiceItemViewDTO();
+                item.setDescription(row.getItemDescription());
+                item.setTypeName(row.getItemType());
+                item.setUnitPrice(row.getItemAmount());
+                item.setQuantity(1);
+                item.setTotalAmount(row.getItemAmount());
+                return item;
+            }).collect(Collectors.toList());
+
+            dto.setItems(items);
+            resultList.add(dto);
+        }
+
+        return resultList;
     }
 
     /**
