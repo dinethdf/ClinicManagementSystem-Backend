@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
@@ -9,14 +10,20 @@ import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.dinethdf.ClinicManagementSystem.util.PatientValidator;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -84,6 +91,58 @@ public class PatientServiceImpl implements PatientService {
         return patient;
     }
 
+    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
+        Specification<Patient> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+//            predicates.add(cb.isTrue(root.get("isActive")));
+
+            if (StringUtils.hasText(search)) {
+                String searchLower = search.toLowerCase().trim();
+                List<Predicate> searchPredicates = new ArrayList<>();
+
+                try {
+                    Long searchId = Long.parseLong(search);
+                    searchPredicates.add(cb.equal(root.get("id"), searchId));
+                } catch (NumberFormatException ignored) {
+                    // Not a number, ignore ID search
+                }
+
+                // 2. Search by Patient No (partial match)
+                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
+
+                // 3. Search by NIC (partial match)
+                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
+
+
+                // Combine all search predicates with OR
+                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // Fetch entities efficiently
+        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
+
+        // Convert to DTO to avoid sending too much data (like EAGER auth details) to frontend
+        return patients.map(this::convertToPatientListDTO);
+    }
+
+    // Helper to map Entity -> Simple List DTO
+    private PatientListDTO convertToPatientListDTO(Patient patient) {
+        // Assuming you have a simple DTO for lists
+        return new PatientListDTO(
+                patient.getId(),
+                patient.getPatientNo(),
+                patient.getFirstName(),
+                patient.getLastName(),
+                patient.getMobileNo(),
+                patient.getGender(),
+                patient.getAge(), // Your helper method in Patient entity
+                patient.getIsActive()
+        );
+    }
 
     @Override
     @Transactional
