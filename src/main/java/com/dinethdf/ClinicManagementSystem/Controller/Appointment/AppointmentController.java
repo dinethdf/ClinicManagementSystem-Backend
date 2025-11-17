@@ -21,23 +21,19 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
     private final MessageSourceUtil messageSourceUtil;
 
+
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<AppointmentResponseDTO>> createAppointment(
              @RequestBody AppointmentCreateDTO createDTO, Principal principal) {
 
         String createBy = principal.getName();
-
-        // 1. Call the service
         AppointmentResponseDTO newAppointment = appointmentService.createAppointment(createDTO, createBy);
-
-        // 2. Create the standard success response
         ApiResponse<AppointmentResponseDTO> response = ApiResponse.success(
                 newAppointment,
                 messageSourceUtil.getMessage("appointment.create.success")
         );
-
-        // 3. Return 201 Created
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
 }

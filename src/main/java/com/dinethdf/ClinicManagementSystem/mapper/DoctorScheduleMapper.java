@@ -13,7 +13,8 @@ public class DoctorScheduleMapper {
         dto.setScheduleDate(schedule.getScheduleDate());
         dto.setStartTime(schedule.getStartTime());
         dto.setEndTime(schedule.getEndTime());
-        dto.setPayment(schedule.getPayment());
+        dto.setDoctorFee(schedule.getDoctorFee());
+        dto.setClinicFee(schedule.getClinicFee());
         dto.setMaxPatientCount(schedule.getMaxPatientCount());
         dto.setRegisteredPatientCount(schedule.getRegisteredPatientCount());
         dto.setIsActive(schedule.getIsActive());

@@ -14,7 +14,8 @@ public class DoctorScheduleResponseDTO {
     private LocalDate scheduleDate;
     private LocalTime startTime;
     private LocalTime endTime;
-    private BigDecimal payment;
+    private BigDecimal doctorFee;
+    private BigDecimal clinicFee;
     private Integer maxPatientCount;
     private Integer registeredPatientCount;
     private Boolean isActive;
