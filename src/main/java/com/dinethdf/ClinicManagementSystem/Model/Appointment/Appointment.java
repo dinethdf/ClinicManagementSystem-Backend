@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_note", type = String.class),
 
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_queuePosition", type = Integer.class),
-                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_appointmentNumber", type = String.class),
+//                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_appointmentNumber", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_newAppointmentId", type = Long.class),
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_newInvoiceId", type = Integer.class),
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_statusMessage", type = String.class)
         }
@@ -31,8 +32,8 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String appointmentNumber;
+//    @Column(nullable = false, unique = true)
+//    private String appointmentNumber;
 
     @Column(nullable = false)
     private int queuePosition;

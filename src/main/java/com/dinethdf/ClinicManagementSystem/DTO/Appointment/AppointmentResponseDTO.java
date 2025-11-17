@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class AppointmentResponseDTO {
 
     private Long id;
-    private String appointmentNumber;
+//    private Long appointmentId;
     private int queuePosition;
     private String status;
     private String note;

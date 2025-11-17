@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,9 +12,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PatientDetailsRepo extends JpaRepository<Patient, Long> {
+public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
 
-    // ✅ Count number of dependents by guardian
     long countByGuardian(Patient guardian);
 
     @Query("""
