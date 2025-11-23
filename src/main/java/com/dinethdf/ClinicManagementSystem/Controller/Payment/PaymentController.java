@@ -19,7 +19,7 @@ public class PaymentController {
     private final MessageSourceUtil messageSourceUtil;
 
     @PostMapping("/appointment/pay")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> processPayment(
             @RequestBody InvoicePaymentDTO paymentDTO) {
 
