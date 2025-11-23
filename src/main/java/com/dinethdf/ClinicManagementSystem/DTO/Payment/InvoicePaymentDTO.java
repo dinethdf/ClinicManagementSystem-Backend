@@ -18,4 +18,6 @@ public class InvoicePaymentDTO {
 
     // Can be an empty list or null if no discounts
     private List<DiscountDTO> discounts;
+
+    private String patientMobileNo;
 }

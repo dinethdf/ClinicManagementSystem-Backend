@@ -7,11 +7,13 @@ import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
+import com.dinethdf.ClinicManagementSystem.util.SmsService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -23,17 +25,17 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepo invoiceRepo;
     private final ObjectMapper objectMapper;
     private final MessageSourceUtil messageSourceUtil;
+    private final SmsService smsService;
 
     @Override
+    @Transactional // Ensure DB transaction is separate from SMS logic
     public PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO) {
 
-        // --- 1. NEW MANUAL VALIDATION ---
         validatePaymentDTO(paymentDTO);
 
-        // --- 2. Get logged-in user ---
-        String createdBy = "receptionist_user"; // TODO: Get from Spring Security
 
-        // 3. Serialize discounts
+        String createdBy = "receptionist_user";
+
         String discountsJson = null;
         if (paymentDTO.getDiscounts() != null && !paymentDTO.getDiscounts().isEmpty()) {
             try {
@@ -58,12 +60,36 @@ public class PaymentServiceImpl implements PaymentService {
             handleSpError(statusMessage);
         }
 
-        // 6. Success
+        // 6. Retrieve the new Payment Object (Success Case)
         Integer newPaymentId = (Integer) spResult.get("o_new_payment_id");
         Payment newPayment = paymentRepo.findById(newPaymentId.longValue())
                 .orElseThrow(() -> new ValidationException("Failed to retrieve new payment", "PAYMENT_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR));
 
-        // ... mapping logic ...
+
+        String smsDeliveryNote = "SMS_SENT_SUCCESSFULLY";
+
+        try {
+            String rawMobile = paymentDTO.getPatientMobileNo();
+            String formattedMobile = formatToLankaInternational("0776935124");
+
+            String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + "Appointment Booked";
+
+
+            boolean isSent = smsService.sendPaymentSms(formattedMobile, msgText);
+
+            if (!isSent) {
+                smsDeliveryNote = "PAYMENT_SUCCESS_BUT_SMS_FAILED";
+            }
+
+        } catch (Exception e) {
+            // CATCH ALL: Ensure Payment success is returned even if SMS crashes
+            System.err.println("SMS Sending Error: " + e.getMessage());
+            smsDeliveryNote = "PAYMENT_SUCCESS_BUT_SMS_ERROR: " + e.getMessage();
+        }
+
+
+        // 8. Prepare Response
+
         PaymentResponseDTO response = new PaymentResponseDTO();
         response.setId(newPayment.getId());
         response.setInvoiceId(newPayment.getInvoice().getId());
@@ -73,7 +99,27 @@ public class PaymentServiceImpl implements PaymentService {
         response.setPaymentStatus(newPayment.getPaymentStatus());
         response.setCreatedDate(newPayment.getCreatedDate());
 
+        // Set the SMS status here so Frontend knows to show a warning if needed
+        response.setSmsStatus(smsDeliveryNote);
+
         return response;
+    }
+
+    // --- Helper Method for Phone Number ---
+    private String formatToLankaInternational(String mobile) {
+        if (mobile == null) return "";
+        mobile = mobile.trim();
+
+        // If starts with 0 (e.g., 077...), remove 0 and add 94
+        if (mobile.startsWith("0")) {
+            return "94" + mobile.substring(1);
+        }
+        // If already starts with 94, return as is
+        if (mobile.startsWith("94")) {
+            return mobile;
+        }
+        // Fallback (or throw validation error if strict)
+        return "94" + mobile;
     }
 
     /**

@@ -13,4 +13,5 @@ public class PaymentResponseDTO {
     private String transactionId;
     private String paymentStatus;
     private LocalDateTime createdDate;
+    private String smsStatus;
 }
