@@ -75,7 +75,7 @@ public class PatientServiceImpl implements PatientService {
         boolean isFullNameValid = (fullName != null && fullName.length() > 2);
         boolean isMobileNoValid = (mobileNo != null && mobileNo.length() > 2);
 
-        // If NONE of the search terms are valid (i.e., long enough), throw an error.
+
         if (!isPatientNoValid && !isNicValid && !isFullNameValid && !isMobileNoValid) {
             throw new ValidationException(
                     "Please provide at least one search term with more than 3 characters.",
@@ -105,39 +105,34 @@ public class PatientServiceImpl implements PatientService {
                     Long searchId = Long.parseLong(search);
                     searchPredicates.add(cb.equal(root.get("id"), searchId));
                 } catch (NumberFormatException ignored) {
-                    // Not a number, ignore ID search
+
                 }
 
-                // 2. Search by Patient No (partial match)
                 searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
 
-                // 3. Search by NIC (partial match)
                 searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
 
-
-                // Combine all search predicates with OR
                 predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        // Fetch entities efficiently
+
         Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
 
-        // Convert to DTO to avoid sending too much data (like EAGER auth details) to frontend
         return patients.map(this::convertToPatientListDTO);
     }
 
-    // Helper to map Entity -> Simple List DTO
     private PatientListDTO convertToPatientListDTO(Patient patient) {
-        // Assuming you have a simple DTO for lists
+
         return new PatientListDTO(
                 patient.getId(),
                 patient.getPatientNo(),
                 patient.getFirstName(),
                 patient.getLastName(),
                 patient.getMobileNo(),
+                patient.getNic(),
                 patient.getGender(),
                 patient.getAge(), // Your helper method in Patient entity
                 patient.getIsActive()

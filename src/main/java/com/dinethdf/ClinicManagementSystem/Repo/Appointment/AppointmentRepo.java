@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Repo.Appointment;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.PatientAppointmentDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.InvoiceAppointmentFlatDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,4 +66,26 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
 """)
     List<InvoiceAppointmentFlatDTO> findRawInvoicesByAppointmentId(@Param("apptId") Long apptId);
 
+    @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS appointmentId,
+            a.queuePosition AS queuePosition,
+            a.status AS status,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            ds.doctorFee AS doctorFee,
+            ds.clinicFee AS clinicFee,
+            (ds.doctorFee + ds.clinicFee) AS totalFee,
+            d.firstName AS doctorFirstName,
+            d.lastName AS doctorLastName,
+            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorFullName,
+            s.name AS specialization
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN doctor d ON ds.doctor_id = d.id
+        LEFT JOIN specialization s ON d.specialization_id = s.id
+        WHERE a.patient_id = :patientId
+        ORDER BY ds.scheduleDate DESC, ds.startTime ASC
+    """)
+    List<PatientAppointmentDTO> findAppointmentsByPatientId(@Param("patientId") Long patientId);
 }
