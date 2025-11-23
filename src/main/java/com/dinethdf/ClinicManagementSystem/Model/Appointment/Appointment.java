@@ -45,9 +45,6 @@ public class Appointment {
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
 
-    // --- bookingTimestamp field removed ---
-
-    // --- Relationships ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_schedule_id", nullable = false)
     private DoctorSchedule doctorSchedule;

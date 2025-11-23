@@ -1,10 +1,14 @@
 package com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule;
 
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleUpdateDTO;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface DoctorScheduleService {
@@ -28,6 +32,8 @@ public interface DoctorScheduleService {
      * @throws ValidationException if schedule is not found.
      */
     DoctorScheduleResponseDTO getScheduleById(Long id);
+
+    Page<DoctorScheduleListDTO> getAllSchedules(String search, LocalDate date, Pageable pageable);
 
     /**
      * Retrieves all schedules, with an option to include inactive ones.

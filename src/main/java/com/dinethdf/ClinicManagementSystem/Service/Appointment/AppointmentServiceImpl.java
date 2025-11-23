@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.PatientAppointmentDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
@@ -42,17 +43,17 @@ public class AppointmentServiceImpl implements AppointmentService {
                 createDTO.getNote()
         );
 
-        // 3. Check the result message from the SP
+
         String statusMessage = (String) spResult.get("o_statusMessage");
 
         if (!"BOOKED_SUCCESS".equals(statusMessage)) {
             handleSpError(statusMessage);
         }
 
-        // 4. On success, get the new appointment number
+
         Long newAppointmentNumber = (Long) spResult.get("o_newAppointmentId");
 
-        // 5. Fetch the new appointment from the DB
+
         Appointment newAppointment = appointmentRepo.findById(newAppointmentNumber)
                 .orElseThrow(() -> new ValidationException(
                         "Failed to retrieve new appointment",
@@ -60,7 +61,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         HttpStatus.INTERNAL_SERVER_ERROR
                 ));
 
-        // 6. Map to DTO and return
+
         return appointmentMapper.toResponseDTO(newAppointment);
     }
 
@@ -139,11 +140,19 @@ public class AppointmentServiceImpl implements AppointmentService {
         return resultList;
     }
 
-    /**
-     * --- NEW HELPER METHOD ---
-     * Manually validates the DTO.
-     * This replaces the @Valid and @NotNull annotations.
-     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId) {
+        if (patientId == null || patientId <= 0) {
+
+            throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
+        }
+
+        List<PatientAppointmentDTO> appointments = appointmentRepo.findAppointmentsByPatientId(patientId);
+
+
+        return appointments;
+    }
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {
         if (createDTO.getDoctorScheduleId() == null) {
             throw new ValidationException(
@@ -168,9 +177,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
-    /**
-     * Helper method to convert database errors into user-friendly exceptions.
-     */
+
     private void handleSpError(String statusMessage) {
         switch (statusMessage) {
 

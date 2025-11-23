@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule;
 
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleListDTO;
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
@@ -10,14 +11,21 @@ import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRep
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorScheduleMapper;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,19 +41,15 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     public DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO) {
-        // 1. Validate DTO input
-        validateCreateDTO(createDTO); // This helper is also updated (see below)
 
-        // 2. Find the associated Doctor
+        validateCreateDTO(createDTO);
+
         Doctor doctor = findDoctorById(createDTO.getDoctorId());
 
-        // 3. Perform business logic validation (Date)
         if (createDTO.getScheduleDate().isBefore(LocalDate.now())) {
             throw new ValidationException("Schedule date cannot be in the past", "PAST_DATE", HttpStatus.BAD_REQUEST);
         }
 
-        // 4. Perform business logic validation (Time Overlap)
-        // We now call our new repository method
         boolean exists = doctorScheduleRepo.existsOverlappingSchedule(
                 createDTO.getDoctorId(),
                 createDTO.getScheduleDate(),
@@ -54,7 +58,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         );
 
         if (exists) {
-            // Throw an updated error message
             throw new ValidationException(
                     messageSourceUtil.getMessage(
                             "schedule.error.duplicate.range", // Use a new message key
@@ -65,13 +68,11 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             );
         }
 
-        // 5. Map DTO to Entity
-        // We now set startTime and endTime
         DoctorSchedule newSchedule = DoctorSchedule.builder()
                 .doctor(doctor)
                 .scheduleDate(createDTO.getScheduleDate())
-                .startTime(createDTO.getStartTime()) // Updated
-                .endTime(createDTO.getEndTime())     // Updated
+                .startTime(createDTO.getStartTime())
+                .endTime(createDTO.getEndTime())
                 .doctorFee(createDTO.getDoctorFee())
                 .clinicFee(createDTO.getClinicFee())
                 .maxPatientCount(createDTO.getMaxPatientCount())
@@ -79,9 +80,62 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .isActive(true)
                 .build();
 
-        // 6. Save and return DTO
+
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(newSchedule);
         return mapper.toResponseDTO(savedSchedule);
+    }
+
+    @Override
+    public Page<DoctorScheduleListDTO> getAllSchedules(String search, LocalDate date, Pageable pageable) {
+
+        Specification<DoctorSchedule> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            Join<DoctorSchedule, Doctor> doctorJoin = root.join("doctor");
+
+            if (StringUtils.hasText(search)) {
+                String searchLower = search.toLowerCase().trim();
+
+                Predicate firstNameLike = cb.like(cb.lower(doctorJoin.get("firstName")), "%" + searchLower + "%");
+                Predicate lastNameLike = cb.like(cb.lower(doctorJoin.get("lastName")), "%" + searchLower + "%");
+
+
+                predicates.add(cb.or(firstNameLike, lastNameLike));
+            }
+
+            if (date != null) {
+                predicates.add(cb.equal(root.get("scheduleDate"), date));
+            }
+
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<DoctorSchedule> page = doctorScheduleRepo.findAll(spec, pageable);
+
+        return page.map(this::mapToDTO);
+    }
+
+    private DoctorScheduleListDTO mapToDTO(DoctorSchedule s) {
+        String fName = (s.getDoctor() != null) ? s.getDoctor().getFirstName() : "Unknown";
+        String lName = (s.getDoctor() != null) ? s.getDoctor().getLastName() : "";
+        String specName = (s.getDoctor() != null && s.getDoctor().getSpecialization() != null)
+                ? s.getDoctor().getSpecialization().getName()
+                : "General";
+
+        return new DoctorScheduleListDTO(
+                s.getId(),
+                fName,
+                lName,
+                specName,
+                s.getScheduleDate(),
+                s.getStartTime(),
+                s.getEndTime(),
+                s.getRegisteredPatientCount(),
+                s.getMaxPatientCount(),
+                Boolean.TRUE.equals(s.getIsActive())
+        );
+
     }
 
     /**
@@ -176,14 +230,13 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new ValidationException("Clinic Fee must be > 0", "INVALID_CLINIC_FEE", HttpStatus.BAD_REQUEST);
         }
 
-        // 3. NEW: Check for overlapping time conflicts with *other* schedules
-        // We use the date and doctor from the *existing* schedule
+
         boolean exists = doctorScheduleRepo.existsOverlappingScheduleForUpdate(
                 existingSchedule.getDoctor().getId(),
                 existingSchedule.getScheduleDate(),
                 updateDTO.getStartTime(),
                 updateDTO.getEndTime(),
-                id // The ID of the schedule we are updating
+                id
         );
 
         if (exists) {

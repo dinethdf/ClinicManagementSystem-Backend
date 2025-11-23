@@ -1,17 +1,23 @@
 package com.dinethdf.ClinicManagementSystem.Controller.DoctorShedule;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleListDTO;
 import com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule.DoctorScheduleService;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleUpdateDTO;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -19,11 +25,20 @@ import java.util.List;
 @RequiredArgsConstructor // Best practice for dependency injection
 public class DoctorScheduleController {
 
-    // Inject the Interface, not the implementation
     private final DoctorScheduleService doctorScheduleService;
 
-    // Inject your message utility
     private final MessageSourceUtil messageSourceUtil;
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER', 'DOCTOR')")
+    @GetMapping
+    public ResponseEntity<Page<DoctorScheduleListDTO>> getScheduleList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) LocalDate date,
+            @PageableDefault(size = 10, sort = "scheduleDate", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<DoctorScheduleListDTO> schedules = doctorScheduleService.getAllSchedules(search, date, pageable);
+        return ResponseEntity.ok(schedules);
+    }
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
@@ -79,7 +94,7 @@ public class DoctorScheduleController {
     }
 
 
-    @GetMapping
+    @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getAllSchedules(
             @RequestParam(defaultValue = "false") boolean includeInactive) {

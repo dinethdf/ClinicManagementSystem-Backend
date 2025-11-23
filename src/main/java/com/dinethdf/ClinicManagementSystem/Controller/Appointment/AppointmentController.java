@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Appointment;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.PatientAppointmentDTO;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/appointments") // New path for appointments
@@ -34,6 +36,20 @@ public class AppointmentController {
                 messageSourceUtil.getMessage("appointment.create.success")
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
+    public ResponseEntity<ApiResponse<List<PatientAppointmentDTO>>> getPatientAppointments(
+            @PathVariable Long patientId) {
+
+        List<PatientAppointmentDTO> list = appointmentService.getAppointmentsByPatient(patientId);
+
+        ApiResponse<List<PatientAppointmentDTO>> response = ApiResponse.success(
+                list,
+                messageSourceUtil.getMessage("appointment.list.success")
+        );
+        return ResponseEntity.ok(response);
     }
 
 }
