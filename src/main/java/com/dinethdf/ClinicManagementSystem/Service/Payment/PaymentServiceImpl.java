@@ -70,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         try {
             String rawMobile = paymentDTO.getPatientMobileNo();
-            String formattedMobile = formatToLankaInternational("0776935124");
+            String formattedMobile = formatToLankaInternational(rawMobile);
 
             String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + "Appointment Booked";
 

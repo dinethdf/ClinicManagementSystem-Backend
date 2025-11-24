@@ -16,26 +16,26 @@ INSERT INTO patient (
     insurance_id, createdDate, createdBy, updatedDate, updatedBy, approvedDate, approvedBy
 )
 VALUES
-(50, NULL, 'P250050', 'Fasdad', 'Qweqwe', 'Fasdad Qweqwe', 1, 1, 1, '201232345678', '2000-10-24', '123 Main Street', 'Colombo', 'Colombo', 'fasdad@example.com', '0713232345', '0112345678', NULL, NULL, 'Jane Doe', 'Spouse', '+94787654321', 'janedoe@example.com', 'AB-', '2025-09-30 10:30:00', 'https://example.com/images/patient1.png', 1, 0, NULL, '2025-10-24 12:20:41', 'test1@user.com', '2025-10-24 12:20:41', 'test1@user.com', NULL, NULL),
-(51, NULL, 'P250002', 'Kamal', 'Perera', 'Kamal Perera', 2, 1, 2, '201232345679', '1998-05-12', '45 Lake Road', 'Kandy', 'Kandy', 'kamalp@demo.com', '0771122334', '0812233445', NULL, NULL, 'Sunil Perera', 'Father', '+94775543210', 'sunilp@demo.com', 'B+', '2025-10-01 11:00:00', 'https://example.com/images/patient2.png', 1, 1, NULL, '2025-10-24 12:25:00', 'admin@demo.com', '2025-10-24 12:25:00', 'admin@demo.com', NULL, NULL),
-(52, NULL, 'P250123', 'Nadeesha', 'Fernando', 'Nadeesha Fernando', 3, 2, 1, '201232345680', '1995-03-18', '22 Beach Avenue', 'Galle', 'Galle', 'nadee@demo.com', '0789988776', '0913344556', NULL, NULL, 'Ruwan Fernando', 'Brother', '+94761234567', 'ruwanf@demo.com', 'O+', '2025-10-02 09:45:00', 'https://example.com/images/patient3.png', 1, 0, NULL, '2025-10-24 12:30:00', 'staff@demo.com', '2025-10-24 12:30:00', 'staff@demo.com', NULL, NULL),
-(53, NULL, 'P250004', 'Sithara', 'Wijesinghe', 'Sithara Wijesinghe', 1, 2, 1, '201232345681', '1999-07-10', '56 Palm Grove', 'Negombo', 'Gampaha', 'sithara@example.com', '0702233445', '0312233445', NULL, NULL, 'Kasun Wijesinghe', 'Brother', '+94771234567', 'kasunw@demo.com', 'A+', '2025-10-03 14:00:00', 'https://example.com/images/patient4.png', 1, 0, NULL, '2025-10-24 12:40:00', 'staff@demo.com', '2025-10-24 12:40:00', 'staff@demo.com', NULL, NULL),
-(54, NULL, 'P250005', 'Ruwan', 'Silva', 'Ruwan Silva', 2, 1, 2, '201232345682', '1997-01-21', '10 River Street', 'Matara', 'Matara', 'ruwans@demo.com', '0765544332', '0413344556', NULL, NULL, 'Priya Silva', 'Mother', '+94761234568', 'priyas@demo.com', 'O-', '2025-10-03 09:00:00', 'https://example.com/images/patient5.png', 1, 1, NULL, '2025-10-24 12:45:00', 'staff@demo.com', '2025-10-24 12:45:00', 'staff@demo.com', NULL, NULL),
-(55, NULL, 'P250006', 'Amaya', 'Jayasinghe', 'Amaya Jayasinghe', 3, 2, 1, '201232345683', '2001-04-25', '12 Green Park', 'Kurunegala', 'Kurunegala', 'amaya@demo.com', '0776677889', '0373344556', NULL, NULL, 'Dinesh Jayasinghe', 'Father', '+94774567890', 'dineshj@demo.com', 'B-', '2025-10-03 09:15:00', 'https://example.com/images/patient6.png', 1, 0, NULL, '2025-10-24 12:50:00', 'staff@demo.com', '2025-10-24 12:50:00', 'staff@demo.com', NULL, NULL),
-(56, NULL, 'P250007', 'Tharindu', 'Ekanayake', 'Tharindu Ekanayake', 1, 1, 1, '201232345684', '1994-09-15', '8 Temple Road', 'Jaffna', 'Jaffna', 'tharindu@demo.com', '0718887776', '0212233445', NULL, NULL, 'Rasika Ekanayake', 'Spouse', '+94775553322', 'rasikae@demo.com', 'A-', '2025-10-04 10:00:00', 'https://example.com/images/patient7.png', 1, 1, NULL, '2025-10-24 12:55:00', 'staff@demo.com', '2025-10-24 12:55:00', 'staff@demo.com', NULL, NULL),
-(57, NULL, 'P250008', 'Chathura', 'Bandara', 'Chathura Bandara', 2, 1, 2, '201232345685', '1988-11-22', '77 Lake View', 'Badulla', 'Badulla', 'chathura@demo.com', '0754455667', '0552233445', NULL, NULL, 'Kumari Bandara', 'Mother', '+94773334455', 'kumari@demo.com', 'B+', '2025-10-05 13:00:00', 'https://example.com/images/patient8.png', 1, 0, NULL, '2025-10-24 13:00:00', 'staff@demo.com', '2025-10-24 13:00:00', 'staff@demo.com', NULL, NULL),
-(58, NULL, 'P250009', 'Sajith', 'Gunasekara', 'Sajith Gunasekara', 3, 1, 1, '201232345686', '1990-08-11', '5 Hill Street', 'Ratnapura', 'Ratnapura', 'sajith@demo.com', '0787654321', '0453344556', NULL, NULL, 'Indika Gunasekara', 'Father', '+94770001122', 'indika@demo.com', 'AB+', '2025-10-05 09:30:00', 'https://example.com/images/patient9.png', 1, 0, NULL, '2025-10-24 13:05:00', 'staff@demo.com', '2025-10-24 13:05:00', 'staff@demo.com', NULL, NULL),
-(59, NULL, 'P250010', 'Nilusha', 'Dissanayake', 'Nilusha Dissanayake', 1, 2, 2, '201232345687', '1993-06-08', '90 Flower Road', 'Anuradhapura', 'Anuradhapura', 'nilusha@demo.com', '0745566778', '0252233445', NULL, NULL, 'Kusum Dissanayake', 'Mother', '+94778889900', 'kusumd@demo.com', 'O+', '2025-10-06 11:00:00', 'https://example.com/images/patient10.png', 1, 1, NULL, '2025-10-24 13:10:00', 'staff@demo.com', '2025-10-24 13:10:00', 'staff@demo.com', NULL, NULL),
-(60, NULL, 'P250011', 'Isuru', 'Abeywickrama', 'Isuru Abeywickrama', 2, 1, 1, '201232345688', '1992-03-12', '7 Lotus Avenue', 'Kalutara', 'Kalutara', 'isuru@demo.com', '0779911223', '0343344556', NULL, NULL, 'Suresh Abeywickrama', 'Father', '+94778881234', 'suresha@demo.com', 'B-', '2025-10-06 10:45:00', 'https://example.com/images/patient11.png', 1, 0, NULL, '2025-10-24 13:15:00', 'staff@demo.com', '2025-10-24 13:15:00', 'staff@demo.com', NULL, NULL),
-(61, NULL, 'P250012', 'Thilini', 'De Silva', 'Thilini De Silva', 3, 2, 1, '201232345689', '1996-09-20', '12 Rose Lane', 'Colombo', 'Colombo', 'thilini@demo.com', '0766677888', '0117788990', NULL, NULL, 'Sameera De Silva', 'Husband', '+94775554433', 'sameerad@demo.com', 'A+', '2025-10-06 15:20:00', 'https://example.com/images/patient12.png', 1, 1, NULL, '2025-10-24 13:20:00', 'staff@demo.com', '2025-10-24 13:20:00', 'staff@demo.com', NULL, NULL),
-(62, NULL, 'P250013', 'Madushan', 'Ranasinghe', 'Madushan Ranasinghe', 1, 1, 1, '201232345690', '1989-01-10', '25 Beach Road', 'Gampaha', 'Gampaha', 'madushan@demo.com', '0719988776', '0332233445', NULL, NULL, 'Lakmini Ranasinghe', 'Wife', '+94770002211', 'lakmini@demo.com', 'AB-', '2025-10-06 14:10:00', 'https://example.com/images/patient13.png', 1, 0, NULL, '2025-10-24 13:25:00', 'staff@demo.com', '2025-10-24 13:25:00', 'staff@demo.com', NULL, NULL),
-(63, NULL, 'P250014', 'Rashmi', 'Perera', 'Rashmi Perera', 2, 2, 1, '201232345691', '1994-11-25', '8 Church Street', 'Matale', 'Matale', 'rashmi@demo.com', '0754433221', '0662233445', NULL, NULL, 'Chandana Perera', 'Father', '+94775553344', 'chandanap@demo.com', 'O-', '2025-10-07 09:00:00', 'https://example.com/images/patient14.png', 1, 0, NULL, '2025-10-24 13:30:00', 'staff@demo.com', '2025-10-24 13:30:00', 'staff@demo.com', NULL, NULL),
-(64, NULL, 'P250015', 'Kasun', 'Jayawardena', 'Kasun Jayawardena', 3, 1, 2, '201232345692', '1995-05-16', '66 Temple Lane', 'Polonnaruwa', 'Polonnaruwa', 'kasun@demo.com', '0789988777', '0272233445', NULL, NULL, 'Manel Jayawardena', 'Mother', '+94774445566', 'manelj@demo.com', 'A-', '2025-10-07 10:10:00', 'https://example.com/images/patient15.png', 1, 1, NULL, '2025-10-24 13:35:00', 'staff@demo.com', '2025-10-24 13:35:00', 'staff@demo.com', NULL, NULL),
-(65, NULL, 'P250016', 'Dinithi', 'Wickramasinghe', 'Dinithi Wickramasinghe', 1, 2, 1, '201232345693', '1997-02-18', '22 Sea View', 'Trincomalee', 'Trincomalee', 'dinithi@demo.com', '0702233446', '0262233445', NULL, NULL, 'Nalin Wickramasinghe', 'Father', '+94773334422', 'nalinw@demo.com', 'B+', '2025-10-08 09:00:00', 'https://example.com/images/patient16.png', 1, 0, NULL, '2025-10-24 13:40:00', 'staff@demo.com', '2025-10-24 13:40:00', 'staff@demo.com', NULL, NULL),
-(66, NULL, 'P250017', 'Shehan', 'Hettiarachchi', 'Shehan Hettiarachchi', 2, 1, 2, '201232345694', '1991-12-22', '33 New Road', 'Nuwara Eliya', 'Nuwara Eliya', 'shehan@demo.com', '0758877665', '0522233445', NULL, NULL, 'Kavinda Hettiarachchi', 'Brother', '+94770002233', 'kavindah@demo.com', 'O+', '2025-10-08 11:15:00', 'https://example.com/images/patient17.png', 1, 1, NULL, '2025-10-24 13:45:00', 'staff@demo.com', '2025-10-24 13:45:00', 'staff@demo.com', NULL, NULL),
-(67, NULL, 'P250018', 'Pavani', 'Abeykoon', 'Pavani Abeykoon', 3, 2, 1, '201232345695', '2000-07-07', '88 Market Street', 'Hambantota', 'Hambantota', 'pavani@demo.com', '0713344556', '0472233445', NULL, NULL, 'Lal Abeykoon', 'Father', '+94774443322', 'lala@demo.com', 'AB+', '2025-10-09 12:00:00', 'https://example.com/images/patient18.png', 1, 0, NULL, '2025-10-24 13:50:00', 'staff@demo.com', '2025-10-24 13:50:00', 'staff@demo.com', NULL, NULL),
-(68, NULL, 'P250019', 'Chamara', 'Dias', 'Chamara Dias', 1, 1, 2, '201232345696', '1987-10-11', '14 Hill Top', 'Puttalam', 'Puttalam', 'chamara@demo.com', '0774455667', '0322233445', NULL, NULL, 'Shanika Dias', 'Wife', '+94770005544', 'shanika@demo.com', 'B-', '2025-10-09 10:30:00', 'https://example.com/images/patient19.png', 1, 1, NULL, '2025-10-24 13:55:00', 'staff@demo.com', '2025-10-24 13:55:00', 'staff@demo.com', NULL, NULL),
-(69, NULL, 'P250020', 'Lakmini', 'Senanayake', 'Lakmini Senanayake', 2, 2, 1, '201232345697', '1999-09-01', '2 Garden Street', 'Galle', 'Galle', 'lakmini@demo.com', '0787766554', '0913344557', NULL, NULL, 'Indika Senanayake', 'Mother', '+94778889977', 'indikas@demo.com', 'A+', '2025-10-10 09:45:00', 'https://example.com/images/patient20.png', 1, 0, NULL, '2025-10-24 14:00:00', 'staff@demo.com', '2025-10-24 14:00:00', 'staff@demo.com', NULL, NULL);
+(50, NULL, 'P250050', 'Fasdad', 'Qweqwe', 'Fasdad Qweqwe', 1, 1, 1, '201232345678', '2000-10-24', '123 Main Street', 'Colombo', 'Colombo', 'fasdad@example.com', '0776935124', '0112345678', NULL, NULL, 'Jane Doe', 'Spouse', '+94787654321', 'janedoe@example.com', 'AB-', '2025-09-30 10:30:00', 'https://example.com/images/patient1.png', 1, 0, NULL, '2025-10-24 12:20:41', 'test1@user.com', '2025-10-24 12:20:41', 'test1@user.com', NULL, NULL),
+(51, NULL, 'P250002', 'Kamal', 'Perera', 'Kamal Perera', 2, 1, 2, '201232345679', '1998-05-12', '45 Lake Road', 'Kandy', 'Kandy', 'kamalp@demo.com', '0776935124', '0812233445', NULL, NULL, 'Sunil Perera', 'Father', '+94775543210', 'sunilp@demo.com', 'B+', '2025-10-01 11:00:00', 'https://example.com/images/patient2.png', 1, 1, NULL, '2025-10-24 12:25:00', 'admin@demo.com', '2025-10-24 12:25:00', 'admin@demo.com', NULL, NULL),
+(52, NULL, 'P250123', 'Nadeesha', 'Fernando', 'Nadeesha Fernando', 3, 2, 1, '201232345680', '1995-03-18', '22 Beach Avenue', 'Galle', 'Galle', 'nadee@demo.com', '0776935124', '0913344556', NULL, NULL, 'Ruwan Fernando', 'Brother', '+94761234567', 'ruwanf@demo.com', 'O+', '2025-10-02 09:45:00', 'https://example.com/images/patient3.png', 1, 0, NULL, '2025-10-24 12:30:00', 'staff@demo.com', '2025-10-24 12:30:00', 'staff@demo.com', NULL, NULL),
+(53, NULL, 'P250004', 'Sithara', 'Wijesinghe', 'Sithara Wijesinghe', 1, 2, 1, '201232345681', '1999-07-10', '56 Palm Grove', 'Negombo', 'Gampaha', 'sithara@example.com', '0776935124', '0312233445', NULL, NULL, 'Kasun Wijesinghe', 'Brother', '+94771234567', 'kasunw@demo.com', 'A+', '2025-10-03 14:00:00', 'https://example.com/images/patient4.png', 1, 0, NULL, '2025-10-24 12:40:00', 'staff@demo.com', '2025-10-24 12:40:00', 'staff@demo.com', NULL, NULL),
+(54, NULL, 'P250005', 'Ruwan', 'Silva', 'Ruwan Silva', 2, 1, 2, '201232345682', '1997-01-21', '10 River Street', 'Matara', 'Matara', 'ruwans@demo.com', '0776935124', '0413344556', NULL, NULL, 'Priya Silva', 'Mother', '+94761234568', 'priyas@demo.com', 'O-', '2025-10-03 09:00:00', 'https://example.com/images/patient5.png', 1, 1, NULL, '2025-10-24 12:45:00', 'staff@demo.com', '2025-10-24 12:45:00', 'staff@demo.com', NULL, NULL),
+(55, NULL, 'P250006', 'Amaya', 'Jayasinghe', 'Amaya Jayasinghe', 3, 2, 1, '201232345683', '2001-04-25', '12 Green Park', 'Kurunegala', 'Kurunegala', 'amaya@demo.com', '0776935124', '0373344556', NULL, NULL, 'Dinesh Jayasinghe', 'Father', '+94774567890', 'dineshj@demo.com', 'B-', '2025-10-03 09:15:00', 'https://example.com/images/patient6.png', 1, 0, NULL, '2025-10-24 12:50:00', 'staff@demo.com', '2025-10-24 12:50:00', 'staff@demo.com', NULL, NULL),
+(56, NULL, 'P250007', 'Tharindu', 'Ekanayake', 'Tharindu Ekanayake', 1, 1, 1, '201232345684', '1994-09-15', '8 Temple Road', 'Jaffna', 'Jaffna', 'tharindu@demo.com', '0776935124', '0212233445', NULL, NULL, 'Rasika Ekanayake', 'Spouse', '+94775553322', 'rasikae@demo.com', 'A-', '2025-10-04 10:00:00', 'https://example.com/images/patient7.png', 1, 1, NULL, '2025-10-24 12:55:00', 'staff@demo.com', '2025-10-24 12:55:00', 'staff@demo.com', NULL, NULL),
+(57, NULL, 'P250008', 'Chathura', 'Bandara', 'Chathura Bandara', 2, 1, 2, '201232345685', '1988-11-22', '77 Lake View', 'Badulla', 'Badulla', 'chathura@demo.com', '0776935124', '0552233445', NULL, NULL, 'Kumari Bandara', 'Mother', '+94773334455', 'kumari@demo.com', 'B+', '2025-10-05 13:00:00', 'https://example.com/images/patient8.png', 1, 0, NULL, '2025-10-24 13:00:00', 'staff@demo.com', '2025-10-24 13:00:00', 'staff@demo.com', NULL, NULL),
+(58, NULL, 'P250009', 'Sajith', 'Gunasekara', 'Sajith Gunasekara', 3, 1, 1, '201232345686', '1990-08-11', '5 Hill Street', 'Ratnapura', 'Ratnapura', 'sajith@demo.com', '0776935124', '0453344556', NULL, NULL, 'Indika Gunasekara', 'Father', '+94770001122', 'indika@demo.com', 'AB+', '2025-10-05 09:30:00', 'https://example.com/images/patient9.png', 1, 0, NULL, '2025-10-24 13:05:00', 'staff@demo.com', '2025-10-24 13:05:00', 'staff@demo.com', NULL, NULL),
+(59, NULL, 'P250010', 'Nilusha', 'Dissanayake', 'Nilusha Dissanayake', 1, 2, 2, '201232345687', '1993-06-08', '90 Flower Road', 'Anuradhapura', 'Anuradhapura', 'nilusha@demo.com', '0776935124', '0252233445', NULL, NULL, 'Kusum Dissanayake', 'Mother', '+94778889900', 'kusumd@demo.com', 'O+', '2025-10-06 11:00:00', 'https://example.com/images/patient10.png', 1, 1, NULL, '2025-10-24 13:10:00', 'staff@demo.com', '2025-10-24 13:10:00', 'staff@demo.com', NULL, NULL),
+(60, NULL, 'P250011', 'Isuru', 'Abeywickrama', 'Isuru Abeywickrama', 2, 1, 1, '201232345688', '1992-03-12', '7 Lotus Avenue', 'Kalutara', 'Kalutara', 'isuru@demo.com', '0776935124', '0343344556', NULL, NULL, 'Suresh Abeywickrama', 'Father', '+94778881234', 'suresha@demo.com', 'B-', '2025-10-06 10:45:00', 'https://example.com/images/patient11.png', 1, 0, NULL, '2025-10-24 13:15:00', 'staff@demo.com', '2025-10-24 13:15:00', 'staff@demo.com', NULL, NULL),
+(61, NULL, 'P250012', 'Thilini', 'De Silva', 'Thilini De Silva', 3, 2, 1, '201232345689', '1996-09-20', '12 Rose Lane', 'Colombo', 'Colombo', 'thilini@demo.com', '0776935124', '0117788990', NULL, NULL, 'Sameera De Silva', 'Husband', '+94775554433', 'sameerad@demo.com', 'A+', '2025-10-06 15:20:00', 'https://example.com/images/patient12.png', 1, 1, NULL, '2025-10-24 13:20:00', 'staff@demo.com', '2025-10-24 13:20:00', 'staff@demo.com', NULL, NULL),
+(62, NULL, 'P250013', 'Madushan', 'Ranasinghe', 'Madushan Ranasinghe', 1, 1, 1, '201232345690', '1989-01-10', '25 Beach Road', 'Gampaha', 'Gampaha', 'madushan@demo.com', '0776935124', '0332233445', NULL, NULL, 'Lakmini Ranasinghe', 'Wife', '+94770002211', 'lakmini@demo.com', 'AB-', '2025-10-06 14:10:00', 'https://example.com/images/patient13.png', 1, 0, NULL, '2025-10-24 13:25:00', 'staff@demo.com', '2025-10-24 13:25:00', 'staff@demo.com', NULL, NULL),
+(63, NULL, 'P250014', 'Rashmi', 'Perera', 'Rashmi Perera', 2, 2, 1, '201232345691', '1994-11-25', '8 Church Street', 'Matale', 'Matale', 'rashmi@demo.com', '0754433221', '0776935124', NULL, NULL, 'Chandana Perera', 'Father', '+94775553344', 'chandanap@demo.com', 'O-', '2025-10-07 09:00:00', 'https://example.com/images/patient14.png', 1, 0, NULL, '2025-10-24 13:30:00', 'staff@demo.com', '2025-10-24 13:30:00', 'staff@demo.com', NULL, NULL),
+(64, NULL, 'P250015', 'Kasun', 'Jayawardena', 'Kasun Jayawardena', 3, 1, 2, '201232345692', '1995-05-16', '66 Temple Lane', 'Polonnaruwa', 'Polonnaruwa', 'kasun@demo.com', '0776935124', '0272233445', NULL, NULL, 'Manel Jayawardena', 'Mother', '+94774445566', 'manelj@demo.com', 'A-', '2025-10-07 10:10:00', 'https://example.com/images/patient15.png', 1, 1, NULL, '2025-10-24 13:35:00', 'staff@demo.com', '2025-10-24 13:35:00', 'staff@demo.com', NULL, NULL),
+(65, NULL, 'P250016', 'Dinithi', 'Wickramasinghe', 'Dinithi Wickramasinghe', 1, 2, 1, '201232345693', '1997-02-18', '22 Sea View', 'Trincomalee', 'Trincomalee', 'dinithi@demo.com', '0776935124', '0262233445', NULL, NULL, 'Nalin Wickramasinghe', 'Father', '+94773334422', 'nalinw@demo.com', 'B+', '2025-10-08 09:00:00', 'https://example.com/images/patient16.png', 1, 0, NULL, '2025-10-24 13:40:00', 'staff@demo.com', '2025-10-24 13:40:00', 'staff@demo.com', NULL, NULL),
+(66, NULL, 'P250017', 'Shehan', 'Hettiarachchi', 'Shehan Hettiarachchi', 2, 1, 2, '201232345694', '1991-12-22', '33 New Road', 'Nuwara Eliya', 'Nuwara Eliya', 'shehan@demo.com', '0776935124', '0522233445', NULL, NULL, 'Kavinda Hettiarachchi', 'Brother', '+94770002233', 'kavindah@demo.com', 'O+', '2025-10-08 11:15:00', 'https://example.com/images/patient17.png', 1, 1, NULL, '2025-10-24 13:45:00', 'staff@demo.com', '2025-10-24 13:45:00', 'staff@demo.com', NULL, NULL),
+(67, NULL, 'P250018', 'Pavani', 'Abeykoon', 'Pavani Abeykoon', 3, 2, 1, '201232345695', '2000-07-07', '88 Market Street', 'Hambantota', 'Hambantota', 'pavani@demo.com', '0776935124', '0472233445', NULL, NULL, 'Lal Abeykoon', 'Father', '+94774443322', 'lala@demo.com', 'AB+', '2025-10-09 12:00:00', 'https://example.com/images/patient18.png', 1, 0, NULL, '2025-10-24 13:50:00', 'staff@demo.com', '2025-10-24 13:50:00', 'staff@demo.com', NULL, NULL),
+(68, NULL, 'P250019', 'Chamara', 'Dias', 'Chamara Dias', 1, 1, 2, '201232345696', '1987-10-11', '14 Hill Top', 'Puttalam', 'Puttalam', 'chamara@demo.com', '0774455667', '0776935124', NULL, NULL, 'Shanika Dias', 'Wife', '+94770005544', 'shanika@demo.com', 'B-', '2025-10-09 10:30:00', 'https://example.com/images/patient19.png', 1, 1, NULL, '2025-10-24 13:55:00', 'staff@demo.com', '2025-10-24 13:55:00', 'staff@demo.com', NULL, NULL),
+(69, NULL, 'P250020', 'Lakmini', 'Senanayake', 'Lakmini Senanayake', 2, 2, 1, '201232345697', '1999-09-01', '2 Garden Street', 'Galle', 'Galle', 'lakmini@demo.com', '0776935124', '0913344557', NULL, NULL, 'Indika Senanayake', 'Mother', '+94778889977', 'indikas@demo.com', 'A+', '2025-10-10 09:45:00', 'https://example.com/images/patient20.png', 1, 0, NULL, '2025-10-24 14:00:00', 'staff@demo.com', '2025-10-24 14:00:00', 'staff@demo.com', NULL, NULL);
 
 INSERT INTO specialization (name, note) VALUES
 ('General Practitioner', 'Family Doctor'),
@@ -175,3 +175,125 @@ VALUES
     ('DOCTOR_DISCOUNT', 'Discount given by the doctor'),
     ('CLINIC_DISCOUNT', 'Discount or promotion from the clinic'),
     ('OTHER_DISCOUNT', 'Any other type of special discount');
+
+
+-- ==========================================
+-- 1. CLEANUP (Reset Schedule 2)
+-- ==========================================
+-- Remove payments linked to Schedule 2 invoices
+DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE appointment_id IN (SELECT id FROM appointments WHERE doctor_schedule_id = 2));
+-- Remove invoice items linked to Schedule 2 invoices
+DELETE FROM invoice_items WHERE invoice_id IN (SELECT id FROM invoices WHERE appointment_id IN (SELECT id FROM appointments WHERE doctor_schedule_id = 2));
+-- Remove invoices linked to Schedule 2
+DELETE FROM invoices WHERE appointment_id IN (SELECT id FROM appointments WHERE doctor_schedule_id = 2);
+-- Remove appointments for Schedule 2
+DELETE FROM appointments WHERE doctor_schedule_id = 2;
+
+
+-- ==========================================
+-- 2. INSERT APPOINTMENTS (10 Records)
+-- ==========================================
+INSERT INTO appointments (doctor_schedule_id, patient_id, queuePosition, status, createdDate, createdBy) VALUES
+(2, 60, 1, 'COMPLETED', NOW(), 'admin'),
+(2, 61, 2, 'COMPLETED', NOW(), 'admin'),
+(2, 62, 3, 'COMPLETED', NOW(), 'admin'),
+(2, 63, 4, 'COMPLETED', NOW(), 'admin'),
+(2, 64, 5, 'COMPLETED', NOW(), 'admin'),
+(2, 65, 6, 'COMPLETED', NOW(), 'admin'),
+(2, 66, 7, 'COMPLETED', NOW(), 'admin'),
+(2, 68, 9, 'COMPLETED', NOW(), 'admin'),
+(2, 69, 10, 'COMPLETED', NOW(), 'admin');
+
+
+-- ==========================================
+-- 3. INSERT INVOICES
+-- ==========================================
+INSERT INTO invoices (patient_id, appointment_id, status, subtotalAmount, totalDiscount, finalAmount, createdDate, createdBy) VALUES
+-- 1. Double Discount (Total 5000 - 1000 = 4000)
+(60, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=60), 'PAID', 5000.00, 1000.00, 4000.00, NOW(), 'admin'),
+-- 2. Standard
+(61, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=61), 'PAID', 5000.00, 0.00, 5000.00, NOW(), 'admin'),
+-- 3. Standard
+(62, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=62), 'PAID', 5000.00, 0.00, 5000.00, NOW(), 'admin'),
+-- 4. Doctor Discount (Total 5000 - 1000 = 4000)
+(63, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=63), 'PAID', 5000.00, 1000.00, 4000.00, NOW(), 'admin'),
+-- 5. Clinic Discount (Total 5000 - 500 = 4500)
+(64, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=64), 'PAID', 5000.00, 500.00, 4500.00, NOW(), 'admin'),
+-- 6. Standard
+(65, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=65), 'PAID', 5000.00, 0.00, 5000.00, NOW(), 'admin'),
+-- 7. Full Doctor Waiver (Total 5000 - 3500 = 1500)
+(66, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=66), 'PAID', 5000.00, 3500.00, 1500.00, NOW(), 'admin'),
+-- 8. Unpaid (Total 5000)
+-- 9. Standard
+(68, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=68), 'PAID', 5000.00, 0.00, 5000.00, NOW(), 'admin'),
+-- 10. Small Double Discount (Total 5000 - 200 = 4800)
+(69, (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=69), 'PAID', 5000.00, 200.00, 4800.00, NOW(), 'admin');
+
+
+-- ==========================================
+-- 4. INSERT INVOICE ITEMS (Logic)
+-- ==========================================
+INSERT INTO invoice_items (invoice_id, item_type_id, description, amount, createdDate, createdBy) VALUES
+-- 1. Pt 60: Double Discount
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=60)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=60)), 5, 'Doctor Friend', -500.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=60)), 6, 'Loyalty Promo', -500.00, NOW(), 'admin'),
+
+-- 2. Pt 61: Standard
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=61)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+
+-- 3. Pt 62: Standard
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=62)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+
+-- 4. Pt 63: Doctor Discount Only (-1000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=63)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=63)), 5, 'Professional Courtesy', -1000.00, NOW(), 'admin'),
+
+-- 5. Pt 64: Clinic Discount Only (-500)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=64)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=64)), 6, 'Manager Discount', -500.00, NOW(), 'admin'),
+
+-- 6. Pt 65: Standard
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=65)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+
+-- 7. Pt 66: Full Doctor Waiver (-3500)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=66)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=66)), 5, 'Free Doctor Visit', -3500.00, NOW(), 'admin'),
+
+-- 8. Pt 67: Unpaid (Just the fee)
+
+
+-- 9. Pt 68: Standard
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=68)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+
+-- 10. Pt 69: Small Double Discount (-100 Doc, -100 Clinic)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=69)), 1, 'Consultation Fee', 5000.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=69)), 5, 'Small Adjustment', -100.00, NOW(), 'admin'),
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=69)), 6, 'Small Adjustment', -100.00, NOW(), 'admin');
+
+
+-- ==========================================
+-- 5. INSERT PAYMENTS (Real Money Movement)
+-- ==========================================
+INSERT INTO payments (invoice_id, amountPaid, paymentMethod, paymentStatus, transactionId, createdDate, createdBy) VALUES
+-- Pt 60 (4000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=60)), 4000.00, 'cash', 'completed', 'TRX-01', NOW(), 'admin'),
+-- Pt 61 (5000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=61)), 5000.00, 'card', 'completed', 'TRX-02', NOW(), 'admin'),
+-- Pt 62 (5000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=62)), 5000.00, 'cash', 'completed', 'TRX-03', NOW(), 'admin'),
+-- Pt 63 (4000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=63)), 4000.00, 'cash', 'completed', 'TRX-04', NOW(), 'admin'),
+-- Pt 64 (4500)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=64)), 4500.00, 'onlineGateway', 'completed', 'TRX-05', NOW(), 'admin'),
+-- Pt 65 (5000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=65)), 5000.00, 'cash', 'completed', 'TRX-06', NOW(), 'admin'),
+-- Pt 66 (1500)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=66)), 1500.00, 'cash', 'completed', 'TRX-07', NOW(), 'admin'),
+-- Pt 67 IS UNPAID (No Record in Payments Table)
+-- Pt 68 (5000)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=68)), 5000.00, 'insurance', 'completed', 'TRX-08', NOW(), 'admin'),
+-- Pt 69 (4800)
+((SELECT id FROM invoices WHERE appointment_id = (SELECT id FROM appointments WHERE doctor_schedule_id=2 AND patient_id=69)), 4800.00, 'cash', 'completed', 'TRX-09', NOW(), 'admin');
+
+UPDATE `clinicmsystem`.`doctorSchedule` SET `registeredPatientCount` = '10' WHERE (`id` = '2');
