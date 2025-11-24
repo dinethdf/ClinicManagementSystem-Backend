@@ -5,6 +5,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +21,25 @@ public class DoctorController {
     @Autowired
     DoctorServiceImpl doctorServiceImpl;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @GetMapping("/doctorlist")
+    public ResponseEntity<ApiResponse<Page<DoctorResponseDto>>> getAllDoctors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        // Call the new service method
+        Page<DoctorResponseDto> doctorsPage = doctorServiceImpl.getAllDoctorsPaginated(page, size);
+
+        ApiResponse<Page<DoctorResponseDto>> response = ApiResponse.success(
+                doctorsPage,
+                "Successfully retrieved doctors list"
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<Doctor>>> getAllDoctors() {
         List<Doctor> doctors = doctorServiceImpl.getAllDoctors();

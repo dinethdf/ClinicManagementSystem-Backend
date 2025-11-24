@@ -27,7 +27,7 @@ BEGIN
         END), 0) AS DoctorDiscountAmount,
 
         -- Net Doctor Payout = Fee - Discount
-        (ds.doctorFee - COALESCE(SUM(CASE
+        (ds.doctorFee + COALESCE(SUM(CASE
             WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount
             ELSE 0
         END), 0)) AS NetDoctorPayout,
@@ -40,7 +40,7 @@ BEGIN
         END), 0) AS ClinicDiscountAmount,
 
         -- Net Clinic Profit = Fee - Discount
-        (ds.clinicFee - COALESCE(SUM(CASE
+        (ds.clinicFee + COALESCE(SUM(CASE
             WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount
             ELSE 0
         END), 0)) AS NetClinicProfit,
