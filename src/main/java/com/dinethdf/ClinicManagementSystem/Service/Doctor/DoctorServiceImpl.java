@@ -11,6 +11,10 @@ import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,6 +86,28 @@ public class DoctorServiceImpl implements DoctorService {
                 doctorMapper.toResponseDTO(doctor),
                 messageSourceUtil.getMessage("doctor.details.get.success")
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size) {
+        try {
+            // Create Pageable object.
+            // We add a default sort by 'id' DESC to ensure the newest doctors show first,
+            // or use 'createdDate' if preferred.
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+            return doctorRepo.findAllDoctorsPaginated(pageable);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the error
+            throw new ValidationException(
+                    messageSourceUtil.getMessage("server.error"),
+                    "SERVER_ERROR",
+                    null,
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     @Override
@@ -173,12 +199,14 @@ public class DoctorServiceImpl implements DoctorService {
             errorCode = "EMAIL_INVALID_FORMAT";
             errorMessage = "Email format is invalid.";
 
-        } else if (doctor.getMobileNo() == null || doctor.getMobileNo().matches("^\\d{10}$")) {
-
-            errorCode = "MOBILENO_INVALID";
-            errorMessage = "Mobile number not valid";
-
-        } else if (doctor.getNic() == null || doctor.getNic().length() < 9) {
+        }
+//        else if (doctor.getMobileNo() == null || doctor.getMobileNo().matches("^\\d{10}$")) {
+//
+//            errorCode = "MOBILENO_INVALID";
+//            errorMessage = "Mobile number not valid";
+//
+//        }
+        else if (doctor.getNic() == null || doctor.getNic().length() < 9) {
             errorCode = "NIC_INVALID";
             errorMessage = "NIC must be at least 9 characters.";
         }else if (doctor.getSlmcNumber() == null || doctor.getSlmcNumber().isEmpty()) {

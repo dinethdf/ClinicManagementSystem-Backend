@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
+import org.springframework.data.domain.Page;
 
 
 import java.util.List;
@@ -19,6 +20,8 @@ public interface DoctorService {
      * Get patient details by patient ID
      */
     DoctorResponseDto getDoctorById(Long doctorId);
+
+    Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size);
 
     ApiResponse<DoctorResponseDto> getDoctorFullDetailsById(String id);
 

@@ -1,22 +1,22 @@
 package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCreateDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.PatientAppointmentDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.InvoiceAppointmentFlatDTO;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.AppointmentMapper;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 // import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,16 +43,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 createDTO.getNote()
         );
 
-
         String statusMessage = (String) spResult.get("o_statusMessage");
 
         if (!"BOOKED_SUCCESS".equals(statusMessage)) {
             handleSpError(statusMessage);
         }
 
-
         Long newAppointmentNumber = (Long) spResult.get("o_newAppointmentId");
-
 
         Appointment newAppointment = appointmentRepo.findById(newAppointmentNumber)
                 .orElseThrow(() -> new ValidationException(
@@ -60,7 +57,6 @@ public class AppointmentServiceImpl implements AppointmentService {
                         "APPOINTMENT_NOT_FOUND",
                         HttpStatus.INTERNAL_SERVER_ERROR
                 ));
-
 
         return appointmentMapper.toResponseDTO(newAppointment);
     }
@@ -142,15 +138,43 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AppointmentAdminListDTO> getFilteredAppointments(Long patientId, Long scheduleId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+
+        // CHANGE 1: If no end date is provided, look 2 months into the FUTURE
+        LocalDate end = (endDate != null) ? endDate : LocalDate.now().plusMonths(2);
+
+        // CHANGE 2: If no start date is provided, look 1 month into the PAST
+        LocalDate start = (startDate != null) ? startDate : LocalDate.now().minusMonths(1);
+
+        // Debugging: This will print in your console so you can see what range is being searched
+        System.out.println("Searching Appointments From: " + start + " To: " + end);
+
+        if (start.isAfter(end)) {
+            throw new ValidationException("Start date cannot be after end date", "INVALID_DATE_RANGE", HttpStatus.BAD_REQUEST);
+        }
+
+        return appointmentRepo.findFilteredAppointments(patientId, scheduleId, start, end, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AppointmentFullDetailsDTO getAppointmentDetails(Long appointmentId) {
+        return appointmentRepo.findAppointmentFullDetails(appointmentId)
+                .orElseThrow(() -> new ValidationException(
+                        messageSourceUtil.getMessage("appointment.not.found"), // Ensure you have this key
+                        "APPOINTMENT_NOT_FOUND",
+                        HttpStatus.NOT_FOUND
+                ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId) {
         if (patientId == null || patientId <= 0) {
-
             throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
 
         List<PatientAppointmentDTO> appointments = appointmentRepo.findAppointmentsByPatientId(patientId);
-
-
         return appointments;
     }
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {
