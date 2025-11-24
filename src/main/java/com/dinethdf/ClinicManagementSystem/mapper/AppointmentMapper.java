@@ -13,13 +13,8 @@ public class AppointmentMapper {
         if (appointment == null) {
             return null;
         }
-
-
         AppointmentResponseDTO dto = new AppointmentResponseDTO();
-
-
         dto.setId(appointment.getId());
-
         dto.setQueuePosition(appointment.getQueuePosition());
         dto.setStatus(appointment.getStatus().toString());
         dto.setNote(appointment.getNote());
@@ -32,7 +27,6 @@ public class AppointmentMapper {
             dto.setDoctorScheduleId(appointment.getDoctorSchedule().getId());
         }
 
-        // 5. Return the finished DTO
         return dto;
     }
 }
