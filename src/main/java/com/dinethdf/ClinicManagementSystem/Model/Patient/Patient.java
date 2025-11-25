@@ -26,22 +26,22 @@ public class Patient extends CommonUserDetails {
     @Column(name = "fullName", length = 255)
     private String fullName;
 
-    @Column(name = "ethnicity", nullable = false)
+    @Column(name = "ethnicity", nullable = true)
     private Integer ethnicity;
 
-    @Column(name = "maritalStatus", nullable = false)
+    @Column(name = "maritalStatus", nullable = true)
     private Integer maritalStatus;
 
     @Column(name = "landNo", nullable = true, length = 20)
     private String landNo;
 
-    @Column(name = "emergencyContactName", nullable = false, length = 100)
+    @Column(name = "emergencyContactName", nullable = true, length = 100)
     private String emergencyContactName;
 
-    @Column(name = "emergencyContactRelationship", nullable = false, length = 50)
+    @Column(name = "emergencyContactRelationship", nullable = true, length = 50)
     private String emergencyContactRelationship;
 
-    @Column(name = "emergencyContactMobile", nullable = false)
+    @Column(name = "emergencyContactMobile", nullable = true)
     private String emergencyContactMobile;
 
     @Column(name = "emergencyContactEmail")

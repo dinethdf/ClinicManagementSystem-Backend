@@ -57,6 +57,8 @@ public interface DoctorScheduleService {
      */
     List<DoctorScheduleResponseDTO> getUpcomingSchedulesByDoctorId(Long doctorId);
 
+    Page<DoctorScheduleResponseDTO> getUpcomingSchedules(String doctorName,String specialization,LocalDate searchDate,Pageable pageable);
+
     /**
      * Updates an existing schedule.
      * @param id The ID of the schedule to update.
