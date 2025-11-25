@@ -22,7 +22,7 @@ public class DoctorController {
     DoctorServiceImpl doctorServiceImpl;
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
-    @GetMapping("/doctorlist")
+    @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<DoctorResponseDto>>> getAllDoctors(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
@@ -86,7 +86,7 @@ public class DoctorController {
         return ResponseEntity.ok(response);
     }
 
-//    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @PostMapping("register")
     public ResponseEntity<ApiResponse<Doctor>> saveDoctorDetailsByStaff(@RequestBody Doctor doctor){
         ApiResponse<Doctor> response = doctorServiceImpl.registerDoctor(doctor);

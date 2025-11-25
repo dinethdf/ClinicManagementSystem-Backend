@@ -109,5 +109,35 @@ public class PatientValidator {
             }
         }
     }
+
+    public void validatePublicPatientRegister(Patient patient) {
+        if (patient.getFirstName() == null || patient.getFirstName().trim().isEmpty()) {
+            throw new ValidationException("First name is required.", "FIRSTNAME_EMPTY", null, HttpStatus.BAD_REQUEST);
+        }
+        if (patient.getLastName() == null || patient.getLastName().trim().isEmpty()) {
+            throw new ValidationException("Last name is required.", "LASTNAME_EMPTY", null, HttpStatus.BAD_REQUEST);
+        }
+        if (patient.getDob() == null || patient.getDob().isAfter(LocalDate.now())) {
+            throw new ValidationException("Date of Birth cannot be in the future.", "INVALID_DOB", null, HttpStatus.BAD_REQUEST);
+        }
+
+        // Validate guardian requirement based on patient type
+        if(patient.isGuardianRequired() && !patient.isDependent()){
+            throw new ValidationException(messageSourceUtil.getMessage("patient.child.require.guardian"),  "REQUIRED_GUARDIAN", null, HttpStatus.BAD_REQUEST);
+        }
+
+        // Validate email, mobile, NIC only for non-dependent patients
+        if (!patient.isDependent()) {
+            if ((patient.getEmail() != null && !patient.getEmail().trim().isEmpty()) && !patient.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                throw new ValidationException("Email format is invalid.", "EMAIL_INVALID_FORMAT", null, HttpStatus.BAD_REQUEST);
+            }
+            if (patient.getMobileNo() == null || !patient.getMobileNo().matches("^\\d{10}$")) {
+                throw new ValidationException("Mobile number not valid.", "MOBILENO_INVALID", null, HttpStatus.BAD_REQUEST);
+            }
+            if (patient.getNic() == null || patient.getNic().length() < 9) {
+                throw new ValidationException("NIC must be at least 9 characters.", "NIC_INVALID", null, HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
 }
 
