@@ -54,7 +54,7 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
+    @GetMapping("/list")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')") // Adjust roles as needed
     public ResponseEntity<ApiResponse<Page<AppointmentAdminListDTO>>> getAllAppointments(
             @RequestParam(required = false) Long patientId,

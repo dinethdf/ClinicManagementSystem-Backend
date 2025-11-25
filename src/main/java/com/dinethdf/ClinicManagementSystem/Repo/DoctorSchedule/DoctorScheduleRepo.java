@@ -1,6 +1,8 @@
 package com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule;
 
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -31,14 +33,33 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             "WHERE s.doctor.id = :doctorId " +
             "AND s.isActive = true " +
             "AND ( " +
-            "    (s.scheduleDate = :today AND s.endTime > :now) " +  // Condition for today
+            "    (s.scheduleDate = :today AND s.endTime > :now) " +
             "    OR " +
-            "    (s.scheduleDate > :today) " +                     // Condition for future dates
+            "    (s.scheduleDate > :today) " +
             ")")
-    List<DoctorSchedule> findUpcomingSchedules(
+    List<DoctorSchedule> findUpcomingSchedulesByDoctorId(
             @Param("doctorId") Long doctorId,
             @Param("today") LocalDate today,
             @Param("now") LocalTime now
+    );
+
+    @Query("SELECT s FROM DoctorSchedule s " +
+            "JOIN s.doctor d " +
+            "JOIN d.specialization sp " +
+            "WHERE s.isActive = true " +
+            // Upcoming Logic (Today+Future Time OR Future Date)
+            "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
+            // Dynamic Search Filters
+            "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
+            "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
+            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate)")
+    Page<DoctorSchedule> findUpcomingSchedules(
+            @Param("today") LocalDate today,
+            @Param("now") LocalTime now,
+            @Param("doctorName") String doctorName,
+            @Param("specialization") String specialization,
+            @Param("searchDate") LocalDate searchDate,
+            Pageable pageable
     );
 
     // Find all active schedules on or after a certain date (for finding upcoming)

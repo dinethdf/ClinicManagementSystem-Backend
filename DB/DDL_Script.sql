@@ -46,9 +46,9 @@ CREATE TABLE patient (
     firstName VARCHAR(50) NOT NULL,
     lastName VARCHAR(50) NOT NULL,
     fullName VARCHAR(255),
-    ethnicity TINYINT UNSIGNED NOT NULL,
+    ethnicity TINYINT UNSIGNED NULL,
     gender TINYINT UNSIGNED NOT NULL,
-    maritalStatus TINYINT UNSIGNED NOT NULL,
+    maritalStatus TINYINT UNSIGNED NULL,
     nic VARCHAR(20) UNIQUE,
     dob DATE NOT NULL,
     address TEXT DEFAULT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE patient (
     guardian_id INT DEFAULT NULL,  -- link to another patient
     relationship_to_guardian VARCHAR(50),  -- e.g., 'Father', 'Mother', 'Guardian'
 
-    emergencyContactName VARCHAR(100) NOT NULL,
+    emergencyContactName VARCHAR(100),
     emergencyContactRelationship VARCHAR(50),
     emergencyContactMobile VARCHAR(20),
     emergencyContactEmail VARCHAR(150),
