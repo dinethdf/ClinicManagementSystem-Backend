@@ -196,13 +196,38 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         findDoctorById(doctorId);
 
         LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
-        List<DoctorSchedule> schedules = doctorScheduleRepo.findUpcomingSchedules(
+        List<DoctorSchedule> schedules = doctorScheduleRepo.findUpcomingSchedulesByDoctorId(
                 doctorId, LocalDate.now(), now); // .minusDays(1) to include today
 
         return schedules.stream()
                 .map(mapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DoctorScheduleResponseDTO> getUpcomingSchedules(
+                String doctorName,
+                String specialization,
+                LocalDate searchDate,
+                Pageable pageable) {
+
+            LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+            LocalDate today = LocalDate.now();
+
+            // Fetch paginated data
+            Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findUpcomingSchedules(
+                    today,
+                    now,
+                    doctorName,
+                    specialization,
+                    searchDate,
+                    pageable
+            );
+
+            // Map Entity Page to DTO Page
+            return schedulePage.map(mapper::toResponseDTO);
+        }
 
     @Override
     @Transactional // Make sure your method is transactional

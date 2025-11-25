@@ -34,7 +34,7 @@ public class SmsService {
 
         } catch (Exception e) {
             System.err.println("CureGuard API failed: " + e.getMessage());
-            return false; // Return false so Controller sets warning message
+            return false;
         }
     }
 }

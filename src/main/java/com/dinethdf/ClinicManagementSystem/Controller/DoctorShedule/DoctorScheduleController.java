@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -134,6 +135,29 @@ public class DoctorScheduleController {
         List<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedulesByDoctorId(doctorId);
 
         ApiResponse<List<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+                schedules,
+                messageSourceUtil.getMessage("schedule.getupcoming.success")
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/upcoming-public")
+    public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getUpcomingSchedules(
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
+    ) {
+
+        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
+                doctorName,
+                specialization,
+                date,
+                pageable
+        );
+
+        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
                 schedules,
                 messageSourceUtil.getMessage("schedule.getupcoming.success")
         );

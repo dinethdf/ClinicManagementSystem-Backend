@@ -184,6 +184,50 @@ public class PatientServiceImpl implements PatientService {
 
     }
 
+    @Transactional
+    public ApiResponse<Patient> registerPatientPublic(Patient patient) {
+
+        patientValidator.validatePublicPatientRegister(patient);
+        try {
+            System.out.println("Patient Save in Staff");
+            patient.setPatientNo(null);
+
+            if (patient.isDependent()){
+                patient.setNic(null);
+                patient.setAddress(null);
+                patient.setCity(null);
+                patient.setDistrict(null);
+                patient.setEmail(null);
+                patient.setMobileNo(null);
+                patient.setLandNo(null);
+            }
+            patient.setRegistrationDate(LocalDateTime.now());
+            Patient savedPatient = patientDetailsRepo.save(patient);
+
+            String patientNo = generatePatientNo(savedPatient.getId());
+            savedPatient.setPatientNo(patientNo);
+            return ApiResponse.success(
+                    patientDetailsRepo.save(savedPatient),
+                    messageSourceUtil.getMessage("patient.register.success")
+            );
+
+        } catch (DataIntegrityViolationException e) {
+            String rootCauseMessage = e.getMostSpecificCause().getMessage();
+
+            // for Duplicate Field Error handle
+            handleDataIntegrityViolation(rootCauseMessage);
+
+            // Any other Database Level error Handle
+            throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
+        }
+        catch (Exception e){
+            System.out.println("Exception Level Error");
+            System.out.println(e.getMessage());
+            throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
     @Override
     public ApiResponse<Patient> updatePatientByStaff(Integer id, Patient patientFromRequest) {
 

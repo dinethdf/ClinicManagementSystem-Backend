@@ -52,9 +52,13 @@ public class SecurityConfig {
                          .requestMatchers("api/good/a").hasAnyAuthority("ADMIN")
                          .requestMatchers("api/good/b").hasAnyAuthority("PATIENT")
                          .requestMatchers("api/hello/**").permitAll()
+                         .requestMatchers("api/public/**").permitAll()
 
+//                         Public
+                         .requestMatchers("api/schedules/upcoming-public").permitAll()
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
+
                          .requestMatchers("api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/schedules/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/appointments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
