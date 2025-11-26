@@ -10,18 +10,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional; // <-- Import this
+import java.util.Optional;
 
 @Repository
 public interface DoctorRepo extends JpaRepository<Doctor, Long> {
 
-    // Cant Use Find all Because USe Lazy load then it work Only this way
+    boolean existsByUserAuthEmailAndIdNot(String email, Long id);
+    boolean existsByNicAndIdNot(String nic, Long id);
+    boolean existsBySlmcNumberAndIdNot(String slmcNumber, Long id);
+
     @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.specialization")
     List<Doctor> findAllWithSpecialization();
 
-    /**
-     * Finds a Doctor entity by joining with the UserAuth entity
-     */
     Optional<Doctor> findByUserAuthEmail(String email);
 
     @Query("""

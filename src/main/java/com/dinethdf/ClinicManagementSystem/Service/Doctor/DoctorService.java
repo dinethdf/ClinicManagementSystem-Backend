@@ -3,8 +3,10 @@ package com.dinethdf.ClinicManagementSystem.Service.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
+import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import org.springframework.data.domain.Page;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
@@ -16,10 +18,6 @@ public interface DoctorService {
      */
     List<Doctor> getAllDoctors();
 
-    /**
-     * Get patient details by patient ID
-     */
-    DoctorResponseDto getDoctorById(Long doctorId);
 
     Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size);
 
@@ -29,30 +27,13 @@ public interface DoctorService {
 
     List<DoctorResponseDto> searchDoctors(String query);
 
-    /**
-     * Register patient details (self-service by patient)
-     */
-    DoctorResponseDto registerDoctorDetailsSelf(DoctorRegistrationDto requestDto);
-
-    /**
-     * Add or update patient details by staff/admin
-     */
     ApiResponse<Doctor> registerDoctor(Doctor doctor);
 
-    /**
-     * Edit patient details (patient or staff, depending on roles)
-     */
-    DoctorResponseDto editDoctorDetails(Long patientId, DoctorRegistrationDto requestDto);
 
-    /**
-     * Approve patient (e.g., after staff verification)
-     */
-    DoctorResponseDto approveDoctor(Long doctorId);
+    DoctorResponseDto editDoctorDetails(Long doctorId, DoctorUpdateDto requestDto);
 
-    /**
-     * Delete patient details (admin only)
-     */
     void deleteDoctor(Long doctorId);
 
 
+    DoctorResponseDto updateDoctorStatus(Long doctorId, String statusStr);
 }
