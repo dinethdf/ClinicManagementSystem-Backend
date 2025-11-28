@@ -1,0 +1,193 @@
+package com.dinethdf.ClinicManagementSystem.Repo.Appointment;
+
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Repository
+public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
+
+    @Procedure(name = "Appointment.spBookAppointment")
+    Map<String, Object> sp_BookAppointment(
+            @Param("p_createdBy") String createdBy,
+            @Param("p_doctor_schedule_id") Long doctorScheduleId,
+            @Param("p_patient_id") Long patientId,
+            @Param("p_note") String note
+    );
+
+    @Query("SELECT a.status FROM Appointment a WHERE a.id = :id")
+    Optional<Appointment.AppointmentStatus> findStatusById(@Param("id") Long id);
+
+    @Query(nativeQuery = true, value = """
+    SELECT
+        i.id AS invoiceId,
+        i.createdDate AS invoiceDate,
+        i.status AS invoiceStatus,
+        i.subtotalAmount AS subtotal,
+        i.totalDiscount AS totalDiscount,
+        i.finalAmount AS finalAmount,
+        p.patientNo AS patientNo,
+        p.firstName AS patientFirstName,
+        p.lastName AS patientLastName,
+        p.address AS patientAddress,
+        p.city AS patientCity,
+        p.mobileNo AS patientMobile,
+        p.dob AS patientDob,
+        a.id AS apptId,
+        a.note AS apptNote,
+        d.firstName AS doctorFirstName,
+        d.lastName AS doctorLastName,
+        s.name AS doctorSpec,
+        ii.description AS itemDescription,
+        it.typeName AS itemType,
+        ii.amount AS itemAmount
+    FROM appointments a
+    JOIN invoices i ON a.invoice_id = i.id
+    JOIN patient p ON i.patient_id = p.id
+    LEFT JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    LEFT JOIN doctor d ON ds.doctor_id = d.id
+    LEFT JOIN specialization s ON d.specialization_id = s.id
+    LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+    LEFT JOIN item_types it ON ii.item_type_id = it.id
+    WHERE a.id = :apptId
+    ORDER BY i.id, ii.id
+""")
+    List<InvoiceAppointmentFlatDTO> findRawInvoicesByAppointmentId(@Param("apptId") Long apptId);
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS appointmentId,
+            a.queuePosition AS queuePosition,
+            a.status AS status,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            ds.doctorFee AS doctorFee,
+            ds.clinicFee AS clinicFee,
+            (ds.doctorFee + ds.clinicFee) AS totalFee,
+            d.firstName AS doctorFirstName,
+            d.lastName AS doctorLastName,
+            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorFullName,
+            s.name AS specialization
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN doctor d ON ds.doctor_id = d.id
+        LEFT JOIN specialization s ON d.specialization_id = s.id
+        WHERE a.patient_id = :patientId
+        ORDER BY ds.scheduleDate DESC, ds.startTime ASC
+    """)
+    List<PatientAppointmentDTO> findAppointmentsByPatientId(@Param("patientId") Long patientId);
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS id,
+            a.queuePosition AS queuePosition,
+            a.status AS status,
+            a.note AS note,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
+            p.id AS patientId,
+            p.patientNo AS patientNo,
+            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+            p.mobileNo AS patientMobile
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN doctor d ON ds.doctor_id = d.id
+        JOIN patient p ON a.patient_id = p.id
+        WHERE
+            (:patientId IS NULL OR a.patient_id = :patientId)
+            AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
+            AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+        ORDER BY ds.scheduleDate DESC, ds.startTime ASC
+    """,
+            countQuery = """
+        SELECT COUNT(a.id)
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        WHERE
+            (:patientId IS NULL OR a.patient_id = :patientId)
+            AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
+            AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+    """)
+    Page<AppointmentAdminListDTO> findFilteredAppointments(
+            @Param("patientId") Long patientId,
+            @Param("scheduleId") Long scheduleId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable
+    );
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS id,
+            a.queuePosition AS queuePosition,
+            a.note AS note,
+            a.status AS status,
+            ds.id AS scheduleId,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            ds.endTime AS endTime,
+            ds.doctorFee AS doctorFee,
+            ds.clinicFee AS clinicFee,
+            p.id AS patientId,
+            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+            p.patientNo AS patientNo,
+            p.mobileNo AS patientMobile,
+            p.nic AS patientNic,
+            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
+            s.name AS specialization,
+            a.createdDate, a.createdBy,
+            a.updatedDate, a.updatedBy,
+            a.approvedDate, a.approvedBy
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN doctor d ON ds.doctor_id = d.id
+        LEFT JOIN specialization s ON d.specialization_id = s.id
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.id = :appointmentId
+    """)
+    Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(@Param("appointmentId") Long appointmentId);
+
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS id,
+            a.queuePosition AS queuePosition,
+            a.status AS status,
+            a.note AS note,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            p.id AS patientId,
+            p.patientNo AS patientNo,
+            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+            p.mobileNo AS patientMobile
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.doctor_schedule_id = :scheduleId
+        ORDER BY a.queuePosition ASC
+    """,
+            countQuery = """
+        SELECT COUNT(a.id)
+        FROM appointments a
+        WHERE a.doctor_schedule_id = :scheduleId
+    """)
+    Page<AppointmentByScheduleListDTO> findAppointmentsByScheduleId(
+            @Param("scheduleId") Long scheduleId,
+            Pageable pageable
+    );
+
+}

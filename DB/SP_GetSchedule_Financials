@@ -1,0 +1,78 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS GetScheduleFinancials $$
+
+CREATE PROCEDURE GetScheduleFinancials(
+    IN input_schedule_id INT
+)
+BEGIN
+    SELECT
+        -- 1. Appointment & Patient Details
+        appt.id AS AppointmentID,
+        appt.queuePosition AS QueueNo,
+        CONCAT(p.firstName, ' ', p.lastName) AS PatientName,
+        p.mobileNo AS PatientMobile,
+        inv.id AS InvoiceID,
+        inv.status AS PaymentStatus, -- 'PAID', 'UNPAID', etc.
+
+        -- 2. Base Fees (From the Schedule settings)
+        ds.doctorFee AS BaseDoctorFee,
+        ds.clinicFee AS BaseClinicFee,
+
+        -- 3. Doctor Side Calculations
+        -- We sum up any item in this invoice that is a 'DOCTOR_DISCOUNT'
+        COALESCE(SUM(CASE
+            WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount
+            ELSE 0
+        END), 0) AS DoctorDiscountAmount,
+
+        -- Net Doctor Payout = Fee - Discount
+        (ds.doctorFee + COALESCE(SUM(CASE
+            WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount
+            ELSE 0
+        END), 0)) AS NetDoctorPayout,
+
+        -- 4. Clinic Side Calculations
+        -- We sum up any item in this invoice that is a 'CLINIC_DISCOUNT'
+        COALESCE(SUM(CASE
+            WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount
+            ELSE 0
+        END), 0) AS ClinicDiscountAmount,
+
+        -- Net Clinic Profit = Fee - Discount
+        (ds.clinicFee + COALESCE(SUM(CASE
+            WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount
+            ELSE 0
+        END), 0)) AS NetClinicProfit,
+
+        -- 5. Total Bill Check
+        inv.finalAmount AS TotalPaidByPatient
+
+    FROM appointments appt
+
+    -- Link to Schedule to get Base Fees
+    JOIN doctorSchedule ds ON appt.doctor_schedule_id = ds.id
+
+    -- Link to Patient for names
+    JOIN patient p ON appt.patient_id = p.id
+
+    -- Link to Invoice (FIXED JOIN: appt now holds the invoice_id)
+    LEFT JOIN invoices inv ON appt.invoice_id = inv.id
+
+    -- Link to Items to find discounts (LEFT JOIN because there might be no discounts)
+    LEFT JOIN invoice_items ii ON inv.id = ii.invoice_id
+    LEFT JOIN item_types it ON ii.item_type_id = it.id
+
+    WHERE
+        appt.doctor_schedule_id = input_schedule_id
+        AND appt.status != 'CANCELLED' -- Exclude cancelled appointments
+
+    GROUP BY
+        appt.id, p.id, inv.id, ds.doctorFee, ds.clinicFee
+
+    ORDER BY
+        appt.queuePosition ASC;
+
+END $$
+
+DELIMITER ;

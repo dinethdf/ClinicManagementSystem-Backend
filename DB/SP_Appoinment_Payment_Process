@@ -1,0 +1,135 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_AppointmentPaymentProcess$$
+
+CREATE PROCEDURE sp_AppointmentPaymentProcess(
+    IN p_invoice_id INT,
+    IN p_payment_method VARCHAR(50),
+    IN p_transaction_code VARCHAR(255),
+    IN p_created_by VARCHAR(50),
+    IN p_discounts_json JSON,
+    OUT o_new_payment_id INT,
+    OUT o_status_message VARCHAR(50)
+)
+BEGIN
+    -- == 1. DECLARE VARIABLES ==
+    DECLARE v_subtotal_amount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_final_amount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_appointment_id INT;
+    DECLARE v_invoice_status VARCHAR(50);
+    DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_now DATETIME;
+
+    -- == 2. ERROR HANDLING ==
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET o_status_message = 'ERROR_SQL_EXCEPTION';
+    END;
+
+    -- == 3. SET VARIABLES & START TRANSACTION ==
+    SET v_now = NOW();
+    START TRANSACTION;
+
+    -- == 4. LOCK INVOICE & GET DATA ==
+    -- UPDATE: appointment_id is removed from invoices table
+    SELECT
+        subtotalAmount, status
+    INTO
+        v_subtotal_amount, v_invoice_status
+    FROM
+        invoices
+    WHERE
+        id = p_invoice_id
+    FOR UPDATE;
+
+    -- UPDATE: Fetch appointment_id from the appointments table instead
+    SELECT id INTO v_appointment_id
+    FROM appointments
+    WHERE invoice_id = p_invoice_id
+    LIMIT 1;
+
+    -- == 5. VALIDATE INVOICE ==
+    IF v_invoice_status IS NULL THEN
+        SET o_status_message = 'ERROR_INVALID_INVOICE';
+        ROLLBACK;
+    ELSEIF v_invoice_status = 'PAID' THEN
+        SET o_status_message = 'ERROR_INVOICE_PAID';
+        ROLLBACK;
+    ELSE
+        -- == 6. PROCESS DISCOUNTS (IF ANY) ==
+        IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
+
+            -- Insert all discount line items
+            -- UPDATE: Removed item_id from INSERT columns and SELECT
+            INSERT INTO invoice_items (
+                invoice_id, item_type_id, description,
+                amount, createdDate, createdBy
+            )
+            SELECT
+                p_invoice_id, it.id, j.description,
+                COALESCE(j.amount, 0) * -1, v_now, p_created_by
+            FROM
+                JSON_TABLE(
+                    p_discounts_json,
+                    '$[*]' COLUMNS (
+                        discountType VARCHAR(50) PATH '$.discountType',
+                        amount DECIMAL(10, 2) PATH '$.amount',
+                        description VARCHAR(255) PATH '$.description'
+                    )
+                ) AS j
+            JOIN
+                item_types it
+            ON
+                j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
+
+            -- Calculate total discount
+            SELECT
+                COALESCE(SUM(amount), 0) INTO v_total_discount
+            FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
+        END IF;
+
+        -- == 7. CALCULATE FINAL AMOUNT ==
+        SET v_final_amount = v_subtotal_amount - v_total_discount;
+
+        -- == 8. CREATE THE PAYMENT RECORD ==
+        INSERT INTO payments (
+            invoice_id, amountPaid, paymentMethod, paymentStatus,
+            transactionId, createdDate, createdBy
+        ) VALUES (
+            p_invoice_id,
+            v_final_amount,
+            p_payment_method,
+            'COMPLETED', -- UPDATE: Changed to UPPERCASE to match ENUM
+            p_transaction_code,
+            v_now,
+            p_created_by
+        );
+
+        SET o_new_payment_id = LAST_INSERT_ID();
+
+        -- == 9. UPDATE THE INVOICE ==
+        UPDATE invoices
+        SET
+            status = 'PAID',
+            totalDiscount = v_total_discount,
+            finalAmount = v_final_amount
+        WHERE
+            id = p_invoice_id;
+
+        -- == 10. UPDATE THE APPOINTMENT ==
+        IF v_appointment_id IS NOT NULL THEN
+            UPDATE appointments
+            SET status = 'BOOKED' -- UPDATE: Changed to UPPERCASE to match ENUM
+            WHERE id = v_appointment_id;
+        END IF;
+
+        -- == 11. SUCCESS ==
+        SET o_status_message = 'PAYMENT_SUCCESS';
+        COMMIT;
+
+    END IF;
+
+END$$
+
+DELIMITER ;
