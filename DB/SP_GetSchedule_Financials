@@ -56,8 +56,8 @@ BEGIN
     -- Link to Patient for names
     JOIN patient p ON appt.patient_id = p.id
 
-    -- Link to Invoice (Use LEFT JOIN so we still see appts even if invoice isn't generated yet)
-    LEFT JOIN invoices inv ON appt.id = inv.appointment_id
+    -- Link to Invoice (FIXED JOIN: appt now holds the invoice_id)
+    LEFT JOIN invoices inv ON appt.invoice_id = inv.id
 
     -- Link to Items to find discounts (LEFT JOIN because there might be no discounts)
     LEFT JOIN invoice_items ii ON inv.id = ii.invoice_id
