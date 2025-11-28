@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Doctor;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
@@ -55,15 +56,18 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public ApiResponse<DoctorResponseDto> getDoctorFullDetailsById(String id) {
+    public ApiResponse<DoctorDetailsDto> getDoctorFullDetailsById(String id) {
+        Doctor doctor = doctorRepo.findById(Long.valueOf(id))
+                .orElseThrow(() -> new ValidationException(
+                        messageSourceUtil.getMessage("doctor.not.found"), "ASDf"
+                ));
 
-        Doctor doctor = doctorRepo.findById(Long.valueOf(id)).orElseThrow(() ->  new ValidationException(messageSourceUtil.getMessage("doctor.not.found"),"ASDf"));
         return ApiResponse.success(
-                doctorMapper.toResponseDTO(doctor),
+                doctorMapper.toDetailsDto(doctor),
                 messageSourceUtil.getMessage("doctor.details.get.success")
         );
-
     }
+
 
     @Override
     public ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email) {

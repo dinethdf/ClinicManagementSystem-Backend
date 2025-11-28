@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Doctor;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorRegistrationDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
@@ -21,7 +22,7 @@ public interface DoctorService {
 
     Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size);
 
-    ApiResponse<DoctorResponseDto> getDoctorFullDetailsById(String id);
+    ApiResponse<DoctorDetailsDto> getDoctorFullDetailsById(String id);
 
     ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email);
 

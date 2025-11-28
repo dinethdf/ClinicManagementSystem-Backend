@@ -1,10 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Repo.Appointment;
 
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentAdminListDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentFullDetailsDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.PatientAppointmentDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
-import com.dinethdf.ClinicManagementSystem.DTO.Appointment.InvoiceAppointmentFlatDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -163,4 +160,36 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         WHERE a.id = :appointmentId
     """)
     Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(@Param("appointmentId") Long appointmentId);
+
+
+        // ... existing methods ...
+
+        @Query(nativeQuery = true, value = """
+        SELECT
+            a.id AS id,
+            a.queuePosition AS queuePosition,
+            a.status AS status,
+            a.note AS note,
+            ds.scheduleDate AS scheduleDate,
+            ds.startTime AS startTime,
+            p.id AS patientId,
+            p.patientNo AS patientNo,
+            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+            p.mobileNo AS patientMobile
+        FROM appointments a
+        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.doctor_schedule_id = :scheduleId
+        ORDER BY a.queuePosition ASC
+    """,
+                countQuery = """
+        SELECT COUNT(a.id)
+        FROM appointments a
+        WHERE a.doctor_schedule_id = :scheduleId
+    """)
+        Page<AppointmentByScheduleListDTO> findAppointmentsByScheduleId(
+                @Param("scheduleId") Long scheduleId,
+                Pageable pageable
+        );
+
 }

@@ -33,7 +33,7 @@ public interface DoctorScheduleService {
      */
     DoctorScheduleResponseDTO getScheduleById(Long id);
 
-    Page<DoctorScheduleListDTO> getAllSchedules(String search, LocalDate date, Pageable pageable);
+    Page<DoctorScheduleResponseDTO> getAllSchedulesList(String doctorName,String specialization,LocalDate searchDate, Pageable pageable);
 
     /**
      * Retrieves all schedules, with an option to include inactive ones.

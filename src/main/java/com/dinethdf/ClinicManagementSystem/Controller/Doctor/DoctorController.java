@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Doctor;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
@@ -54,8 +55,8 @@ public class DoctorController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping("get-details/staff/{id}")
-    public ResponseEntity<ApiResponse<DoctorResponseDto>> getPatients(@PathVariable String id){
-        ApiResponse<DoctorResponseDto> response = doctorServiceImpl.getDoctorFullDetailsById(id);
+    public ResponseEntity<ApiResponse<DoctorDetailsDto>> getPatients(@PathVariable String id){
+        ApiResponse<DoctorDetailsDto> response = doctorServiceImpl.getDoctorFullDetailsById(id);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
