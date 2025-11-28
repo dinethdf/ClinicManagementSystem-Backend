@@ -14,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-// import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -49,7 +48,13 @@ public class AppointmentServiceImpl implements AppointmentService {
             handleSpError(statusMessage);
         }
 
-        Long newAppointmentNumber = (Long) spResult.get("o_newAppointmentId");
+        // 3. CRITICAL FIX: Safe Casting from Integer (DB) to Long (Java)
+        Object newIdObj = spResult.get("o_newAppointmentId");
+        if (newIdObj == null) {
+            throw new ValidationException("Database failed to return a valid Appointment ID", "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        Long newAppointmentNumber = ((Number) newIdObj).longValue();
 
         Appointment newAppointment = appointmentRepo.findById(newAppointmentNumber)
                 .orElseThrow(() -> new ValidationException(
@@ -65,18 +70,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public List<AppointmentInvoiceViewDTO> getInvoicesByAppointmentId(Long appointmentId) {
 
-
         if (appointmentId == null || appointmentId <= 0) {
             throw new ValidationException("Invalid appointment ID.", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
 
-        // 2. Fast Existence & Status Check (Combined)
-        // We fetch JUST the status. If it's empty, the appointment doesn't exist.
+        // Fast Existence & Status Check
         Appointment.AppointmentStatus status = appointmentRepo.findStatusById(appointmentId)
                 .orElseThrow(() -> new ValidationException("Appointment not found.", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        if (status == Appointment.AppointmentStatus.CANCELLED || status == Appointment.AppointmentStatus.Booked) {
-            throw new ValidationException("Appointment is already " + status + ".", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        if (status == Appointment.AppointmentStatus.CANCELLED) {
+            throw new ValidationException("Appointment is CANCELLED.", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
         }
 
         List<InvoiceAppointmentFlatDTO> rawData = appointmentRepo.findRawInvoicesByAppointmentId(appointmentId);
@@ -92,12 +95,19 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         for (Map.Entry<Long, List<InvoiceAppointmentFlatDTO>> entry : groupedByInvoice.entrySet()) {
             List<InvoiceAppointmentFlatDTO> invoiceRows = entry.getValue();
-            InvoiceAppointmentFlatDTO header = invoiceRows.getFirst();
+
+            // Safe check for list size
+            if(invoiceRows.isEmpty()) continue;
+
+            InvoiceAppointmentFlatDTO header = invoiceRows.get(0);
 
             // Map Header
             AppointmentInvoiceViewDTO dto = new AppointmentInvoiceViewDTO();
             dto.setInvoiceId(header.getInvoiceId());
-            dto.setDateIssued(header.getInvoiceDate().toLocalDate());
+            // Safe check for date
+            if (header.getInvoiceDate() != null) {
+                dto.setDateIssued(header.getInvoiceDate().toLocalDate());
+            }
             dto.setStatus(header.getInvoiceStatus());
             dto.setSubtotal(header.getSubtotal());
             dto.setTotalDiscount(header.getTotalDiscount());
@@ -140,14 +150,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public Page<AppointmentAdminListDTO> getFilteredAppointments(Long patientId, Long scheduleId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
 
-        // CHANGE 1: If no end date is provided, look 2 months into the FUTURE
         LocalDate end = (endDate != null) ? endDate : LocalDate.now().plusMonths(2);
-
-        // CHANGE 2: If no start date is provided, look 1 month into the PAST
         LocalDate start = (startDate != null) ? startDate : LocalDate.now().minusMonths(1);
-
-        // Debugging: This will print in your console so you can see what range is being searched
-        System.out.println("Searching Appointments From: " + start + " To: " + end);
 
         if (start.isAfter(end)) {
             throw new ValidationException("Start date cannot be after end date", "INVALID_DATE_RANGE", HttpStatus.BAD_REQUEST);
@@ -170,10 +174,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional(readOnly = true)
     public Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable) {
-
-        // Optional: You can validate if the schedule exists here if needed
-        // DoctorSchedule schedule = doctorScheduleRepo.findById(scheduleId)...
-
         return appointmentRepo.findAppointmentsByScheduleId(scheduleId, pageable);
     }
 
@@ -183,73 +183,46 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (patientId == null || patientId <= 0) {
             throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
-
-        List<PatientAppointmentDTO> appointments = appointmentRepo.findAppointmentsByPatientId(patientId);
-        return appointments;
+        return appointmentRepo.findAppointmentsByPatientId(patientId);
     }
+
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {
         if (createDTO.getDoctorScheduleId() == null) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("appointment.error.no_schedule_id"), // You need to add this key
+                    messageSourceUtil.getMessage("appointment.error.no_schedule_id"),
                     "INVALID_SCHEDULE_ID",
                     HttpStatus.BAD_REQUEST
             );
         }
         if (createDTO.getPatientId() == null) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("appointment.error.no_patient_id"), // You need to add this key
+                    messageSourceUtil.getMessage("appointment.error.no_patient_id"),
                     "INVALID_PATIENT_ID",
                     HttpStatus.BAD_REQUEST
             );
         }
         if (createDTO.getNote() != null && createDTO.getNote().length() > 500) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("appointment.error.note_too_long"), // You need to add this key
+                    messageSourceUtil.getMessage("appointment.error.note_too_long"),
                     "NOTE_TOO_LONG",
                     HttpStatus.BAD_REQUEST
             );
         }
     }
 
-
     private void handleSpError(String statusMessage) {
         switch (statusMessage) {
-
             case "ERROR_SCHEDULE_FULL":
-                throw new ValidationException(
-                        messageSourceUtil.getMessage("appointment.error.full"),
-                        "SCHEDULE_FULL",
-                        HttpStatus.CONFLICT
-                );
-
+                throw new ValidationException(messageSourceUtil.getMessage("appointment.error.full"), "SCHEDULE_FULL", HttpStatus.CONFLICT);
             case "ERROR_DUPLICATE_PATIENT":
-                throw new ValidationException(
-                        messageSourceUtil.getMessage("appointment.error.duplicate"),
-                        "DUPLICATE_PATIENT",
-                        HttpStatus.CONFLICT
-                );
-
+                throw new ValidationException(messageSourceUtil.getMessage("appointment.error.duplicate"), "DUPLICATE_PATIENT", HttpStatus.CONFLICT);
             case "ERROR_INVALID_SCHEDULE":
-                throw new ValidationException(
-                        messageSourceUtil.getMessage("appointment.error.invalid_schedule"),
-                        "INVALID_SCHEDULE",
-                        HttpStatus.NOT_FOUND
-                );
-
+                throw new ValidationException(messageSourceUtil.getMessage("appointment.error.invalid_schedule"), "INVALID_SCHEDULE", HttpStatus.NOT_FOUND);
             case "ERROR_SCHEDULE_INACTIVE":
-                throw new ValidationException(
-                        messageSourceUtil.getMessage("appointment.error.inactive_schedule"),
-                        "INACTIVE_SCHEDULE",
-                        HttpStatus.BAD_REQUEST
-                );
-
+                throw new ValidationException(messageSourceUtil.getMessage("appointment.error.inactive_schedule"), "INACTIVE_SCHEDULE", HttpStatus.BAD_REQUEST);
             case "ERROR_SQL_EXCEPTION":
             default:
-                throw new ValidationException(
-                        messageSourceUtil.getMessage("appointment.error.database"), // A generic error message
-                        "DATABASE_ERROR",
-                        HttpStatus.INTERNAL_SERVER_ERROR
-                );
+                throw new ValidationException(messageSourceUtil.getMessage("appointment.error.database"), "DATABASE_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

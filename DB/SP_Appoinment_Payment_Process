@@ -13,8 +13,8 @@ CREATE PROCEDURE sp_AppointmentPaymentProcess(
 )
 BEGIN
     -- == 1. DECLARE VARIABLES ==
-    DECLARE v_subtotal_amount DECIMAL(10, 2) DEFAULT 0; -- Renamed
-    DECLARE v_final_amount DECIMAL(10, 2) DEFAULT 0;    -- New
+    DECLARE v_subtotal_amount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_final_amount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_appointment_id INT;
     DECLARE v_invoice_status VARCHAR(50);
     DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
@@ -32,15 +32,22 @@ BEGIN
     START TRANSACTION;
 
     -- == 4. LOCK INVOICE & GET DATA ==
+    -- UPDATE: appointment_id is removed from invoices table
     SELECT
-        subtotalAmount, status, appointment_id -- <-- RENAMED
+        subtotalAmount, status
     INTO
-        v_subtotal_amount, v_invoice_status, v_appointment_id
+        v_subtotal_amount, v_invoice_status
     FROM
         invoices
     WHERE
         id = p_invoice_id
-    FOR UPDATE; -- Lock the row
+    FOR UPDATE;
+
+    -- UPDATE: Fetch appointment_id from the appointments table instead
+    SELECT id INTO v_appointment_id
+    FROM appointments
+    WHERE invoice_id = p_invoice_id
+    LIMIT 1;
 
     -- == 5. VALIDATE INVOICE ==
     IF v_invoice_status IS NULL THEN
@@ -54,12 +61,13 @@ BEGIN
         IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
 
             -- Insert all discount line items
+            -- UPDATE: Removed item_id from INSERT columns and SELECT
             INSERT INTO invoice_items (
-                invoice_id, item_type_id, item_id, description,
+                invoice_id, item_type_id, description,
                 amount, createdDate, createdBy
             )
             SELECT
-                p_invoice_id, it.id, NULL, j.description,
+                p_invoice_id, it.id, j.description,
                 COALESCE(j.amount, 0) * -1, v_now, p_created_by
             FROM
                 JSON_TABLE(
@@ -90,9 +98,9 @@ BEGIN
             transactionId, createdDate, createdBy
         ) VALUES (
             p_invoice_id,
-            v_final_amount, -- Pay the final discounted amount
+            v_final_amount,
             p_payment_method,
-            'Completed',
+            'COMPLETED', -- UPDATE: Changed to UPPERCASE to match ENUM
             p_transaction_code,
             v_now,
             p_created_by
@@ -104,16 +112,15 @@ BEGIN
         UPDATE invoices
         SET
             status = 'PAID',
-            totalDiscount = v_total_discount, -- Set the discount amount
-            finalAmount = v_final_amount    -- Set the final amount
-            -- We NEVER change subtotalAmount
+            totalDiscount = v_total_discount,
+            finalAmount = v_final_amount
         WHERE
             id = p_invoice_id;
 
         -- == 10. UPDATE THE APPOINTMENT ==
         IF v_appointment_id IS NOT NULL THEN
             UPDATE appointments
-            SET status = 'Booked'
+            SET status = 'BOOKED' -- UPDATE: Changed to UPPERCASE to match ENUM
             WHERE id = v_appointment_id;
         END IF;
 

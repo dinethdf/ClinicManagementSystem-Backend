@@ -94,9 +94,9 @@ public class PaymentServiceImpl implements PaymentService {
         response.setId(newPayment.getId());
         response.setInvoiceId(newPayment.getInvoice().getId());
         response.setAmountPaid(newPayment.getAmountPaid());
-        response.setPaymentMethod(newPayment.getPaymentMethod());
+        response.setPaymentMethod(newPayment.getPaymentMethod().toString());
         response.setTransactionId(newPayment.getTransactionId());
-        response.setPaymentStatus(newPayment.getPaymentStatus());
+        response.setPaymentStatus(newPayment.getPaymentStatus().toString());
         response.setCreatedDate(newPayment.getCreatedDate());
 
         // Set the SMS status here so Frontend knows to show a warning if needed

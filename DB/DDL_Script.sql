@@ -177,53 +177,18 @@ CREATE TABLE doctorSchedule (
     FOREIGN KEY (doctor_id) REFERENCES doctor(id)
 );
 
-CREATE TABLE appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
---     appointmentNumber VARCHAR(50) NOT NULL UNIQUE,
-    queuePosition INT NOT NULL,
-    note TEXT NULL,
-    status ENUM(
-        'PENDING_PAYMENT',
-        'Booked', -- Corrected spelling
-        'COMPLETED',
-        'CANCELLED',
-        'NOSHOW'
-    ) NOT NULL DEFAULT 'PENDING_PAYMENT',
-    doctor_schedule_id INT NOT NULL,
-    patient_id INT NOT NULL,
-
-    createdDate DATETIME NOT NULL,
-    createdBy VARCHAR(50) NOT NULL,
-    updatedDate DATETIME DEFAULT NULL,
-    updatedBy VARCHAR(50),
-    approvedDate DATETIME DEFAULT NULL,
-    approvedBy VARCHAR(50),
-
-    CONSTRAINT fk_appointment_schedule
-        FOREIGN KEY (doctor_schedule_id)
-        REFERENCES doctorSchedule(id)
-        ON DELETE RESTRICT,
-    CONSTRAINT fk_appointment_patient
-        FOREIGN KEY (patient_id)
-        REFERENCES patient(id)
-        ON DELETE RESTRICT,
-
-    INDEX idx_schedule_patient (doctor_schedule_id, patient_id),
-    INDEX idx_patient (patient_id)
-
-) ENGINE=InnoDB;
-
 CREATE TABLE invoices (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
-    appointment_id INT NULL DEFAULT NULL,
+
     status ENUM('UNPAID', 'PAID', 'PARTIAL', 'CANCELLED') NOT NULL DEFAULT 'UNPAID',
+
     subtotalAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     totalDiscount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     finalAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     dueDate DATE NULL,
 
-    -- Your System Columns
+    -- System Columns
     createdDate DATETIME NOT NULL,
     createdBy VARCHAR(50) NOT NULL,
     updatedDate DATETIME DEFAULT NULL,
@@ -231,16 +196,12 @@ CREATE TABLE invoices (
     approvedDate DATETIME DEFAULT NULL,
     approvedBy VARCHAR(50),
 
-    -- Link to the patient table
-    CONSTRAINT fk_invoice_patient FOREIGN KEY (patient_id) REFERENCES patient(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_invoice_appointment FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT
-    -- Removed redundant index, fk_invoice_patient already creates one
-
+    CONSTRAINT fk_invoice_patient FOREIGN KEY (patient_id) REFERENCES patient(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE item_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    -- 'APPOINTMENT', 'LABTEST', 'SUBSCRIPTION', 'PHARMACY', DOCTOR_DISCOUNT, CLINIC_DISCOUNT
+    -- Examples: 'APPOINTMENT', 'LABTEST', 'PHARMACY', 'DocDISCOUNT','CliniDISCOUNT', 'TAX'
     typeName VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255) NULL
 ) ENGINE=InnoDB;
@@ -249,9 +210,8 @@ CREATE TABLE invoice_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     invoice_id INT NOT NULL,
     item_type_id INT NOT NULL,
-    item_id INT NULL,
-    description VARCHAR(255) NULL,
-    amount DECIMAL(10, 2) NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
 
     createdDate DATETIME NOT NULL,
     createdBy VARCHAR(50) NOT NULL,
@@ -260,13 +220,8 @@ CREATE TABLE invoice_items (
     approvedDate DATETIME DEFAULT NULL,
     approvedBy VARCHAR(50),
 
-    CONSTRAINT fk_item_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_item_type FOREIGN KEY (item_type_id) REFERENCES item_types(id) ON DELETE RESTRICT,
-
-    -- This composite index is good for searching
-    INDEX idx_item (item_type_id, item_id)
-    -- Removed redundant index on invoice_id
-
+    CONSTRAINT fk_item_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+    CONSTRAINT fk_item_type FOREIGN KEY (item_type_id) REFERENCES item_types(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 
@@ -274,8 +229,8 @@ CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     invoice_id INT NOT NULL,
     amountPaid DECIMAL(10, 2) NOT NULL,
-    paymentMethod ENUM('cash', 'card', 'bankTransfer','onlineGateway', 'insurance') NOT NULL,
-    paymentStatus ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'Pending',
+    paymentMethod ENUM('CASH', 'CARD', 'BANK_TRANSFER', 'ONLINE', 'INSURANCE') NOT NULL,
+    paymentStatus ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
     transactionId VARCHAR(255) NULL,
     paymentTimestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -293,3 +248,57 @@ CREATE TABLE payments (
     -- Removed redundant index on invoice_id
 
 ) ENGINE=InnoDB;
+
+CREATE TABLE appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    queuePosition INT NOT NULL,
+    note TEXT NULL,
+    status ENUM(
+        'PENDING_PAYMENT',
+        'BOOKED',
+        'COMPLETED',
+        'CANCELLED',
+        'NOSHOW'
+    ) NOT NULL DEFAULT 'PENDING_PAYMENT',
+
+    doctor_schedule_id INT NOT NULL,
+    patient_id INT NOT NULL,
+
+    invoice_id INT NULL,
+
+    -- System Columns
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    -- Foreign Keys
+    CONSTRAINT fk_appointment_schedule
+        FOREIGN KEY (doctor_schedule_id)
+        REFERENCES doctorSchedule(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_appointment_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES patient(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_appointment_invoice
+        FOREIGN KEY (invoice_id)
+        REFERENCES invoices(id)
+        ON DELETE SET NULL,
+
+    -- INDEXES
+    -- Critical: Prevents duplicate queue numbers for the same doctor schedule
+    UNIQUE INDEX idx_unique_queue (doctor_schedule_id, queuePosition),
+    INDEX idx_patient (patient_id)
+
+) ENGINE=InnoDB;
+
+-- Align Financial Tables with AuditWrapper
+ALTER TABLE appointments ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE invoices ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE invoice_items ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE payments ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;

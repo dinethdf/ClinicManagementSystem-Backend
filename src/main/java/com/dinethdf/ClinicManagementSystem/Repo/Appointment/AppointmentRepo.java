@@ -54,9 +54,9 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         ii.description AS itemDescription,
         it.typeName AS itemType,
         ii.amount AS itemAmount
-    FROM invoices i
+    FROM appointments a
+    JOIN invoices i ON a.invoice_id = i.id
     JOIN patient p ON i.patient_id = p.id
-    JOIN appointments a ON i.appointment_id = a.id
     LEFT JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     LEFT JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
@@ -162,9 +162,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(@Param("appointmentId") Long appointmentId);
 
 
-        // ... existing methods ...
-
-        @Query(nativeQuery = true, value = """
+    @Query(nativeQuery = true, value = """
         SELECT
             a.id AS id,
             a.queuePosition AS queuePosition,
@@ -182,14 +180,14 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         WHERE a.doctor_schedule_id = :scheduleId
         ORDER BY a.queuePosition ASC
     """,
-                countQuery = """
+            countQuery = """
         SELECT COUNT(a.id)
         FROM appointments a
         WHERE a.doctor_schedule_id = :scheduleId
     """)
-        Page<AppointmentByScheduleListDTO> findAppointmentsByScheduleId(
-                @Param("scheduleId") Long scheduleId,
-                Pageable pageable
-        );
+    Page<AppointmentByScheduleListDTO> findAppointmentsByScheduleId(
+            @Param("scheduleId") Long scheduleId,
+            Pageable pageable
+    );
 
 }

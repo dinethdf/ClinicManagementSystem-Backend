@@ -17,9 +17,9 @@ BEGIN
     DECLARE v_maxPatientCount INT;
     DECLARE v_currentBookedCount INT;
     DECLARE v_isScheduleActive TINYINT;
-    DECLARE v_doctorFee DECIMAL(10, 2); -- NEW
-    DECLARE v_clinicFee DECIMAL(10, 2); -- NEW
-    DECLARE v_totalFee DECIMAL(10, 2);  -- NEW: To hold the sum
+    DECLARE v_doctorFee DECIMAL(10, 2);
+    DECLARE v_clinicFee DECIMAL(10, 2);
+    DECLARE v_totalFee DECIMAL(10, 2);
     DECLARE v_patientBookingCount INT;
     DECLARE v_newQueuePosition INT;
     DECLARE v_newAppointmentId INT;
@@ -42,14 +42,14 @@ BEGIN
         maxPatientCount,
         registeredPatientCount,
         isActive,
-        doctorFee,  -- Get doctor fee
-        clinicFee   -- Get clinic fee
+        doctorFee,
+        clinicFee
     INTO
         v_maxPatientCount,
         v_currentBookedCount,
         v_isScheduleActive,
-        v_doctorFee,  -- Store doctor fee
-        v_clinicFee   -- Store clinic fee
+        v_doctorFee,
+        v_clinicFee
     FROM
         doctorSchedule
     WHERE
@@ -73,7 +73,7 @@ BEGIN
         FROM appointments
         WHERE doctor_schedule_id = p_doctor_schedule_id
           AND patient_id = p_patient_id
-          AND status IN ('Booked', 'PENDING_PAYMENT');
+          AND status IN ('BOOKED', 'PENDING_PAYMENT'); -- Updated to Uppercase to match Enum
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
@@ -82,7 +82,7 @@ BEGIN
             -- == 7. ALL CHECKS PASSED - CREATE BOOKING ==
             SET v_newQueuePosition = v_currentBookedCount + 1;
 
-            -- a. Insert the new appointment
+            -- a. Insert the new appointment (invoice_id is NULL initially)
             INSERT INTO appointments (
                 doctor_schedule_id,
                 patient_id,
@@ -117,10 +117,9 @@ BEGIN
             FROM item_types
             WHERE typeName = 'APPOINTMENT' LIMIT 1;
 
-            -- d. Create the master invoice
+            -- d. Create the master invoice (Removed appointment_id)
             INSERT INTO invoices (
                 patient_id,
-                appointment_id,
                 status,
                 subtotalAmount,
                 totalDiscount,
@@ -129,22 +128,20 @@ BEGIN
                 createdBy
             ) VALUES (
                 p_patient_id,
-                v_newAppointmentId,
                 'UNPAID',
-                v_totalFee, -- Use the sum here
+                v_totalFee,
                 0.00,
-                v_totalFee, -- Use the sum here
+                v_totalFee,
                 v_now,
                 p_createdBy
             );
 
             SET o_newInvoiceId = LAST_INSERT_ID();
 
-            -- e. Create the invoice line item
+            -- e. Create the invoice line item (Removed item_id)
             INSERT INTO invoice_items (
                 invoice_id,
                 item_type_id,
-                item_id,
                 description,
                 amount,
                 createdDate,
@@ -152,12 +149,16 @@ BEGIN
             ) VALUES (
                 o_newInvoiceId,
                 v_appointmentItemTypeId,
-                v_newAppointmentId,
                 'Doctor Consultation',
-                v_totalFee, -- Use the sum here
+                v_totalFee,
                 v_now,
                 p_createdBy
             );
+
+            -- f. CRITICAL UPDATE: Link the Appointment to the Invoice
+            UPDATE appointments
+            SET invoice_id = o_newInvoiceId
+            WHERE id = v_newAppointmentId;
 
             -- == 9. SUCCESS! ==
             SET o_queuePosition = v_newQueuePosition;
