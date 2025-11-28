@@ -82,4 +82,19 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.success(detail, "Appointment details retrieved successfully"));
     }
 
+    @GetMapping("/schedule/{scheduleId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
+    public ResponseEntity<ApiResponse<Page<AppointmentByScheduleListDTO>>> getAppointmentsByScheduleId(
+            @PathVariable Long scheduleId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AppointmentByScheduleListDTO> result = appointmentService.getAppointmentsBySchedule(scheduleId, pageable);
+        ApiResponse<Page<AppointmentByScheduleListDTO>> response = ApiResponse.success(
+                result, messageSourceUtil.getMessage("appointment.list.success")
+        );
+        return ResponseEntity.ok(response);
+    }
+
 }

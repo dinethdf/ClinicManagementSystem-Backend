@@ -169,6 +169,16 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable) {
+
+        // Optional: You can validate if the schedule exists here if needed
+        // DoctorSchedule schedule = doctorScheduleRepo.findById(scheduleId)...
+
+        return appointmentRepo.findAppointmentsByScheduleId(scheduleId, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId) {
         if (patientId == null || patientId <= 0) {
             throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);

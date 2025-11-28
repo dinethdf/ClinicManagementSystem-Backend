@@ -47,9 +47,25 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             "JOIN s.doctor d " +
             "JOIN d.specialization sp " +
             "WHERE s.isActive = true " +
-            // Upcoming Logic (Today+Future Time OR Future Date)
+            "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
+            "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
+            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate)")
+    Page<DoctorSchedule> findAllSchedules(
+            @Param("today") LocalDate today,
+            @Param("now") LocalTime now,
+            @Param("doctorName") String doctorName,
+            @Param("specialization") String specialization,
+            @Param("searchDate") LocalDate searchDate,
+            Pageable pageable
+    );
+
+    @Query("SELECT s FROM DoctorSchedule s " +
+            "JOIN s.doctor d " +
+            "JOIN d.specialization sp " +
+            "WHERE s.isActive = true " +
+
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
-            // Dynamic Search Filters
+
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
             "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate)")
@@ -65,14 +81,6 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     // Find all active schedules on or after a certain date (for finding upcoming)
     List<DoctorSchedule> findByScheduleDateAfterAndIsActiveTrue(LocalDate date);
 
-//    // Check if a conflicting schedule already exists
-//    boolean existsByDoctorIdAndScheduleDateAndScheduleTime(Long doctorId, LocalDate date, LocalTime time);
-
-    /**
-     * Replaces the old existsByDoctorIdAndScheduleDateAndScheduleTime
-     * * This checks for time range overlaps: (NewStartTime < ExistingEndTime) AND (NewEndTime > ExistingStartTime)
-     * It will find any schedule that conflicts with the new proposed time.
-     */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
             "FROM DoctorSchedule s " +
             "WHERE s.doctor.id = :doctorId " +

@@ -32,13 +32,49 @@ public class DoctorScheduleController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER', 'DOCTOR')")
     @GetMapping
-    public ResponseEntity<Page<DoctorScheduleListDTO>> getScheduleList(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) LocalDate date,
-            @PageableDefault(size = 10, sort = "scheduleDate", direction = Sort.Direction.DESC) Pageable pageable
+    public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getScheduleList(
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
-        Page<DoctorScheduleListDTO> schedules = doctorScheduleService.getAllSchedules(search, date, pageable);
-        return ResponseEntity.ok(schedules);
+
+        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getAllSchedulesList(
+                doctorName,
+                specialization,
+                date,
+                pageable
+        );
+
+        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+                schedules,
+                messageSourceUtil.getMessage("schedule.success")
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/upcoming-public")
+    public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getUpcomingSchedules(
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
+    ) {
+
+        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
+                doctorName,
+                specialization,
+                date,
+                pageable
+        );
+
+        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+                schedules,
+                messageSourceUtil.getMessage("schedule.getupcoming.success")
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -135,29 +171,6 @@ public class DoctorScheduleController {
         List<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedulesByDoctorId(doctorId);
 
         ApiResponse<List<DoctorScheduleResponseDTO>> response = ApiResponse.success(
-                schedules,
-                messageSourceUtil.getMessage("schedule.getupcoming.success")
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/upcoming-public")
-    public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getUpcomingSchedules(
-            @RequestParam(required = false) String doctorName,
-            @RequestParam(required = false) String specialization,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
-    ) {
-
-        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
-                doctorName,
-                specialization,
-                date,
-                pageable
-        );
-
-        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
                 schedules,
                 messageSourceUtil.getMessage("schedule.getupcoming.success")
         );

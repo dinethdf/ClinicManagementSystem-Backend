@@ -86,34 +86,26 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     }
 
     @Override
-    public Page<DoctorScheduleListDTO> getAllSchedules(String search, LocalDate date, Pageable pageable) {
+    public Page<DoctorScheduleResponseDTO> getAllSchedulesList(
+            String doctorName,
+            String specialization,
+            LocalDate searchDate,
+            Pageable pageable) {
 
-        Specification<DoctorSchedule> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        LocalDate today = LocalDate.now();
 
-            Join<DoctorSchedule, Doctor> doctorJoin = root.join("doctor");
+        Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findAllSchedules(
+                today,
+                now,
+                doctorName,
+                specialization,
+                searchDate,
+                pageable
+        );
 
-            if (StringUtils.hasText(search)) {
-                String searchLower = search.toLowerCase().trim();
-
-                Predicate firstNameLike = cb.like(cb.lower(doctorJoin.get("firstName")), "%" + searchLower + "%");
-                Predicate lastNameLike = cb.like(cb.lower(doctorJoin.get("lastName")), "%" + searchLower + "%");
-
-
-                predicates.add(cb.or(firstNameLike, lastNameLike));
-            }
-
-            if (date != null) {
-                predicates.add(cb.equal(root.get("scheduleDate"), date));
-            }
-
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<DoctorSchedule> page = doctorScheduleRepo.findAll(spec, pageable);
-
-        return page.map(this::mapToDTO);
+        // Map Entity Page to DTO Page
+        return schedulePage.map(mapper::toResponseDTO);
     }
 
     private DoctorScheduleListDTO mapToDTO(DoctorSchedule s) {

@@ -51,6 +51,8 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
 
+        patient.setPatientAuth(null);
+
         return ApiResponse.success(
                 patient,
                 messageSourceUtil.getMessage("patient.details.get.success")

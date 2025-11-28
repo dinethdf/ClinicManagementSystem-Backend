@@ -49,6 +49,10 @@ public class Doctor extends CommonUserDetails {
         }
     }
 
+    @Enumerated(EnumType.STRING) // Saves as "AVAILABLE" text in DB instead of 0, 1, 2
+    @Column(name = "availability_status", length = 20)
+    private AvailabilityStatus availabilityStatus;
+
     @Column(name = "registrationDate")
     private LocalDateTime registrationDate;
 
