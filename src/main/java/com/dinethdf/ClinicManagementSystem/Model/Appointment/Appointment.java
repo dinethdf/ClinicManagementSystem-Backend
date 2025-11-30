@@ -59,6 +59,6 @@ public class Appointment extends AuditWrapper {
     private Invoice invoice;
 
     public enum AppointmentStatus {
-        PENDING_PAYMENT, BOOKED, COMPLETED, CANCELLED, NOSHOW
+        PENDING_PAYMENT, BOOKED, COMPLETED, ONGOING, CANCELLED, NOSHOW
     }
 }

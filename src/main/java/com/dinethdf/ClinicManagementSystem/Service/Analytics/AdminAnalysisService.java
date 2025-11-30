@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,4 +101,68 @@ public class AdminAnalysisService {
         """;
         return jdbcTemplate.queryForList(sql);
     }
+
+    public Map<String, List<Map<String, Object>>> getSpecializationCountsGrouped(int year, int month) {
+        String sql = """
+        (
+            SELECT
+                'year' AS rangeType,
+                s.name AS specialization,
+                COUNT(a.id) AS appointmentCount
+            FROM appointments a
+            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctor d ON ds.doctor_id = d.id
+            JOIN specialization s ON d.specialization_id = s.id
+            WHERE YEAR(a.createdDate) = ?
+            GROUP BY s.name
+        )
+        UNION ALL
+        (
+            SELECT
+                'month' AS rangeType,
+                s.name AS specialization,
+                COUNT(a.id) AS appointmentCount
+            FROM appointments a
+            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctor d ON ds.doctor_id = d.id
+            JOIN specialization s ON d.specialization_id = s.id
+            WHERE YEAR(a.createdDate) = ? AND MONTH(a.createdDate) = ?
+            GROUP BY s.name
+        )
+        UNION ALL
+        (
+            SELECT
+                'week' AS rangeType,
+                s.name AS specialization,
+                COUNT(a.id) AS appointmentCount
+            FROM appointments a
+            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctor d ON ds.doctor_id = d.id
+            JOIN specialization s ON d.specialization_id = s.id
+            WHERE YEARWEEK(a.createdDate, 1) = YEARWEEK(CURDATE(), 1)
+            GROUP BY s.name
+        )
+        ORDER BY rangeType, specialization
+        """;
+
+        List<Map<String, Object>> queryResult = jdbcTemplate.queryForList(sql, year, year, month);
+
+        // Transform into grouped response
+        Map<String, List<Map<String, Object>>> groupedResult = new HashMap<>();
+        groupedResult.put("year", new ArrayList<>());
+        groupedResult.put("month", new ArrayList<>());
+        groupedResult.put("week", new ArrayList<>());
+
+        for (Map<String, Object> row : queryResult) {
+            String rangeType = ((String) row.get("rangeType")).toLowerCase();
+            Map<String, Object> data = new HashMap<>();
+            data.put("specialization", row.get("specialization"));
+            data.put("appointmentCount", row.get("appointmentCount"));
+            groupedResult.get(rangeType).add(data);
+        }
+
+        return groupedResult;
+    }
+
+
 }
