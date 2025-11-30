@@ -110,7 +110,7 @@ public class AdminAnalysisService {
                 s.name AS specialization,
                 COUNT(a.id) AS appointmentCount
             FROM appointments a
-            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
             JOIN doctor d ON ds.doctor_id = d.id
             JOIN specialization s ON d.specialization_id = s.id
             WHERE YEAR(a.createdDate) = ?
@@ -123,7 +123,7 @@ public class AdminAnalysisService {
                 s.name AS specialization,
                 COUNT(a.id) AS appointmentCount
             FROM appointments a
-            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
             JOIN doctor d ON ds.doctor_id = d.id
             JOIN specialization s ON d.specialization_id = s.id
             WHERE YEAR(a.createdDate) = ? AND MONTH(a.createdDate) = ?
@@ -136,7 +136,7 @@ public class AdminAnalysisService {
                 s.name AS specialization,
                 COUNT(a.id) AS appointmentCount
             FROM appointments a
-            JOIN doctorschedule ds ON a.doctor_schedule_id = ds.id
+            JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
             JOIN doctor d ON ds.doctor_id = d.id
             JOIN specialization s ON d.specialization_id = s.id
             WHERE YEARWEEK(a.createdDate, 1) = YEARWEEK(CURDATE(), 1)
