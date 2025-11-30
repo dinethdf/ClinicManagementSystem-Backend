@@ -148,7 +148,7 @@ public class DoctorScheduleController {
 
 
     @GetMapping("/by-doctor/{doctorId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF','DOCTOR')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getSchedulesByDoctor(
             @PathVariable Long doctorId,
             @RequestParam(defaultValue = "false") boolean includeInactive) {
