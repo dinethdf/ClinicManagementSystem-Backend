@@ -55,7 +55,7 @@ INSERT INTO doctor (id, auth_id, firstName, lastName, nameWithInitials, gender, 
 (20, 29, 'Ruwan', 'Kumara', 'R. Kumara', 1, '1985-11-02', '853071234V', 'ruwan.kumara@clinic.com', '0765674567', '31, Galle Road, Kalutara', NULL, 'DOC020', 5, 'MBBS, MD (Oncology)', 10, 'AVAILABLE', 1, NOW(), 'admin');
 
 INSERT INTO doctorSchedule (id, doctor_id, scheduleDate, startTime, endTime, doctorFee, clinicFee, maxPatientCount, isActive, createdDate, createdBy) VALUES
-(1, 1, '2025-12-01', '09:00:00', '12:00:00', 3500.00, 1500.00, 15, 1, NOW(), 'kamal.perera'),
+(1, 1, '2025-12-01', '09:00:00', '12:00:00', 3500.00, 1500.00, 35, 1, NOW(), 'kamal.perera'),
 (2, 1, '2025-12-03', '14:00:00', '17:00:00', 3500.00, 1500.00, 12, 1, NOW(), 'kamal.perera'),
 (3, 1, '2025-12-05', '09:00:00', '12:00:00', 3500.00, 1500.00, 14, 1, NOW(), 'kamal.perera'),
 (11, 2, '2025-12-02', '10:00:00', '12:00:00', 2500.00, 1500.00, 10, 1, NOW(), 'saman.fernando'),
