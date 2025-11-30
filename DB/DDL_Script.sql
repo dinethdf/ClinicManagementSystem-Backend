@@ -304,3 +304,40 @@ ALTER TABLE appointments ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
 ALTER TABLE invoices ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
 ALTER TABLE invoice_items ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
 ALTER TABLE payments ADD COLUMN isApproved TINYINT NOT NULL DEFAULT 0;
+
+
+CREATE TABLE prescriptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    status ENUM('ISSUED', 'DISPENSED', 'CANCELLED') DEFAULT 'ISSUED',
+    note TEXT,
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    CONSTRAINT fk_prescriptions_appointment
+        FOREIGN KEY (appointment_id)
+        REFERENCES appointments(id)
+        ON DELETE CASCADE,
+
+    UNIQUE INDEX idx_appointment_unique (appointment_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE prescription_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT NOT NULL,
+
+    medicineName VARCHAR(255) NOT NULL,
+    dosage VARCHAR(100),
+    quantity VARCHAR(50),
+    duration VARCHAR(50),
+    instructions TEXT,
+
+    CONSTRAINT fk_items_prescription
+        FOREIGN KEY (prescription_id)
+        REFERENCES prescriptions(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;

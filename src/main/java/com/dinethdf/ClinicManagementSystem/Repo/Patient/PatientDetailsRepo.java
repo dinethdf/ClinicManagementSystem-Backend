@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Repo.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -82,7 +83,18 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
             @Param("fullName") String fullName,
             @Param("mobileNo") String mobileNo);
 
-
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO(
+        p.id,
+        p.patientNo,
+        p.firstName,
+        p.lastName
+    )
+    FROM Patient p
+    WHERE (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
+      AND p.isActive IS TRUE
+    """)
+    List<PatientSimpleResponseDTO> searchByPatientNo(@Param("patientNo") String patientNo);
 
 }
 

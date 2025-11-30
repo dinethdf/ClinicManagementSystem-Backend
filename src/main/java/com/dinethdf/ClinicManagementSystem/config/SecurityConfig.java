@@ -57,13 +57,15 @@ public class SecurityConfig {
 //                         Public
                          .requestMatchers("api/schedules/upcoming-public").permitAll()
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
-                         .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF")
+                         .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF", "DOCTOR")
 
                          .requestMatchers("api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/schedules/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/appointments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/payments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/financials/**").hasAnyAuthority("ADMIN", "USER", "STAFF")
+                         .requestMatchers("api/prescriptions/**").hasAnyAuthority("ADMIN","DOCTOR" )
+
 
                          .requestMatchers("api/admin-analysis/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
 

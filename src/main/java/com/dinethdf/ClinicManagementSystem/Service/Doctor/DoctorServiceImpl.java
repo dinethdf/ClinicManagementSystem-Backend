@@ -6,6 +6,8 @@ import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Specialization;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserRole;
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.SpecializationRepo;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorMapper;
 
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +44,8 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Autowired
     SpecializationRepo specializationRepo;
+
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     @Override
     @Transactional(readOnly = true)
@@ -121,28 +126,38 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     @Transactional
     public ApiResponse<Doctor> registerDoctor(Doctor doctor) {
-        System.out.println(doctor.toString());
+
         validateDoctor(doctor);
+
         try {
-            Doctor savedPatient = doctorRepo.save(doctor);
+            UserAuth userAuth = new UserAuth();
+            userAuth.setEmail(doctor.getEmail());
+            userAuth.setPassword(encoder.encode(doctor.getNic()));
+            userAuth.setEnable(true);
+
+            UserRole doctorRole = new UserRole();
+            doctorRole.setId(3);
+            userAuth.setRole(doctorRole);
+            doctor.setUserAuth(userAuth);
+
+            Doctor savedDoctor = doctorRepo.save(doctor);
+
+            savedDoctor.getUserAuth().setDetailsId(savedDoctor.getId());
+
             return ApiResponse.success(
-                    savedPatient,
+                    savedDoctor,
                     messageSourceUtil.getMessage("doctor.register.success")
             );
 
         } catch (DataIntegrityViolationException e) {
             String rootCauseMessage = e.getMostSpecificCause().getMessage();
-
             handleDataIntegrityViolation(rootCauseMessage);
-
-            throw new ValidationException(messageSourceUtil.getMessage("doctor.register.error"),  "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
+            throw new ValidationException(messageSourceUtil.getMessage("doctor.register.error"), "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Exception Level Error: " + e.getMessage());
+            throw new ValidationException(messageSourceUtil.getMessage("doctor.register.error"), "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
         }
-        catch (Exception e){
-            System.out.println("Exception Level Error");
-            throw new ValidationException(messageSourceUtil.getMessage("doctor.register.error"),  "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
-        }
-
-
     }
 
     @Transactional

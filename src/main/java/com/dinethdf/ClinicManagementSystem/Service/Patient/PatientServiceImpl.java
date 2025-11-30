@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
@@ -332,8 +333,26 @@ public class PatientServiceImpl implements PatientService {
                     messageSourceUtil.getMessage("patient.delete.success")
             );
         }
+    }
 
+    @Override
+    public List<PatientSimpleResponseDTO> findPatientOnlyByNo(String patientNo) {
 
+        // Basic validation: Ensure patientNo is not null and has some length
+        if (patientNo == null || patientNo.trim().length() < 2) {
+            throw new ValidationException(
+                    "Please provide a valid Patient Number (at least 2 characters).",
+                    "INVALID_SEARCH_CRITERIA"
+            );
+        }
+
+        List<PatientSimpleResponseDTO> results = patientDetailsRepo.searchByPatientNo(patientNo);
+
+        if (results.isEmpty()) {
+            throw new ValidationException("No Patient found with this Patient Number.", "PATIENT_NOT_FOUND");
+        }
+
+        return results;
     }
 
     private String generatePatientNo(Long id) {
