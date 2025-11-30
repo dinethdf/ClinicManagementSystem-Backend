@@ -12,6 +12,8 @@ public class UserAuth {
     private String email;
     private String password;
 
+    private Long detailsId;
+
     private Boolean isEnable;
 
     public Boolean getEnable() {
@@ -57,6 +59,14 @@ public class UserAuth {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public Long getDetailsId() {
+        return detailsId;
+    }
+
+    public void setDetailsId(Long id) {
+        this.detailsId = id;
     }
 
     @Override
