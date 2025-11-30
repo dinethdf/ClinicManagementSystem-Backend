@@ -256,6 +256,7 @@ CREATE TABLE appointments (
     status ENUM(
         'PENDING_PAYMENT',
         'BOOKED',
+        'ONGOING',
         'COMPLETED',
         'CANCELLED',
         'NOSHOW'
