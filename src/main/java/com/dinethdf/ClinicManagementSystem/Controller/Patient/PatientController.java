@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
@@ -26,7 +27,7 @@ public class PatientController {
     @Autowired
     PatientServiceImpl patientServiceImpl;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
     @GetMapping("details/staff/{id}")
     public ResponseEntity<ApiResponse<Patient>> getPatients(@PathVariable String id){
         ApiResponse<Patient> response = patientServiceImpl.getPatientDetailsByIdStaff(id);
@@ -53,6 +54,19 @@ public class PatientController {
 
         List<PatientResponseDTO> results = patientServiceImpl.findPatientBySearching(patientNo, nic, mobileNo, fullName);
         return ResponseEntity.ok(results);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'DOCTOR')")
+    @GetMapping("/search-by-no")
+    public ResponseEntity<ApiResponse<List<PatientSimpleResponseDTO>>> searchPatientByNo(
+            @RequestParam(required = true) String patientNo) {
+
+        List<PatientSimpleResponseDTO> results = patientServiceImpl.findPatientOnlyByNo(patientNo);
+        ApiResponse<List<PatientSimpleResponseDTO>> response = ApiResponse.success(
+                results,
+                "messageSourceUtil.getMessage(\"doctor.search.success\")"
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")

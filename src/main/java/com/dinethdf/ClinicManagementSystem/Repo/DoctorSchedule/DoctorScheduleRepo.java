@@ -49,7 +49,15 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             "WHERE s.isActive = true " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
-            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate)")
+            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate) " +
+            "ORDER BY " +
+            "CASE " +
+            "  WHEN s.scheduleDate = :today THEN 1 " +
+            "  WHEN s.scheduleDate > :today THEN 2 " +
+            "  ELSE 3 " +
+            "END ASC, " +
+            "s.scheduleDate ASC, " +
+            "s.startTime ASC")
     Page<DoctorSchedule> findAllSchedules(
             @Param("today") LocalDate today,
             @Param("now") LocalTime now,

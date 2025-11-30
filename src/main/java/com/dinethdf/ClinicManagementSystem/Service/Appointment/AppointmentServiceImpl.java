@@ -186,6 +186,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentRepo.findAppointmentsByPatientId(patientId);
     }
 
+    @Override
+    public AppointmentCheckDTO checkPatientAppointment(Long scheduleId, Long patientId) {
+
+        return appointmentRepo.findDetailsByScheduleAndPatient(scheduleId, patientId)
+                .orElseThrow(() -> new ValidationException(
+                        "No appointment found for this patient in the selected schedule.",
+                        "APPOINTMENT_NOT_FOUND"
+                ));
+    }
+
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {
         if (createDTO.getDoctorScheduleId() == null) {
             throw new ValidationException(
