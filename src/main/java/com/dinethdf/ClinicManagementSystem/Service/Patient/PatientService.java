@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 
 import java.util.List;
@@ -39,4 +40,5 @@ public interface PatientService {
     ApiResponse<String> deletePatient(Integer patientId);
 
 
+    List<PatientSimpleResponseDTO> findPatientOnlyByNo(String patientNo);
 }

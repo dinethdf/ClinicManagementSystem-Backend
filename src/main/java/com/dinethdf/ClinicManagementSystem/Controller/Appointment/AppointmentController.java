@@ -97,4 +97,17 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    @GetMapping("/check-status")
+    public ResponseEntity<ApiResponse<AppointmentCheckDTO>> checkAppointmentStatus(
+            @RequestParam Long scheduleId,
+            @RequestParam Long patientId) {
+        AppointmentCheckDTO result = appointmentService.checkPatientAppointment(scheduleId, patientId);
+        ApiResponse<AppointmentCheckDTO> response = ApiResponse.success(
+                result,
+                messageSourceUtil.getMessage("appointment.check.success")
+        );
+        return ResponseEntity.ok(response);
+    }
+
 }

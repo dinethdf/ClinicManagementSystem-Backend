@@ -190,4 +190,24 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             Pageable pageable
     );
 
+    @Query("""
+        SELECT new com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCheckDTO(
+            p.Id,
+            CONCAT(p.firstName, ' ', p.lastName),
+            p.patientNo,
+            p.nic,
+            a.queuePosition,
+            CAST(a.status AS string),
+            a.createdDate
+        )
+        FROM Appointment a
+        JOIN a.patient p
+        WHERE a.doctorSchedule.id = :scheduleId
+          AND p.id = :patientId
+    """)
+    Optional<AppointmentCheckDTO> findDetailsByScheduleAndPatient(
+            @Param("scheduleId") Long scheduleId,
+            @Param("patientId") Long patientId
+    );
+
 }

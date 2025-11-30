@@ -24,4 +24,5 @@ public interface AppointmentService {
 
     AppointmentFullDetailsDTO getAppointmentDetails(Long appointmentId);
 
+    AppointmentCheckDTO checkPatientAppointment(Long scheduleId, Long patientId);
 }
