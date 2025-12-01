@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class AppointmentCheckDTO {
     private Long id;
+    private Long appointmentId;
     private String fullName;
     private String patientNo;
     private String nic;

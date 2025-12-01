@@ -193,6 +193,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     @Query("""
         SELECT new com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCheckDTO(
             p.Id,
+            a.Id,
             CONCAT(p.firstName, ' ', p.lastName),
             p.patientNo,
             p.nic,
