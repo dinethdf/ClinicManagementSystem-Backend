@@ -56,6 +56,8 @@ public class SecurityConfig {
 
 //                         Public
                          .requestMatchers("api/schedules/upcoming-public").permitAll()
+                         .requestMatchers("api/otp/**").permitAll()
+
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF", "DOCTOR")
 

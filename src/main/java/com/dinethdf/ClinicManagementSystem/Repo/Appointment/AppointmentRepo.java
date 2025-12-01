@@ -91,37 +91,37 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     List<PatientAppointmentDTO> findAppointmentsByPatientId(@Param("patientId") Long patientId);
 
     @Query(nativeQuery = true, value = """
-        SELECT
-            a.id AS id,
-            a.queuePosition AS queuePosition,
-            a.status AS status,
-            a.note AS note,
-            ds.scheduleDate AS scheduleDate,
-            ds.startTime AS startTime,
-            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
-            p.id AS patientId,
-            p.patientNo AS patientNo,
-            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
-            p.mobileNo AS patientMobile
-        FROM appointments a
-        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
-        JOIN doctor d ON ds.doctor_id = d.id
-        JOIN patient p ON a.patient_id = p.id
-        WHERE
-            (:patientId IS NULL OR a.patient_id = :patientId)
-            AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
-            AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
-        ORDER BY ds.scheduleDate DESC, ds.startTime ASC
-    """,
+    SELECT
+        a.id AS id,
+        a.queuePosition AS queuePosition,
+        a.status AS status,
+        a.note AS note,
+        ds.scheduleDate AS scheduleDate,
+        ds.startTime AS startTime,
+        CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
+        p.id AS patientId,
+        p.patientNo AS patientNo,
+        CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+        p.mobileNo AS patientMobile
+    FROM appointments a
+    JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    JOIN doctor d ON ds.doctor_id = d.id
+    JOIN patient p ON a.patient_id = p.id
+    WHERE
+        (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
+        AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+    ORDER BY a.id DESC
+""",
             countQuery = """
-        SELECT COUNT(a.id)
-        FROM appointments a
-        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
-        WHERE
-            (:patientId IS NULL OR a.patient_id = :patientId)
-            AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
-            AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
-    """)
+    SELECT COUNT(a.id)
+    FROM appointments a
+    JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    WHERE
+        (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
+        AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+""")
     Page<AppointmentAdminListDTO> findFilteredAppointments(
             @Param("patientId") Long patientId,
             @Param("scheduleId") Long scheduleId,
