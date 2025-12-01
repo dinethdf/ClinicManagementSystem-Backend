@@ -341,3 +341,14 @@ CREATE TABLE prescription_items (
         REFERENCES prescriptions(id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE OtpVerification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    mobileNo VARCHAR(15) NOT NULL UNIQUE,
+    otpCode VARCHAR(6) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+

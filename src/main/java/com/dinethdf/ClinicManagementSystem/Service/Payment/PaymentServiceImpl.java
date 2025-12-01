@@ -7,7 +7,6 @@ import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
-import com.dinethdf.ClinicManagementSystem.util.SmsService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepo invoiceRepo;
     private final ObjectMapper objectMapper;
     private final MessageSourceUtil messageSourceUtil;
-    private final SmsService smsService;
+//    private final SmsService smsService;
 
     @Override
     @Transactional // Ensure DB transaction is separate from SMS logic
@@ -75,9 +74,10 @@ public class PaymentServiceImpl implements PaymentService {
             String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + "Appointment Booked";
 
 
-            boolean isSent = smsService.sendPaymentSms(formattedMobile, msgText);
-
-            if (!isSent) {
+            // disable for now After remove this
+//            boolean isSent = smsService.sendPaymentSms(formattedMobile, msgText);
+//            if (!isSent) {
+            if (true) {
                 smsDeliveryNote = "PAYMENT_SUCCESS_BUT_SMS_FAILED";
             }
 
