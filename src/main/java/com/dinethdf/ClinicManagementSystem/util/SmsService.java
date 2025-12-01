@@ -27,10 +27,10 @@ public class SmsService {
             payload.put("type", "plain");
             payload.put("message", messageText);
 
-//            ResponseEntity<String> response = restTemplate.postForEntity(url, payload, String.class);
-//            System.out.println(response);
-//            return response.getStatusCode().is2xxSuccessful();
-            return false;
+            ResponseEntity<String> response = restTemplate.postForEntity(url, payload, String.class);
+            System.out.println(response);
+            return response.getStatusCode().is2xxSuccessful();
+//            return false;
 
         } catch (Exception e) {
             System.err.println("CureGuard API failed: " + e.getMessage());

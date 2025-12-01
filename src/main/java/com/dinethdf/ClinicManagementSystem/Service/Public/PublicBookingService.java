@@ -4,6 +4,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Public.PublicBookingRequestDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Otp.OtpService;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -21,13 +22,21 @@ public class PublicBookingService {
     private AppointmentRepo appointmentRepo;
 
     @Autowired
-    private PatientServiceImpl patientService; // Reusing your existing service
+    private PatientServiceImpl patientService;
 
     @Autowired
     private MessageSourceUtil messageSourceUtil;
 
+    @Autowired
+    private OtpService otpService;
+
     @Transactional
     public ApiResponse<Long> processPublicBooking(PublicBookingRequestDTO request) {
+
+
+        if (!otpService.isVerified(request.getMobileNo())) {
+            return ApiResponse.error("Please verify your mobile number before booking.");
+        }
 
         Long finalPatientId = request.getExistingPatientId();
 
@@ -43,22 +52,16 @@ public class PublicBookingService {
             newPatient.setFullName(request.getFirstName() + " " + request.getLastName());
             newPatient.setDob(request.getDob());
             newPatient.setGender(request.getGender());
-//            newPatient.setAddress("");
 
-            // Default settings for Public Web Registration
             newPatient.setIsActive(true);
-            newPatient.setIsApproved(false); // Admin needs to approve later?
-//            newPatient.setDependent(false);  // Assuming main patient booking
+            newPatient.setIsApproved(false);
 
-            // 2. Call your existing Patient Service
-            // This handles Validation + PatientNo Generation (P250001) + DB Save
             ApiResponse<Patient> registrationResponse = patientService.registerPatientPublic(newPatient);
 
             // 3. Get the new ID
             finalPatientId = registrationResponse.getData().getId();
         }
 
-        // --- SCENARIO: BOOK APPOINTMENT (Using SP) ---
         String createdBy = "PUBLIC_WEB";
 
         Map<String, Object> spResult = appointmentRepo.sp_BookAppointment(
@@ -68,7 +71,6 @@ public class PublicBookingService {
                 request.getNote()
         );
 
-        // Handle SP Errors (Full, Duplicate, etc.)
         String statusMessage = (String) spResult.get("o_statusMessage");
         if (!"BOOKED_SUCCESS".equals(statusMessage)) {
             handleSpError(statusMessage);
