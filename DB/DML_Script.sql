@@ -179,3 +179,10 @@ INSERT INTO payments (invoice_id, amountPaid, paymentMethod, paymentStatus, tran
 
 -- Update the Schedule Count
 UPDATE `doctorSchedule` SET `registeredPatientCount` = '9' WHERE (`id` = '2');
+
+
+
+INSERT INTO systemConfig (configKey, configValue, createdDate, createdBy)
+VALUES
+('SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
+('EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM');
