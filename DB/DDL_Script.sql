@@ -343,12 +343,32 @@ CREATE TABLE prescription_items (
 ) ENGINE=InnoDB;
 
 
-CREATE TABLE OtpVerification (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    mobileNo VARCHAR(15) NOT NULL UNIQUE,
-    otpCode VARCHAR(6) NOT NULL,
-    expiresAt DATETIME NOT NULL,
-    verified BOOLEAN DEFAULT FALSE,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE systemConfig (
+    configKey VARCHAR(100) NOT NULL,
+    configValue VARCHAR(255) NOT NULL,
+    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    PRIMARY KEY (configKey)
 );
 
+CREATE TABLE otpVerification (
+    id INT AUTO_INCREMENT NOT NULL,
+    mobileNo VARCHAR(20) NOT NULL,
+    email VARCHAR(100) DEFAULT NULL,
+    otpCode VARCHAR(10) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    verified TINYINT DEFAULT 0,
+
+    dailySmsCount INT DEFAULT 0,
+    lastSmsDate DATE DEFAULT NULL,
+
+    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_mobileNo (mobileNo)
+);
