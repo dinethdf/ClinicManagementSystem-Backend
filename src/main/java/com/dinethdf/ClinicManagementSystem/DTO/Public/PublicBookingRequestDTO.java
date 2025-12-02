@@ -18,4 +18,5 @@ public class PublicBookingRequestDTO {
     private String nic;
     private LocalDate dob;
     private String mobileNo;
+    private String email;
 }
