@@ -372,3 +372,152 @@ CREATE TABLE otpVerification (
     PRIMARY KEY (id),
     UNIQUE KEY uk_mobileNo (mobileNo)
 );
+
+
+/* ==========================================================================
+   SECTION 1: LIABILITY TABLES (The Bills/Debts)
+   ========================================================================== */
+
+CREATE TABLE doctor_schedule_payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    doctor_schedule_id INT NOT NULL,
+    totalDoctorFee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    totalDoctorDiscounts DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    finalPayableAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00, -- (Fee - Discount)
+
+    status ENUM('PENDING', 'PARTIAL', 'PAID') NOT NULL DEFAULT 'PENDING',
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    CONSTRAINT fk_dsp_schedule
+        FOREIGN KEY (doctor_schedule_id)
+        REFERENCES doctorSchedule(id)
+        ON DELETE RESTRICT,
+
+    UNIQUE INDEX idx_unique_schedule_payment (doctor_schedule_id)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE lab_vendor_payouts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    vendor_name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NULL,
+
+    fromDate DATE NULL,
+    toDate DATE NULL,
+
+    totalBillAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    totalDiscount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    finalPayableAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+
+    status ENUM('PENDING', 'PARTIAL', 'PAID') NOT NULL DEFAULT 'PENDING',
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE operational_expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    category ENUM('RENT', 'UTILITY', 'SALARY', 'MAINTENANCE', 'MARKETING', 'OTHER') NOT NULL,
+    description VARCHAR(255) NOT NULL, -- e.g. 'Electricity Bill - Nov'
+
+    amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    dueDate DATE NULL,
+
+    status ENUM('PENDING', 'PARTIAL', 'PAID') NOT NULL DEFAULT 'PENDING',
+
+    -- System Columns
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50)
+) ENGINE=InnoDB;
+
+
+/* ==========================================================================
+   SECTION 2: TRANSACTION TABLE (The Money Transfer)
+   ========================================================================== */
+
+CREATE TABLE payout_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    doctor_payment_id INT NULL,
+    lab_payout_id INT NULL,
+    expense_id INT NULL,
+
+    amountPaid DECIMAL(10, 2) NOT NULL,
+    paymentMethod ENUM('CASH', 'CARD', 'BANK_TRANSFER', 'ONLINE', 'CHEQUE') NOT NULL,
+    transactionReference VARCHAR(255) NULL,
+    paymentDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    CONSTRAINT fk_tx_doctor FOREIGN KEY (doctor_payment_id) REFERENCES doctor_schedule_payments(id)  ON DELETE RESTRICT,
+
+    CONSTRAINT fk_tx_lab FOREIGN KEY (lab_payout_id) REFERENCES lab_vendor_payouts(id) ON DELETE RESTRICT,
+
+    CONSTRAINT fk_tx_expense FOREIGN KEY (expense_id) REFERENCES operational_expenses(id) ON DELETE RESTRICT,
+
+    INDEX idx_tx_doctor (doctor_payment_id),
+    INDEX idx_tx_lab (lab_payout_id),
+    INDEX idx_tx_expense (expense_id)
+) ENGINE=InnoDB;
+
+
+
+-- 1. Create the new Master Table for Categories
+CREATE TABLE expense_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE, -- e.g. 'RENT', 'UTILITY', 'SALARY'
+    description VARCHAR(255) NULL,
+    isActive TINYINT DEFAULT 1
+) ENGINE=InnoDB;
+
+
+
+-- 3. Update the Operational Expenses table
+-- We drop the old Enum column and add a Foreign Key
+ALTER TABLE operational_expenses DROP COLUMN category;
+
+ALTER TABLE operational_expenses
+ADD COLUMN expense_category_id INT NOT NULL AFTER id,
+ADD CONSTRAINT fk_expense_category
+    FOREIGN KEY (expense_category_id)
+    REFERENCES expense_categories(id)
+    ON DELETE RESTRICT;
+
+ALTER TABLE doctorSchedule
+-- 1. Add status column for schedule lifecycle
+ADD COLUMN status ENUM('ACTIVE', 'COMPLETED', 'CANCELLED')
+    NOT NULL DEFAULT 'ACTIVE'
+AFTER isApproved,
+
+-- 2. Add bookingStatus column for online booking control
+ADD COLUMN bookingStatus ENUM('OPEN', 'CLOSED')
+    NOT NULL DEFAULT 'OPEN'
+AFTER status,
+
+-- 3. Add payoutStatus column for doctor payment state
+ADD COLUMN payoutStatus ENUM('NOT_PAID', 'PENDING', 'PAID')
+    NOT NULL DEFAULT 'NOT_PAID'
+AFTER bookingStatus;
