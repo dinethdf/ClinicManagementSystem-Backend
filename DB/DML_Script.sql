@@ -186,3 +186,12 @@ INSERT INTO systemConfig (configKey, configValue, createdDate, createdBy)
 VALUES
 ('SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
 ('EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM');
+
+-- 2. Insert your default categories
+INSERT INTO expense_categories (name, description) VALUES
+('RENT', 'Monthly Building Rent'),
+('UTILITY', 'Electricity, Water, Internet'),
+('SALARY', 'Staff Salaries'),
+('MAINTENANCE', 'Repairs and Cleaning'),
+('MARKETING', 'Ads and Promotions'),
+('OTHER', 'Miscellaneous Expenses');

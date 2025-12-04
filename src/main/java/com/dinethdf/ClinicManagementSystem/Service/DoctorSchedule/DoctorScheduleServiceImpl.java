@@ -77,12 +77,15 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .clinicFee(createDTO.getClinicFee())
                 .maxPatientCount(createDTO.getMaxPatientCount())
                 .registeredPatientCount(0)
-                .isActive(true)
+                //.isActive(true)  <-- optional, can remove if you want to rely on status
+                .status(DoctorSchedule.ScheduleStatus.ACTIVE)
+                .bookingStatus(DoctorSchedule.BookingStatus.OPEN)
+                .payoutStatus(DoctorSchedule.PayoutStatus.NOT_PAID)
                 .build();
-
 
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(newSchedule);
         return mapper.toResponseDTO(savedSchedule);
+
     }
 
     @Override
@@ -108,27 +111,27 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         return schedulePage.map(mapper::toResponseDTO);
     }
 
-    private DoctorScheduleListDTO mapToDTO(DoctorSchedule s) {
-        String fName = (s.getDoctor() != null) ? s.getDoctor().getFirstName() : "Unknown";
-        String lName = (s.getDoctor() != null) ? s.getDoctor().getLastName() : "";
-        String specName = (s.getDoctor() != null && s.getDoctor().getSpecialization() != null)
-                ? s.getDoctor().getSpecialization().getName()
-                : "General";
-
-        return new DoctorScheduleListDTO(
-                s.getId(),
-                fName,
-                lName,
-                specName,
-                s.getScheduleDate(),
-                s.getStartTime(),
-                s.getEndTime(),
-                s.getRegisteredPatientCount(),
-                s.getMaxPatientCount(),
-                Boolean.TRUE.equals(s.getIsActive())
-        );
-
-    }
+//    private DoctorScheduleListDTO mapToDTO(DoctorSchedule s) {
+//        String fName = (s.getDoctor() != null) ? s.getDoctor().getFirstName() : "Unknown";
+//        String lName = (s.getDoctor() != null) ? s.getDoctor().getLastName() : "";
+//        String specName = (s.getDoctor() != null && s.getDoctor().getSpecialization() != null)
+//                ? s.getDoctor().getSpecialization().getName()
+//                : "General";
+//
+//        return new DoctorScheduleListDTO(
+//                s.getId(),
+//                fName,
+//                lName,
+//                specName,
+//                s.getScheduleDate(),
+//                s.getStartTime(),
+//                s.getEndTime(),
+//                s.getRegisteredPatientCount(),
+//                s.getMaxPatientCount(),
+//                Boolean.TRUE.equals(s.getIsActive())
+//        );
+//
+//    }
 
     /**
      * --- NEW BATCH METHOD IMPLEMENTATION ---
@@ -156,8 +159,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         List<DoctorSchedule> schedules;
         if (includeInactive) {
             schedules = doctorScheduleRepo.findAll();
-        } else {
-            schedules = doctorScheduleRepo.findByIsActiveTrue();
+        }
+        else {
+            schedules = doctorScheduleRepo.findAllActive();
         }
         return schedules.stream()
                 .map(mapper::toResponseDTO)
@@ -174,7 +178,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (includeInactive) {
             schedules = doctorScheduleRepo.findByDoctorId(doctorId);
         } else {
-            schedules = doctorScheduleRepo.findByDoctorIdAndIsActiveTrue(doctorId);
+            schedules = doctorScheduleRepo.findActiveByDoctorId(doctorId);
         }
         return schedules.stream()
                 .map(mapper::toResponseDTO)
@@ -283,11 +287,24 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     public DoctorScheduleResponseDTO deactivateSchedule(Long id) {
         DoctorSchedule schedule = findScheduleById(id);
 
-        if (!schedule.getIsActive()) {
-            throw new ValidationException("Schedule is already inactive", "ALREADY_INACTIVE", HttpStatus.BAD_REQUEST);
+        if (schedule.getStatus() == DoctorSchedule.ScheduleStatus.CANCELLED) {
+            throw new ValidationException(
+                    "Schedule is already cancelled",
+                    "ALREADY_CANCELLED",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        schedule.setIsActive(false);
+        // You could also prevent deactivating COMPLETED schedules if needed
+        if (schedule.getStatus() == DoctorSchedule.ScheduleStatus.COMPLETED) {
+            throw new ValidationException(
+                    "Cannot deactivate a completed schedule",
+                    "COMPLETED_SCHEDULE",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        schedule.setStatus(DoctorSchedule.ScheduleStatus.CANCELLED);
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
         return mapper.toResponseDTO(savedSchedule);
     }
@@ -296,16 +313,24 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     public DoctorScheduleResponseDTO reactivateSchedule(Long id) {
         DoctorSchedule schedule = findScheduleById(id);
 
-        if (schedule.getIsActive()) {
-            throw new ValidationException("Schedule is already active", "ALREADY_ACTIVE", HttpStatus.BAD_REQUEST);
+        if (schedule.getStatus() == DoctorSchedule.ScheduleStatus.ACTIVE) {
+            throw new ValidationException(
+                    "Schedule is already active",
+                    "ALREADY_ACTIVE",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        // Add logic here if reactivating a past schedule is not allowed
+        // Optional: prevent reactivating past schedules
         if (schedule.getScheduleDate().isBefore(LocalDate.now())) {
-            throw new ValidationException("Cannot reactivate a schedule in the past", "PAST_DATE", HttpStatus.BAD_REQUEST);
+            throw new ValidationException(
+                    "Cannot reactivate a schedule in the past",
+                    "PAST_DATE",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        schedule.setIsActive(true);
+        schedule.setStatus(DoctorSchedule.ScheduleStatus.ACTIVE);
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
         return mapper.toResponseDTO(savedSchedule);
     }

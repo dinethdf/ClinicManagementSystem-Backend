@@ -47,7 +47,42 @@ public class DoctorSchedule extends AuditWrapper {
     @Column(name = "registeredPatientCount", nullable = false)
     private Integer registeredPatientCount = 0;
 
-    @Column(name = "isActive", nullable = false)
-    private Boolean isActive = true;
+//    @Column(name = "isActive", nullable = false)
+//    private Boolean isActive = true;
+
+
+    // --- New Columns ---
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ScheduleStatus status = ScheduleStatus.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bookingStatus", nullable = false)
+    private BookingStatus bookingStatus = BookingStatus.OPEN;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payoutStatus", nullable = false)
+    private PayoutStatus payoutStatus = PayoutStatus.NOT_PAID;
+
+    public enum ScheduleStatus {
+        ACTIVE,
+        COMPLETED,
+        CANCELLED
+    }
+
+    public enum BookingStatus {
+        OPEN,
+        CLOSED
+    }
+
+    public enum PayoutStatus {
+        NOT_PAID,
+        PENDING,
+        PAID
+    }
 
 }
+
+
+
