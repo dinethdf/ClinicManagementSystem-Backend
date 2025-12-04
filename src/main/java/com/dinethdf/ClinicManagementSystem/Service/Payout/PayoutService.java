@@ -1,7 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.Payout;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.*;
-import com.dinethdf.ClinicManagementSystem.Model.Financial.DoctorSchedulePayment;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.OperationalExpense;
 import java.util.List;
 
@@ -9,7 +8,8 @@ public interface PayoutService {
 
     // --- DOCTOR PAYOUTS ---
     DoctorPayoutResultDTO generateDoctorBill(Integer scheduleId, String createdBy);
-    List<DoctorSchedulePayment> getPendingDoctorBills();
+    // Update this line
+    List<PendingBillView> getPendingDoctorBills(Integer doctorId);
     BulkPaymentResponseDTO payDoctorsBulk(BulkPaymentRequestDTO request, String createdBy);
 
     // --- OPERATIONAL EXPENSES ---

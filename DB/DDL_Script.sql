@@ -505,3 +505,19 @@ ADD CONSTRAINT fk_expense_category
     FOREIGN KEY (expense_category_id)
     REFERENCES expense_categories(id)
     ON DELETE RESTRICT;
+
+ALTER TABLE doctorSchedule
+-- 1. Add status column for schedule lifecycle
+ADD COLUMN status ENUM('ACTIVE', 'COMPLETED', 'CANCELLED')
+    NOT NULL DEFAULT 'ACTIVE'
+AFTER isApproved,
+
+-- 2. Add bookingStatus column for online booking control
+ADD COLUMN bookingStatus ENUM('OPEN', 'CLOSED')
+    NOT NULL DEFAULT 'OPEN'
+AFTER status,
+
+-- 3. Add payoutStatus column for doctor payment state
+ADD COLUMN payoutStatus ENUM('NOT_PAID', 'PENDING', 'PAID')
+    NOT NULL DEFAULT 'NOT_PAID'
+AFTER bookingStatus;

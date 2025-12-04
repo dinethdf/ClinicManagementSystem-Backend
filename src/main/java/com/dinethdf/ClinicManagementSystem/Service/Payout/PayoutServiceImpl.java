@@ -82,8 +82,8 @@ public class PayoutServiceImpl implements PayoutService {
 
 
     @Override
-    public List<DoctorSchedulePayment> getPendingDoctorBills() {
-        return doctorBillRepo.findByStatus(DoctorSchedulePayment.PayoutStatus.PENDING);
+    public List<PendingBillView> getPendingDoctorBills(Integer doctorId) {
+        return doctorBillRepo.findPendingBillsFiltered(DoctorSchedulePayment.PayoutStatus.PENDING, doctorId);
     }
 
 
@@ -134,7 +134,7 @@ public class PayoutServiceImpl implements PayoutService {
         BulkPaymentResponseDTO response = new BulkPaymentResponseDTO();
         response.setSuccessCount(count);
         response.setTotalProcessedAmount(totalProcessed);
-        response.setMessage("Paid " + count + " doctors successfully.");
+        response.setMessage("Paid " + count + " doctors Schedules successfully.");
         return response;
     }
 

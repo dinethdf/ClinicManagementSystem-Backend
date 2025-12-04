@@ -34,8 +34,16 @@ public class PayoutController {
 
     @GetMapping("/doctor/pending")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResponse<List<DoctorSchedulePayment>>> getPendingDoctorBills() {
-        return ResponseEntity.ok(ApiResponse.success(payoutService.getPendingDoctorBills(), "Fetched Pending Bills"));
+    public ResponseEntity<ApiResponse<List<PendingBillView>>> getPendingDoctorBills(
+            @RequestParam(required = false) Integer doctorId
+    ) {
+
+        List<PendingBillView> list = payoutService.getPendingDoctorBills(doctorId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                list,
+                "Fetched Pending Bills"
+        ));
     }
 
     @PostMapping("/doctor/pay-bulk")

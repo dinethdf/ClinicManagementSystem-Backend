@@ -4,10 +4,12 @@ import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import org.springframework.stereotype.Component;
 
-@Component // Or use MapStruct
+@Component
 public class DoctorScheduleMapper {
 
     public DoctorScheduleResponseDTO toResponseDTO(DoctorSchedule schedule) {
+        if (schedule == null) return null;
+
         DoctorScheduleResponseDTO dto = new DoctorScheduleResponseDTO();
         dto.setId(schedule.getId());
         dto.setScheduleDate(schedule.getScheduleDate());
@@ -17,14 +19,24 @@ public class DoctorScheduleMapper {
         dto.setClinicFee(schedule.getClinicFee());
         dto.setMaxPatientCount(schedule.getMaxPatientCount());
         dto.setRegisteredPatientCount(schedule.getRegisteredPatientCount());
-        dto.setIsActive(schedule.getIsActive());
+
+        // Optional: remove isActive if you rely on status enum
+//        dto.setIsActive(schedule.getIsActive());
+
+        // Map enums
+        dto.setStatus(schedule.getStatus());
+        dto.setBookingStatus(schedule.getBookingStatus());
+        dto.setPayoutStatus(schedule.getPayoutStatus());
 
         if (schedule.getDoctor() != null) {
             dto.setDoctorId(schedule.getDoctor().getId());
-            // Assuming Doctor entity has getName()
             dto.setDoctorName(schedule.getDoctor().getFirstName() + " " + schedule.getDoctor().getLastName());
-            dto.setSpecialization(schedule.getDoctor().getSpecialization().getName());
+
+            if (schedule.getDoctor().getSpecialization() != null) {
+                dto.setSpecialization(schedule.getDoctor().getSpecialization().getName());
+            }
         }
+
         return dto;
     }
 }
