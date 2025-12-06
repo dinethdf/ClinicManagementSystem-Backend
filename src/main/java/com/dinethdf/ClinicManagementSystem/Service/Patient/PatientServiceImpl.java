@@ -160,7 +160,9 @@ public class PatientServiceImpl implements PatientService {
                 patient.setMobileNo(null);
                 patient.setLandNo(null);
             }
-            patient.setRegistrationDate(LocalDateTime.now());
+//            patient.setRegistrationDate(LocalDateTime.now());
+            patient.setIsActive(true);
+            patient.setIsApproved(true);
             Patient savedPatient = patientDetailsRepo.save(patient);
 
             String patientNo = generatePatientNo(savedPatient.getId());

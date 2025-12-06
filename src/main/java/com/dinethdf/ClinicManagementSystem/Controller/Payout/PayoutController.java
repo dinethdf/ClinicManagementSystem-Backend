@@ -6,12 +6,14 @@ import com.dinethdf.ClinicManagementSystem.Model.Financial.DoctorSchedulePayment
 import com.dinethdf.ClinicManagementSystem.Model.Financial.OperationalExpense;
 import com.dinethdf.ClinicManagementSystem.Service.Payout.PayoutService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,7 +23,19 @@ public class PayoutController {
 
     private final PayoutService payoutService;
 
-    // --- DOCTOR ENDPOINTS ---
+    @GetMapping("/doctor/search")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<PayoutView>>> searchPayouts(
+            @RequestParam(required = false) Integer doctorId,
+            @RequestParam(required = false) DoctorSchedulePayment.PayoutStatus status,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<PayoutView> result = payoutService.searchPayouts(doctorId, status, startDate, endDate, page, size);
+        return ResponseEntity.ok(ApiResponse.success(result, "Search Results"));
+    }
 
     @PostMapping("/doctor/generate-bill/{scheduleId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
@@ -55,7 +69,30 @@ public class PayoutController {
         return ResponseEntity.ok(ApiResponse.success(result, "Payment Successful"));
     }
 
-    // --- EXPENSE ENDPOINTS ---
+    @PostMapping("/doctor/reverse/{payoutId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')") // STRICTLY ADMIN ONLY
+    public ResponseEntity<ApiResponse<String>> reversePayment(
+            @PathVariable Integer payoutId, Principal p) {
+
+        payoutService.reversePayment(payoutId, p.getName());
+        return ResponseEntity.ok(ApiResponse.success(null, "Payment Reversed. Bill is now PENDING."));
+    }
+
+    @GetMapping("/summary")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<FinancialSummaryDTO>> getDashboardSummary(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate
+    ) {
+
+        FinancialSummaryDTO summary = payoutService.getFinancialSummary(startDate, endDate);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                summary,
+                "Financial Dashboard Stats Fetched"
+        ));
+    }
+
 
     @PostMapping("/expense")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
