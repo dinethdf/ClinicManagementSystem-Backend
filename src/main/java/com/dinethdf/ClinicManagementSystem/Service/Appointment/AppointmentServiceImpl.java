@@ -203,6 +203,31 @@ public class AppointmentServiceImpl implements AppointmentService {
                 ));
     }
 
+    @Override
+    public String cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy) {
+
+        // 1. Call Stored Procedure (It returns the status string directly now)
+        String statusMessage = appointmentRepo.sp_CancelAppointment(
+                appointmentId.intValue(),
+                cancelDTO.getReason(),
+                cancelledBy
+        );
+
+        // 2. Handle Response
+        return switch (statusMessage) {
+            case "CANCEL_SUCCESS" -> "Appointment Cancelled Successfully.";
+            case "REFUND_SUCCESS" -> "Appointment Cancelled & Refund Recorded.";
+            case "ERROR_NOT_FOUND" ->
+                    throw new ValidationException("Appointment not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
+            case "ERROR_ALREADY_CANCELLED" ->
+                    throw new ValidationException("Appointment is already cancelled", "ALREADY_CANCELLED", HttpStatus.BAD_REQUEST);
+            case "ERROR_CANNOT_CANCEL_COMPLETED" ->
+                    throw new ValidationException("Cannot cancel a completed appointment", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+            default ->
+                    throw new ValidationException("Database Error: " + statusMessage, "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+        };
+    }
+
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {
         if (createDTO.getDoctorScheduleId() == null) {
             throw new ValidationException(
