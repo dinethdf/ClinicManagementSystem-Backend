@@ -96,9 +96,9 @@ public class AppointmentNotificationService {
 
                     <div class="header">
                         <img src="https://cdn-icons-png.flaticon.com/512/3063/3063176.png" width="50" alt="Logo" style="margin-bottom: 10px;">
-                        <h1>CureGuard Medical</h1>
+                        <h1>CureGuard Medical Center</h1>
                         <div class="contact-info">
-                            📍 123 Health Avenue, Wellness City &nbsp;|&nbsp; 📞 +94 112 345 678 &nbsp;|&nbsp; ✉️ support@cureguard.com
+                            📍 123 Pelmadulla, Rathnapura City &nbsp;|&nbsp; 📞 +94 452 274 222 &nbsp;|&nbsp; ✉️ support@cureguard.com
                         </div>
                         <hr style="border: 0; border-top: 2px solid #aecfea; margin-top: 20px;">
                     </div>

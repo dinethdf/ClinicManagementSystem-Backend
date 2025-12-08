@@ -160,7 +160,9 @@ public class PatientServiceImpl implements PatientService {
                 patient.setMobileNo(null);
                 patient.setLandNo(null);
             }
-            patient.setRegistrationDate(LocalDateTime.now());
+//            patient.setRegistrationDate(LocalDateTime.now());
+            patient.setIsActive(true);
+            patient.setIsApproved(true);
             Patient savedPatient = patientDetailsRepo.save(patient);
 
             String patientNo = generatePatientNo(savedPatient.getId());
@@ -315,6 +317,22 @@ public class PatientServiceImpl implements PatientService {
                     messageSourceUtil.getMessage("patient.approve.success")
             );
         }
+    }
+
+    @Override
+    public ApiResponse<String> togglePatientStatus(Integer patientId) {
+        Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
+                () -> new ValidationException(messageSourceUtil.getMessage("patient.not.found"), "PATIENT_NOT_FOUND"));
+
+        // Toggle the status (If true -> make false. If false -> make true)
+        boolean newStatus = !Boolean.TRUE.equals(existingPatient.getIsActive());
+
+        existingPatient.setIsActive(newStatus);
+        patientDetailsRepo.save(existingPatient);
+
+        String message = newStatus ? "Patient activated successfully" : "Patient deactivated successfully";
+
+        return ApiResponse.success(existingPatient.getPatientNo(), message);
     }
 
     @Override

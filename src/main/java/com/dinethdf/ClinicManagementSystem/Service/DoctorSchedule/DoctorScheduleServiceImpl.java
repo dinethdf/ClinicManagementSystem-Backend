@@ -40,6 +40,12 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     private final MessageSourceUtil messageSourceUtil;
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean validateScheduleOwnership(Long doctorId, Long scheduleId) {
+        return doctorScheduleRepo.existsByIdAndDoctorId(scheduleId, doctorId);
+    }
+
+    @Override
     public DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO) {
 
         validateCreateDTO(createDTO);

@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
@@ -83,7 +84,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/schedule/{scheduleId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<ApiResponse<Page<AppointmentByScheduleListDTO>>> getAppointmentsByScheduleId(
             @PathVariable Long scheduleId,
             @RequestParam(defaultValue = "0") int page,
@@ -93,6 +94,18 @@ public class AppointmentController {
         Page<AppointmentByScheduleListDTO> result = appointmentService.getAppointmentsBySchedule(scheduleId, pageable);
         ApiResponse<Page<AppointmentByScheduleListDTO>> response = ApiResponse.success(
                 result, messageSourceUtil.getMessage("appointment.list.success")
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/schedule/{scheduleId}/analytics")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<ScheduleAnalyticsDTO>> getScheduleAnalytics(
+            @PathVariable Long scheduleId) {
+
+        ScheduleAnalyticsDTO analytics = appointmentService.getAnalyticsByScheduleId(scheduleId);
+        ApiResponse<ScheduleAnalyticsDTO> response = ApiResponse.success(
+                analytics, "Analytics retrieved successfully"
         );
         return ResponseEntity.ok(response);
     }

@@ -5,6 +5,7 @@ import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -74,7 +75,8 @@ public class Patient extends CommonUserDetails {
         return getAge() < 18;
     }
 
-    @Column(name = "registrationDate")
+    @CreationTimestamp
+    @Column(name = "registrationDate", nullable = false, updatable = false)
     private LocalDateTime registrationDate;
 
     @Column(name = "isActive", nullable = false)

@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Repo.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -189,6 +190,19 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("scheduleId") Long scheduleId,
             Pageable pageable
     );
+
+    @Query(nativeQuery = true, value = """
+    SELECT
+        COUNT(id) AS total,
+        COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS completed,
+        COALESCE(SUM(CASE WHEN status = 'BOOKED' THEN 1 ELSE 0 END), 0) AS booked,
+        COALESCE(SUM(CASE WHEN status = 'PENDING_PAYMENT' THEN 1 ELSE 0 END), 0) AS pendingPayment,
+        COALESCE(SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END), 0) AS cancelled
+    FROM appointments
+    WHERE doctor_schedule_id = :scheduleId
+""")
+    ScheduleAnalyticsDTO getScheduleAnalytics(@Param("scheduleId") Long scheduleId);
+
 
     @Query("""
         SELECT new com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCheckDTO(

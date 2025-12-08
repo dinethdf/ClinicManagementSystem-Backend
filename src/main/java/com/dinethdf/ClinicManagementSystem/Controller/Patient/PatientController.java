@@ -100,6 +100,13 @@ public class PatientController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PatchMapping("status/{id}")
+    public ResponseEntity<ApiResponse<String>> togglePatientStatus(@PathVariable Integer id) {
+        ApiResponse<String> response = patientServiceImpl.togglePatientStatus(id);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @DeleteMapping("delete/staff/{id}")
     public ResponseEntity<ApiResponse<String>> deletePatientDetailsByStaff(@PathVariable Integer id){
