@@ -65,8 +65,8 @@ public class SecurityConfig {
                          .requestMatchers("api/schedules/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/appointments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("api/payments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
-                         .requestMatchers("api/financials/**").hasAnyAuthority("ADMIN", "USER", "STAFF")
-                         .requestMatchers("api/payouts/**").hasAnyAuthority("ADMIN", "USER")
+                         .requestMatchers("api/financials/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("api/payouts/**").hasAnyAuthority("ADMIN", "USER", "DOCTOR" )
                          .requestMatchers("api/prescriptions/**").hasAnyAuthority("ADMIN","DOCTOR" )
 
 
@@ -88,7 +88,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.addAllowedOriginPattern("*");
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

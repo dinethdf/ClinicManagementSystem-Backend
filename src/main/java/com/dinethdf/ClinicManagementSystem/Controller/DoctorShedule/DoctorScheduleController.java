@@ -54,6 +54,27 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/validate-owner")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<Boolean>> validateScheduleOwner(
+            @RequestParam Long doctorId,
+            @RequestParam Long scheduleId
+    ) {
+        boolean isValid = doctorScheduleService.validateScheduleOwnership(doctorId, scheduleId);
+        if (isValid) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    true,
+                    "Valid: Schedule belongs to this Doctor."
+            ));
+        } else {
+            return ResponseEntity.ok(ApiResponse.success(
+                    false,
+                    "Invalid: Schedule does not belong to this Doctor or does not exist."
+            ));
+        }
+    }
+
+
     @GetMapping("/upcoming-public")
     public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getUpcomingSchedules(
             @RequestParam(required = false) String doctorName,
@@ -165,7 +186,7 @@ public class DoctorScheduleController {
 
 
     @GetMapping("/by-doctor/{doctorId}/upcoming")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getUpcomingSchedulesByDoctor(@PathVariable Long doctorId) {
 
         List<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedulesByDoctorId(doctorId);

@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
@@ -175,6 +176,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable) {
         return appointmentRepo.findAppointmentsByScheduleId(scheduleId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ScheduleAnalyticsDTO getAnalyticsByScheduleId(Long scheduleId) {
+        return appointmentRepo.getScheduleAnalytics(scheduleId);
     }
 
     @Override

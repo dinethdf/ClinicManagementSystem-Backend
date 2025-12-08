@@ -34,9 +34,8 @@ public interface PatientService {
      */
     ApiResponse<String> approvePatient(Integer patientId) ;
 
-    /**
-     * Delete patient details (admin only)
-     */
+    ApiResponse<String> togglePatientStatus(Integer patientId);
+
     ApiResponse<String> deletePatient(Integer patientId);
 
 

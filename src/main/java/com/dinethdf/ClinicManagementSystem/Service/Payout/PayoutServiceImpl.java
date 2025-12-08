@@ -9,11 +9,17 @@ import com.dinethdf.ClinicManagementSystem.Repo.Payout.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,6 +85,21 @@ public class PayoutServiceImpl implements PayoutService {
         return result;
     }
 
+    @Override
+    public FinancialSummaryDTO getFinancialSummary(LocalDate startDate, LocalDate endDate) {
+
+        BigDecimal totalPaidToDoctors = doctorBillRepo.sumByStatusAndDate(
+                DoctorSchedulePayment.PayoutStatus.PAID, startDate, endDate
+        );
+
+        BigDecimal totalPendingDoctors = doctorBillRepo.sumByStatusAndDate(
+                DoctorSchedulePayment.PayoutStatus.PENDING, startDate, endDate
+        );
+
+        BigDecimal totalExpenses = expenseRepo.sumExpensesByDate(startDate, endDate);
+
+        return new FinancialSummaryDTO(totalPaidToDoctors, totalPendingDoctors, totalExpenses);
+    }
 
 
     @Override
@@ -86,56 +107,136 @@ public class PayoutServiceImpl implements PayoutService {
         return doctorBillRepo.findPendingBillsFiltered(DoctorSchedulePayment.PayoutStatus.PENDING, doctorId);
     }
 
+    @Override
+    public Page<PayoutView> searchPayouts(Long doctorId, DoctorSchedulePayment.PayoutStatus status,
+                                          LocalDate startDate, LocalDate endDate, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("ds.scheduleDate").descending());
+        return doctorBillRepo.searchPayouts(doctorId, status, startDate, endDate, pageable);
+    }
 
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public BulkPaymentResponseDTO payDoctorsBulk(BulkPaymentRequestDTO request, String createdBy) {
+
         List<Integer> ids = request.getPaymentIds();
-        BigDecimal totalProcessed = BigDecimal.ZERO;
-        int count = 0;
 
-        if (ids == null || ids.isEmpty()) throw new ValidationException("No selection", "EMPTY", HttpStatus.BAD_REQUEST);
+        // --- 1. BASIC VALIDATION ---
+        if (ids == null || ids.isEmpty()) {
+            throw new ValidationException("No selection", "EMPTY", HttpStatus.BAD_REQUEST);
+        }
 
-        for (Integer id : ids) {
-            DoctorSchedulePayment bill = doctorBillRepo.findById(id)
-                    .orElseThrow(() -> new ValidationException("Bill ID " + id + " not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
+        // --- 2. FETCH ALL DATA (One DB Query) ---
+        // Efficiently fetch all bills in one go
+        List<DoctorSchedulePayment> bills = doctorBillRepo.findAllById(ids);
 
+        // Check if all requested IDs were found
+        if (bills.size() != ids.size()) {
+            throw new ValidationException("One or more Bill IDs not found in database", "NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+
+        // --- 3. LOGIC VALIDATION LOOP (Memory Only - No Saves Yet) ---
+        Long referenceDoctorId = null;
+        BigDecimal calculatedTotal = BigDecimal.ZERO;
+
+        for (DoctorSchedulePayment bill : bills) {
+
+            // A. Check Status
             if (bill.getStatus() == DoctorSchedulePayment.PayoutStatus.PAID) {
-                throw new ValidationException("Schedule #" + bill.getDoctorSchedule().getId() + " is already paid", "PAID", HttpStatus.CONFLICT);
+                throw new ValidationException(
+                        "Schedule #" + bill.getDoctorSchedule().getId() + " is already paid. Transaction Aborted.",
+                        "ALREADY_PAID",
+                        HttpStatus.CONFLICT
+                );
             }
 
-            BigDecimal amount = bill.getFinalPayableAmount();
+            // B. Check Doctor Consistency (Must be same doctor)
+            Long currentDoctorId = bill.getDoctorSchedule().getDoctor().getId();
 
-            // CREATE TRANSACTION RECORD
+            if (referenceDoctorId == null) {
+                referenceDoctorId = currentDoctorId; // Set the first doctor as the standard
+            } else {
+                if (!currentDoctorId.equals(referenceDoctorId)) {
+                    throw new ValidationException(
+                            "Multi-Doctor Payment Not Allowed. You selected schedules for different doctors (IDs: "
+                                    + referenceDoctorId + " and " + currentDoctorId + "). Please select one doctor at a time.",
+                            "MIXED_DOCTORS",
+                            HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            // C. Sum up total
+            calculatedTotal = calculatedTotal.add(bill.getFinalPayableAmount());
+        }
+
+        if (request.getTotalAmountToPay() != null && calculatedTotal.compareTo(request.getTotalAmountToPay()) != 0) {
+            throw new ValidationException(
+                    "Total mismatch! System calculated: " + calculatedTotal + ", but you requested: " + request.getTotalAmountToPay(),
+                    "AMOUNT_MISMATCH",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        int count = 0;
+        List<DoctorSchedulePayment> billsToSave = new ArrayList<>();
+
+        for (DoctorSchedulePayment bill : bills) {
+
+            // 1. Create Transaction Record
             PayoutTransaction tx = new PayoutTransaction();
             tx.setDoctorPayment(bill);
-            tx.setAmountPaid(amount);
+            tx.setAmountPaid(bill.getFinalPayableAmount());
             tx.setPaymentMethod(request.getPaymentMethod());
             tx.setTransactionReference(request.getTransactionReference());
             tx.setCreatedBy(createdBy);
 
-            // UPDATE BILL STATUS
+            // 2. Update Bill Status
             bill.setStatus(DoctorSchedulePayment.PayoutStatus.PAID);
 
+            // 3. Link Transaction
             if (bill.getTransactions() == null) bill.setTransactions(new ArrayList<>());
             bill.getTransactions().add(tx);
 
-            doctorBillRepo.save(bill);
-
-            totalProcessed = totalProcessed.add(amount);
+            // Add to batch list
+            billsToSave.add(bill);
             count++;
         }
 
-        // SAFETY CHECK
-        if (request.getTotalAmountToPay() != null && totalProcessed.compareTo(request.getTotalAmountToPay()) != 0) {
-            throw new ValidationException("Total mismatch. Calculated: " + totalProcessed, "MISMATCH", HttpStatus.BAD_REQUEST);
-        }
+        // 4. Batch Save (Efficient)
+        doctorBillRepo.saveAll(billsToSave);
 
+        // --- RETURN SUCCESS ---
         BulkPaymentResponseDTO response = new BulkPaymentResponseDTO();
         response.setSuccessCount(count);
-        response.setTotalProcessedAmount(totalProcessed);
-        response.setMessage("Paid " + count + " doctors Schedules successfully.");
+        response.setTotalProcessedAmount(calculatedTotal);
+        response.setMessage("Validation passed. Successfully paid " + count + " schedules.");
+
         return response;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void reversePayment(Integer payoutId, String modifiedBy) {
+
+        // 1. Get the Bill
+        DoctorSchedulePayment bill = doctorBillRepo.findById(payoutId)
+                .orElseThrow(() -> new ValidationException("Bill not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // 2. Validate: Can only reverse PAID items
+        if (bill.getStatus() != DoctorSchedulePayment.PayoutStatus.PAID) {
+            throw new ValidationException("Only PAID bills can be reversed", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        }
+
+        // 3. Reset Status
+        bill.setStatus(DoctorSchedulePayment.PayoutStatus.PENDING);
+        bill.setUpdatedBy(modifiedBy);
+        bill.setUpdatedDate(LocalDateTime.now());
+
+        bill.getTransactions().clear();
+
+        doctorBillRepo.save(bill);
     }
 
 

@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,8 @@ public interface AppointmentService {
      List<AppointmentInvoiceViewDTO> getInvoicesByAppointmentId(Long appointmentId) ;
 
     Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable);
+
+    ScheduleAnalyticsDTO getAnalyticsByScheduleId(Long scheduleId);
 
     List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId);
 
