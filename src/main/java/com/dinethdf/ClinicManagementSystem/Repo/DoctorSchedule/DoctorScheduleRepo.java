@@ -16,6 +16,8 @@ import java.util.List;
 @Repository
 public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>, JpaSpecificationExecutor<DoctorSchedule> {
 
+    boolean existsByIdAndDoctorId(Long id, Long doctorId);
+
     // Find all schedules for a specific doctor
     List<DoctorSchedule> findByDoctorId(Long doctorId);
 

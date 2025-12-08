@@ -4,12 +4,17 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.DoctorSchedulePayment;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.OperationalExpense;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.Payout.PayoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -33,8 +38,30 @@ public class PayoutController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Page<PayoutView> result = payoutService.searchPayouts(doctorId, status, startDate, endDate, page, size);
+        Page<PayoutView> result = payoutService.searchPayouts(Long.valueOf(doctorId), status, startDate, endDate, page, size);
         return ResponseEntity.ok(ApiResponse.success(result, "Search Results"));
+    }
+
+    @GetMapping("/doctor/my-payouts")
+    @PreAuthorize("hasAnyAuthority('ADMIN','DOCTOR')")
+    public ResponseEntity<ApiResponse<Page<PayoutView>>> getMyPayouts(
+            @RequestParam(required = false) DoctorSchedulePayment.PayoutStatus status,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication
+    ) {
+
+        if (authentication.getPrincipal() instanceof String) {
+            throw new AccessDeniedException("User is not authenticated correctly.");
+        }
+        UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
+
+        Long doctorId = userDetails.getUserDetailsId();
+
+        Page<PayoutView> result = payoutService.searchPayouts(doctorId, status, startDate, endDate, page, size);
+        return ResponseEntity.ok(ApiResponse.success(result, "My Payout History"));
     }
 
     @PostMapping("/doctor/generate-bill/{scheduleId}")

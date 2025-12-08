@@ -68,7 +68,7 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
             (:endDate IS NULL OR ds.scheduleDate <= :endDate)
     """)
     Page<PayoutView> searchPayouts(
-            @Param("doctorId") Integer doctorId,
+            @Param("doctorId") Long doctorId,
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,

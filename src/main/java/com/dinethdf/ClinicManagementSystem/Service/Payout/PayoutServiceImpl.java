@@ -108,8 +108,9 @@ public class PayoutServiceImpl implements PayoutService {
     }
 
     @Override
-    public Page<PayoutView> searchPayouts(Integer doctorId, DoctorSchedulePayment.PayoutStatus status,
+    public Page<PayoutView> searchPayouts(Long doctorId, DoctorSchedulePayment.PayoutStatus status,
                                           LocalDate startDate, LocalDate endDate, int page, int size) {
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("ds.scheduleDate").descending());
         return doctorBillRepo.searchPayouts(doctorId, status, startDate, endDate, pageable);
     }

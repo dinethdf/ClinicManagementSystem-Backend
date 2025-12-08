@@ -19,7 +19,7 @@ public interface PayoutService {
     // Update this line
     List<PendingBillView> getPendingDoctorBills(Integer doctorId);
 
-    Page<PayoutView> searchPayouts(Integer doctorId, DoctorSchedulePayment.PayoutStatus status,
+    Page<PayoutView> searchPayouts(Long doctorId, DoctorSchedulePayment.PayoutStatus status,
                                    LocalDate startDate, LocalDate endDate, int page, int size);
 
     BulkPaymentResponseDTO payDoctorsBulk(BulkPaymentRequestDTO request, String createdBy);

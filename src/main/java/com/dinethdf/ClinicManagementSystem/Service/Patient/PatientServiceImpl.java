@@ -320,6 +320,22 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    public ApiResponse<String> togglePatientStatus(Integer patientId) {
+        Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
+                () -> new ValidationException(messageSourceUtil.getMessage("patient.not.found"), "PATIENT_NOT_FOUND"));
+
+        // Toggle the status (If true -> make false. If false -> make true)
+        boolean newStatus = !Boolean.TRUE.equals(existingPatient.getIsActive());
+
+        existingPatient.setIsActive(newStatus);
+        patientDetailsRepo.save(existingPatient);
+
+        String message = newStatus ? "Patient activated successfully" : "Patient deactivated successfully";
+
+        return ApiResponse.success(existingPatient.getPatientNo(), message);
+    }
+
+    @Override
     public ApiResponse<String> deletePatient(Integer patientId) {
         Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));

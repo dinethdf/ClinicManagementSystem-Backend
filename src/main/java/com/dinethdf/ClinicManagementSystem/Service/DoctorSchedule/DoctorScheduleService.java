@@ -13,11 +13,8 @@ import java.util.List;
 
 public interface DoctorScheduleService {
 
-    /**
-     * Creates a new doctor schedule.
-     * @param createDTO DTO containing schedule details.
-     * @return The created schedule as a Response DTO.
-     */
+    boolean validateScheduleOwnership(Long doctorId, Long scheduleId);
+
     DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO);
 
     /**

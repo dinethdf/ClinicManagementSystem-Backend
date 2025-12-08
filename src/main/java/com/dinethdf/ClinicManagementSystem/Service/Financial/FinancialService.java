@@ -19,7 +19,6 @@ public class FinancialService {
     @Transactional(readOnly = true)
     public List<ScheduleFinancialDTO> getFinancialsForSchedule(Integer scheduleId) {
 
-        System.out.println("run this");
         List<ScheduleFinancialProjection> rawData = financialRepo.getScheduleFinancials(scheduleId);
 
         return rawData.stream()
