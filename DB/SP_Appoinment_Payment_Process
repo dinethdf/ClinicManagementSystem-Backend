@@ -109,18 +109,23 @@ BEGIN
         SET o_new_payment_id = LAST_INSERT_ID();
 
         -- == 9. UPDATE THE INVOICE ==
+        -- Added updatedDate and updatedBy
         UPDATE invoices
         SET
             status = 'PAID',
             totalDiscount = v_total_discount,
-            finalAmount = v_final_amount
+            finalAmount = v_final_amount,
+            updatedDate = v_now,
+            updatedBy = p_created_by
         WHERE
             id = p_invoice_id;
 
         -- == 10. UPDATE THE APPOINTMENT ==
         IF v_appointment_id IS NOT NULL THEN
             UPDATE appointments
-            SET status = 'BOOKED' -- UPDATE: Changed to UPPERCASE to match ENUM
+            SET status = 'BOOKED',
+                updatedDate = v_now,
+                updatedBy = p_created_by
             WHERE id = v_appointment_id;
         END IF;
 

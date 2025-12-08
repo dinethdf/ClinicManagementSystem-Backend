@@ -22,6 +22,18 @@ import lombok.EqualsAndHashCode;
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_statusMessage", type = String.class)
         }
 )
+
+@NamedStoredProcedureQuery(
+        name = "Appointment.cancel",
+        procedureName = "sp_CancelAppointment",
+        parameters = {
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_appointment_id", type = Integer.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cancel_reason", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cancelled_by", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class)
+        }
+)
+
 @Entity
 @Table(name = "appointments", indexes = {
         @Index(name = "idx_unique_queue", columnList = "doctor_schedule_id, queuePosition", unique = true),
