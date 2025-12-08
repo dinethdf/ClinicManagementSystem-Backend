@@ -521,3 +521,6 @@ AFTER status,
 ADD COLUMN payoutStatus ENUM('NOT_PAID', 'PENDING', 'PAID')
     NOT NULL DEFAULT 'NOT_PAID'
 AFTER bookingStatus;
+
+ALTER TABLE doctorSchedule
+ADD COLUMN lastQueueNumber INT NOT NULL DEFAULT 0 AFTER registeredPatientCount;

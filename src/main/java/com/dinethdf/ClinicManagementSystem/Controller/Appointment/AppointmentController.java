@@ -123,4 +123,21 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/cancel/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<String>> cancelAppointment(
+            @PathVariable Long id,
+            @RequestBody AppointmentCancelDTO cancelDTO,
+            Principal principal) {
+
+        String resultMessage = appointmentService.cancelAppointment(id, cancelDTO, principal.getName());
+
+        ApiResponse<String> response = ApiResponse.success(
+                null, // No data payload for cancellation
+                resultMessage // The service returns the specific message (Refund vs Cancel)
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
 }

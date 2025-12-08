@@ -16,6 +16,7 @@ BEGIN
     -- == 1. DECLARE VARIABLES ==
     DECLARE v_maxPatientCount INT;
     DECLARE v_currentBookedCount INT;
+    DECLARE v_lastQueueNumber INT; -- NEW VARIABLE
     DECLARE v_isScheduleActive TINYINT;
     DECLARE v_doctorFee DECIMAL(10, 2);
     DECLARE v_clinicFee DECIMAL(10, 2);
@@ -41,12 +42,14 @@ BEGIN
     SELECT
         maxPatientCount,
         registeredPatientCount,
+        lastQueueNumber,        -- NEW COLUMN for Ticket Sequence
         isActive,
         doctorFee,
         clinicFee
     INTO
         v_maxPatientCount,
-        v_currentBookedCount,
+        v_currentBookedCount,   -- Holds current ACTIVE count
+        v_lastQueueNumber,      -- Holds last Ticket Number
         v_isScheduleActive,
         v_doctorFee,
         v_clinicFee
@@ -80,7 +83,7 @@ BEGIN
             ROLLBACK;
         ELSE
             -- == 7. ALL CHECKS PASSED - CREATE BOOKING ==
-            SET v_newQueuePosition = v_currentBookedCount + 1;
+            SET v_newQueuePosition = v_lastQueueNumber + 1;
 
             -- a. Insert the new appointment (invoice_id is NULL initially)
             INSERT INTO appointments (
@@ -104,8 +107,11 @@ BEGIN
             SET v_newAppointmentId = LAST_INSERT_ID();
 
             -- b. Update the schedule's patient count
+            -- Increment Active Count (v_currentBookedCount + 1)
+            -- Update Last Queue Number to the new ticket (v_newQueuePosition)
             UPDATE doctorSchedule
-            SET registeredPatientCount = v_newQueuePosition
+            SET registeredPatientCount = v_currentBookedCount + 1,
+                lastQueueNumber = v_newQueuePosition
             WHERE id = p_doctor_schedule_id;
 
             -- == 8. AUTOMATIC INVOICE CREATION ==

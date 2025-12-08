@@ -195,3 +195,6 @@ INSERT INTO expense_categories (name, description) VALUES
 ('MAINTENANCE', 'Repairs and Cleaning'),
 ('MARKETING', 'Ads and Promotions'),
 ('OTHER', 'Miscellaneous Expenses');
+
+
+UPDATE doctorSchedule SET lastQueueNumber = registeredPatientCount;
