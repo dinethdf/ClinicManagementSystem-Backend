@@ -8,6 +8,10 @@ import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo; // EXIS
 import com.dinethdf.ClinicManagementSystem.Repo.Payout.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.PayoutStatus;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,26 +46,27 @@ public class PayoutServiceImpl implements PayoutService {
     @Override
     public DoctorPayoutResultDTO generateDoctorBill(Integer scheduleId, String createdBy) {
 
+        // 1. Fetch Schedule
         DoctorSchedule schedule = scheduleRepo.findById(Long.valueOf(scheduleId))
                 .orElseThrow(() -> new ValidationException("Schedule not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
 
+        // 2. Validate Duplicate
         if (doctorBillRepo.existsByDoctorScheduleId(scheduleId)) {
             throw new ValidationException("Bill already generated for this schedule", "DUPLICATE", HttpStatus.CONFLICT);
         }
 
-        // CALL EXISTING STORED PROCEDURE
         List<ScheduleFinancialProjection> data = calculationRepo.getScheduleFinancials(scheduleId);
 
         if (data.isEmpty()) {
-            throw new ValidationException("No appointment data found", "NO_DATA", HttpStatus.BAD_REQUEST);
+            throw new ValidationException("No appointment data found. Cannot generate bill.", "NO_DATA", HttpStatus.BAD_REQUEST);
         }
 
-        // CALCULATE SUMS
+        // 4. Sum up totals
         BigDecimal fee = data.stream().map(ScheduleFinancialProjection::getBaseDoctorFee).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal discount = data.stream().map(ScheduleFinancialProjection::getDoctorDiscountAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal payable = data.stream().map(ScheduleFinancialProjection::getNetDoctorPayout).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // SAVE BILL
+        // 5. Create the Bill (Liability)
         DoctorSchedulePayment bill = new DoctorSchedulePayment();
         bill.setDoctorSchedule(schedule);
         bill.setTotalDoctorFee(fee);
@@ -72,7 +77,13 @@ public class PayoutServiceImpl implements PayoutService {
 
         DoctorSchedulePayment saved = doctorBillRepo.save(bill);
 
-        // MAP TO DTO
+        // --- 6. NEW: Update Schedule Status to PENDING ---
+        // This marks the schedule as "Bill Generated, Waiting for Payment"
+        schedule.setPayoutStatus(PayoutStatus.PENDING);
+        schedule.setStatus(DoctorSchedule.ScheduleStatus.COMPLETED);
+        scheduleRepo.save(schedule);
+
+        // 7. Return Result
         DoctorPayoutResultDTO result = new DoctorPayoutResultDTO();
         result.setPayoutId(saved.getId());
         result.setScheduleId(scheduleId);
@@ -80,7 +91,7 @@ public class PayoutServiceImpl implements PayoutService {
         result.setTotalDiscounts(discount);
         result.setFinalPayable(payable);
         result.setStatus(saved.getStatus());
-        result.setMessage("Bill Generated. Ready for payment.");
+        result.setMessage("Bill Generated. Schedule marked as PENDING.");
 
         return result;
     }
@@ -122,13 +133,10 @@ public class PayoutServiceImpl implements PayoutService {
 
         List<Integer> ids = request.getPaymentIds();
 
-        // --- 1. BASIC VALIDATION ---
         if (ids == null || ids.isEmpty()) {
             throw new ValidationException("No selection", "EMPTY", HttpStatus.BAD_REQUEST);
         }
 
-        // --- 2. FETCH ALL DATA (One DB Query) ---
-        // Efficiently fetch all bills in one go
         List<DoctorSchedulePayment> bills = doctorBillRepo.findAllById(ids);
 
         // Check if all requested IDs were found
@@ -136,13 +144,11 @@ public class PayoutServiceImpl implements PayoutService {
             throw new ValidationException("One or more Bill IDs not found in database", "NOT_FOUND", HttpStatus.NOT_FOUND);
         }
 
-        // --- 3. LOGIC VALIDATION LOOP (Memory Only - No Saves Yet) ---
         Long referenceDoctorId = null;
         BigDecimal calculatedTotal = BigDecimal.ZERO;
 
         for (DoctorSchedulePayment bill : bills) {
 
-            // A. Check Status
             if (bill.getStatus() == DoctorSchedulePayment.PayoutStatus.PAID) {
                 throw new ValidationException(
                         "Schedule #" + bill.getDoctorSchedule().getId() + " is already paid. Transaction Aborted.",
@@ -151,11 +157,11 @@ public class PayoutServiceImpl implements PayoutService {
                 );
             }
 
-            // B. Check Doctor Consistency (Must be same doctor)
+            // Check Doctor Must be same doctor
             Long currentDoctorId = bill.getDoctorSchedule().getDoctor().getId();
 
             if (referenceDoctorId == null) {
-                referenceDoctorId = currentDoctorId; // Set the first doctor as the standard
+                referenceDoctorId = currentDoctorId;
             } else {
                 if (!currentDoctorId.equals(referenceDoctorId)) {
                     throw new ValidationException(
@@ -181,10 +187,11 @@ public class PayoutServiceImpl implements PayoutService {
 
         int count = 0;
         List<DoctorSchedulePayment> billsToSave = new ArrayList<>();
+        List<DoctorSchedule> schedulesToSave = new ArrayList<>();
 
         for (DoctorSchedulePayment bill : bills) {
 
-            // 1. Create Transaction Record
+            // Create Transaction Record
             PayoutTransaction tx = new PayoutTransaction();
             tx.setDoctorPayment(bill);
             tx.setAmountPaid(bill.getFinalPayableAmount());
@@ -201,11 +208,18 @@ public class PayoutServiceImpl implements PayoutService {
 
             // Add to batch list
             billsToSave.add(bill);
+
+            // NEW: Update DoctorSchedule Status ---
+            DoctorSchedule schedule = bill.getDoctorSchedule();
+            schedule.setPayoutStatus(PayoutStatus.PAID);
+            schedulesToSave.add(schedule);
+
             count++;
         }
 
         // 4. Batch Save (Efficient)
         doctorBillRepo.saveAll(billsToSave);
+        scheduleRepo.saveAll(schedulesToSave);
 
         // --- RETURN SUCCESS ---
         BulkPaymentResponseDTO response = new BulkPaymentResponseDTO();
