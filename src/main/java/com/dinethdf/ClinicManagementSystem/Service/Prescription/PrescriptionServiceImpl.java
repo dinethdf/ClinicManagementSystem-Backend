@@ -33,6 +33,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     public ApiResponse<PrescriptionResponseDTO> createPrescription(PrescriptionRequestDTO request, String createdBy) {
 
+        System.out.println(request.getAppointmentId());
         Appointment appointment = appointmentRepo.findById(request.getAppointmentId())
                 .orElseThrow(() -> new ValidationException("Appointment not found", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
