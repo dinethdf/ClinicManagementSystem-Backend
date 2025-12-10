@@ -111,6 +111,8 @@ public class PatientServiceImpl implements PatientService {
 
                 }
 
+                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
+
                 searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
 
                 searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));

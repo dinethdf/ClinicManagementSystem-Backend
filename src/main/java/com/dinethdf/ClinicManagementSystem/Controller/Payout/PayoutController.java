@@ -64,8 +64,23 @@ public class PayoutController {
         return ResponseEntity.ok(ApiResponse.success(result, "My Payout History"));
     }
 
+    @GetMapping("/doctor/list")
+    @PreAuthorize("hasAnyAuthority('ADMIN','DOCTOR')")
+    public ResponseEntity<ApiResponse<Page<PayoutView>>> getDoctorPayoutsList(
+            @RequestParam(required = false) DoctorSchedulePayment.PayoutStatus status,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Page<PayoutView> result = payoutService.searchPayouts(null, status, startDate, endDate, page, size);
+        return ResponseEntity.ok(ApiResponse.success(result, "My Payout History"));
+    }
+
+
     @PostMapping("/doctor/generate-bill/{scheduleId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR')")
     public ResponseEntity<ApiResponse<DoctorPayoutResultDTO>> generateDoctorBill(
             @PathVariable Integer scheduleId, Principal p) {
 
