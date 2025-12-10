@@ -52,8 +52,19 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
         Doctor doctor = findDoctorById(createDTO.getDoctorId());
 
-        if (createDTO.getScheduleDate().isBefore(LocalDate.now())) {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        if (createDTO.getScheduleDate().isBefore(today)) {
             throw new ValidationException("Schedule date cannot be in the past", "PAST_DATE", HttpStatus.BAD_REQUEST);
+        }
+
+        if (createDTO.getScheduleDate().equals(today) && createDTO.getStartTime().isBefore(now)) {
+            throw new ValidationException(
+                    "Start time cannot be in the past for today's schedule",
+                    "PAST_TIME",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
         boolean exists = doctorScheduleRepo.existsOverlappingSchedule(

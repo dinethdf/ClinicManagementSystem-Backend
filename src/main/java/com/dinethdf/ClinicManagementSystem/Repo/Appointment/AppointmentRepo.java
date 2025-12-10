@@ -132,34 +132,52 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     );
 
     @Query(nativeQuery = true, value = """
-        SELECT
-            a.id AS id,
-            a.queuePosition AS queuePosition,
-            a.note AS note,
-            a.status AS status,
-            ds.id AS scheduleId,
-            ds.scheduleDate AS scheduleDate,
-            ds.startTime AS startTime,
-            ds.endTime AS endTime,
-            ds.doctorFee AS doctorFee,
-            ds.clinicFee AS clinicFee,
-            p.id AS patientId,
-            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
-            p.patientNo AS patientNo,
-            p.mobileNo AS patientMobile,
-            p.nic AS patientNic,
-            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
-            s.name AS specialization,
-            a.createdDate, a.createdBy,
-            a.updatedDate, a.updatedBy,
-            a.approvedDate, a.approvedBy
-        FROM appointments a
-        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
-        JOIN doctor d ON ds.doctor_id = d.id
-        LEFT JOIN specialization s ON d.specialization_id = s.id
-        JOIN patient p ON a.patient_id = p.id
-        WHERE a.id = :appointmentId
-    """)
+    SELECT
+        a.id AS id,
+        a.queuePosition AS queuePosition,
+        a.note AS note,
+        a.status AS status,
+        
+        -- Schedule Details
+        ds.id AS scheduleId,
+        ds.scheduleDate AS scheduleDate,
+        ds.startTime AS startTime,
+        ds.endTime AS endTime,
+        ds.doctorFee AS doctorFee,
+        ds.clinicFee AS clinicFee,
+        
+        -- Patient Details
+        p.id AS patientId,
+        CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+        p.patientNo AS patientNo,
+        p.mobileNo AS patientMobile,
+        p.nic AS patientNic,
+        
+        -- Doctor Details
+        CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
+        s.name AS specialization,
+        
+        -- NEW: Invoice Details (Mapped to new DTO fields)
+        i.totalDiscount AS invoiceTotalDiscount,
+        i.finalAmount AS invoiceFinalAmount,
+        i.status AS invoiceStatus,
+
+        -- System Columns
+        a.createdDate, a.createdBy,
+        a.updatedDate, a.updatedBy,
+        a.approvedDate, a.approvedBy
+
+    FROM appointments a
+    JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    JOIN doctor d ON ds.doctor_id = d.id
+    LEFT JOIN specialization s ON d.specialization_id = s.id
+    JOIN patient p ON a.patient_id = p.id
+    
+    -- LINK THE INVOICE TABLE
+    LEFT JOIN invoices i ON a.invoice_id = i.id
+
+    WHERE a.id = :appointmentId
+""")
     Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(@Param("appointmentId") Long appointmentId);
 
 

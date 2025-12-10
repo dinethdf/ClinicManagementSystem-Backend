@@ -134,7 +134,7 @@ public class AppointmentController {
 
         ApiResponse<String> response = ApiResponse.success(
                 null, // No data payload for cancellation
-                resultMessage // The service returns the specific message (Refund vs Cancel)
+                resultMessage // The service returns the specific message (Refund vs Cancel)s
         );
 
         return ResponseEntity.ok(response);
