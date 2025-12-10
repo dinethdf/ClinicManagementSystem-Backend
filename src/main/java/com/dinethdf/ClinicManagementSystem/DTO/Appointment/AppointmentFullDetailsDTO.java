@@ -30,6 +30,11 @@ public interface AppointmentFullDetailsDTO {
     String getDoctorName();
     String getSpecialization();
 
+    // --- NEW: Invoice Details ---
+    BigDecimal getInvoiceTotalDiscount();
+    BigDecimal getInvoiceFinalAmount();
+    String getInvoiceStatus(); // Will return 'PAID', 'UNPAID', etc.
+
     // System Columns (Requested in Saved Info)
     LocalDateTime getCreatedDate();
     String getCreatedBy();
