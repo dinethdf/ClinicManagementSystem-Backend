@@ -98,6 +98,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         PrescriptionResponseDTO dto = new PrescriptionResponseDTO();
         dto.setId(p.getId());
         dto.setAppointmentId(p.getAppointment().getId());
+        dto.setDoctorName((p.getAppointment().getDoctorSchedule().getDoctor().getFirstName() + " " + p.getAppointment().getDoctorSchedule().getDoctor().getLastName()));
         dto.setNote(p.getNote());
         dto.setStatus(p.getStatus());
         dto.setCreatedDate(p.getCreatedDate());
