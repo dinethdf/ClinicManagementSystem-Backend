@@ -553,7 +553,7 @@ CREATE TABLE clinic_staff (
     createdDate DATETIME NOT NULL,
     createdBy VARCHAR(50) NOT NULL,
     updatedDate DATETIME DEFAULT NULL,
-    updatedBy VARCHAR(50),
+    updatedBy VARCHAR(50)
 
     -- Relationships
     -- CONSTRAINT fk_staff_auth
