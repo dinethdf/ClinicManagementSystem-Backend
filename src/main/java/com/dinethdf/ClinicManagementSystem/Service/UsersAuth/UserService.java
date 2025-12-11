@@ -46,6 +46,7 @@ public class UserService {
 
     public UserAuth register(UserAuth userAuth){
         userAuth.setPassword(encoder.encode(userAuth.getPassword()));
+        userAuth.setEnable(true);
        return userRepo.save(userAuth);
     }
 
