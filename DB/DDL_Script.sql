@@ -524,3 +524,40 @@ AFTER bookingStatus;
 
 ALTER TABLE doctorSchedule
 ADD COLUMN lastQueueNumber INT NOT NULL DEFAULT 0 AFTER registeredPatientCount;
+
+
+CREATE TABLE clinic_staff (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auth_id INT DEFAULT NULL,
+
+    -- Personal Details
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    nameWithInitials VARCHAR(150),
+    gender TINYINT UNSIGNED NOT NULL,
+    dob DATE,
+    nic VARCHAR(20) UNIQUE,
+    email VARCHAR(150) UNIQUE,
+    mobileNo VARCHAR(20),
+    address VARCHAR(255),
+    city VARCHAR(100),
+    district VARCHAR(100),
+
+    joinDate DATETIME,
+    profileImg VARCHAR(255),
+    designation VARCHAR(100),
+
+    -- Status
+    status ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE' NOT NULL,
+
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+
+    -- Relationships
+    -- CONSTRAINT fk_staff_auth
+    --    FOREIGN KEY (auth_id) REFERENCES userAuth(id)
+    --    ON DELETE CASCADE
+    --    ON UPDATE CASCADE
+);
