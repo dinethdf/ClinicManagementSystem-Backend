@@ -4,6 +4,7 @@ package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,11 +35,17 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String username = null;
         String role = null;
+        Integer clinicId = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             username = jwtService.extractUserName(token);
             role = jwtService.extractUserRole(token);
+            clinicId = jwtService.extractClinicId(token);
+
+            if (clinicId != null) {
+                TenantContext.setCurrentTenant(clinicId);
+            }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -59,6 +66,12 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // CRITICAL: Clean up thread local to prevent leaks
+            TenantContext.clear();
+        }
+
     }
 }

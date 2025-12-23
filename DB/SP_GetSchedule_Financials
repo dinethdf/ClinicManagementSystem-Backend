@@ -3,6 +3,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS GetScheduleFinancials $$
 
 CREATE PROCEDURE GetScheduleFinancials(
+    IN p_clinic_id INT,
     IN input_schedule_id INT
 )
 BEGIN
@@ -51,20 +52,21 @@ BEGIN
     FROM appointments appt
 
     -- Link to Schedule to get Base Fees
-    JOIN doctorSchedule ds ON appt.doctor_schedule_id = ds.id
+    JOIN doctorSchedule ds ON appt.doctor_schedule_id = ds.id AND ds.clinic_id = p_clinic_id
 
     -- Link to Patient for names
-    JOIN patient p ON appt.patient_id = p.id
+    JOIN patient p ON appt.patient_id = p.id AND p.clinic_id = p_clinic_id
 
     -- Link to Invoice (FIXED JOIN: appt now holds the invoice_id)
-    LEFT JOIN invoices inv ON appt.invoice_id = inv.id
+    LEFT JOIN invoices inv ON appt.invoice_id = inv.id AND inv.clinic_id = p_clinic_id
 
     -- Link to Items to find discounts (LEFT JOIN because there might be no discounts)
-    LEFT JOIN invoice_items ii ON inv.id = ii.invoice_id
+    LEFT JOIN invoice_items ii ON inv.id = ii.invoice_id AND ii.clinic_id = p_clinic_id
     LEFT JOIN item_types it ON ii.item_type_id = it.id
 
     WHERE
         appt.doctor_schedule_id = input_schedule_id
+        AND appt.clinic_id = p_clinic_id
         AND appt.status != 'CANCELLED' -- Exclude cancelled appointments
 
     GROUP BY

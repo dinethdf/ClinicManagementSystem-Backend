@@ -16,6 +16,10 @@ public class UserAuth {
 
     private Boolean isEnable;
 
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId;
+
+
     public Boolean getEnable() {
         return isEnable;
     }
@@ -69,10 +73,14 @@ public class UserAuth {
         this.detailsId = id;
     }
 
+    public Integer getClinicId() { return clinicId; }
+    public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
+
     @Override
     public String toString() {
         return "User{" +
                 "Id=" + Id +
+                ", clinicID='" + clinicId + '\'' +
                 ", username='" + email + '\'' +
                 ", isEnable='" + isEnable + '\'' +
                 ", password='" + password + '\'' +
