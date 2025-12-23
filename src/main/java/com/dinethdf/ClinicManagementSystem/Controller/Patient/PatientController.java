@@ -8,6 +8,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
+import com.dinethdf.ClinicManagementSystem.util.BarcodeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,12 +28,45 @@ public class PatientController {
     @Autowired
     PatientServiceImpl patientServiceImpl;
 
+    @Autowired
+    private BarcodeService barcodeService;
+
+
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
     @GetMapping("details/staff/{id}")
     public ResponseEntity<ApiResponse<Patient>> getPatients(@PathVariable String id){
         ApiResponse<Patient> response = patientServiceImpl.getPatientDetailsByIdStaff(id);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
+    @GetMapping("/by-barcode/{barcode}")
+    public ResponseEntity<ApiResponse<Patient>> getPatientByBarcode(@PathVariable String barcode) {
+
+        Long decodedId = barcodeService.decodeId(barcode);
+
+        if (decodedId == 0) {
+            // FIX: Removed the second 'null' argument to match your DTO
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Invalid Barcode"));
+        }
+
+        ApiResponse<Patient> response = patientServiceImpl.getPatientDetailsByIdStaff(String.valueOf(decodedId));
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
+    @GetMapping("/barcode/{id}")
+    public ResponseEntity<ApiResponse<String>> getPatientBarcode(@PathVariable Long id) {
+
+        String barcode = barcodeService.encodeId(id);
+        return ResponseEntity.ok(
+                ApiResponse.success(barcode, "Barcode generated successfully")
+        );
+    }
+
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping("/search-guardian")
