@@ -104,8 +104,12 @@ CREATE TABLE patientAuth (
     UNIQUE INDEX idx_patient_email_per_clinic (clinic_id, email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS otpVerification;
+
 CREATE TABLE otpVerification (
     id INT AUTO_INCREMENT NOT NULL,
+    clinic_id INT NOT NULL, -- <--- NEW: Tenant Link
+
     mobileNo VARCHAR(20) NOT NULL,
     email VARCHAR(100) DEFAULT NULL,
     otpCode VARCHAR(10) NOT NULL,
@@ -114,15 +118,18 @@ CREATE TABLE otpVerification (
     dailySmsCount INT DEFAULT 0,
     lastSmsDate DATE DEFAULT NULL,
 
+    -- System Fields
     createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    createdBy VARCHAR(50) NOT NULL,
+    createdBy VARCHAR(50) NOT NULL DEFAULT 'SYSTEM', -- Default to SYSTEM for public OTPs
     updatedDate DATETIME DEFAULT NULL,
     updatedBy VARCHAR(50) DEFAULT NULL,
 
     PRIMARY KEY (id),
 
-    UNIQUE KEY uk_mobileNo (mobileNo)
-);
+    CONSTRAINT fk_otp_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
+
+    UNIQUE KEY uk_mobile_clinic (clinic_id, mobileNo)
+) ENGINE=InnoDB;
 
 
 CREATE TABLE insurance (
@@ -446,7 +453,6 @@ CREATE TABLE prescriptions (
 
 CREATE TABLE prescription_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    clinic_id INT NOT NULL, -- Tenant Link (For safer queries)
 
     prescription_id INT NOT NULL,
     medicineName VARCHAR(255) NOT NULL,
@@ -455,8 +461,7 @@ CREATE TABLE prescription_items (
     duration VARCHAR(50),
     instructions TEXT,
 
-    CONSTRAINT fk_pres_item_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
-    CONSTRAINT fk_items_prescription FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE
+    CONSTRAINT fk_pres_item_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id)
 ) ENGINE=InnoDB;
 
 -- ==================================================================================

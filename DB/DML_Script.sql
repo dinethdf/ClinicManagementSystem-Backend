@@ -5,7 +5,8 @@ USE clinicmsystem;
 
 -- 1. Create the Default Tenant (Clinic)
 INSERT INTO clinics (id, name, subdomain, status, max_doctors, max_patients, createdDate)
-VALUES (1, 'City Hospital', 'city', 'ACTIVE', 10, 50000, NOW());
+VALUES (1, 'City Hospital', 'city', 'ACTIVE', 10, 50000, NOW()),
+(2, 'SenaraHospital', 'cenara', 'ACTIVE', 10, 100000, NOW());
 
 -- 2. Master Roles
 INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');

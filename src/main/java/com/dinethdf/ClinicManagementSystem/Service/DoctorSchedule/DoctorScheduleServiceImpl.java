@@ -215,13 +215,16 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
         LocalDate today = LocalDate.now();
 
+        System.out.println("Date : " + today);
+        System.out.println("Time : " + now);
+
         Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findUpcomingSchedules(
                 today,
                 now,
                 doctorName,
                 specialization,
                 searchDate,
-                TenantContext.getCurrentTenant(), // <--- Clinic ID
+                TenantContext.getCurrentTenant(),
                 pageable
         );
 

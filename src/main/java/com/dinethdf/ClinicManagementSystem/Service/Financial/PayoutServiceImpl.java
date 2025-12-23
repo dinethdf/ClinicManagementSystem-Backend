@@ -6,10 +6,10 @@ import com.dinethdf.ClinicManagementSystem.Model.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.DoctorSchedulePaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.ExpenseCategoryRepo;
-import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo; // EXISTING REPO (For Calculations)
+import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.OperationalExpenseRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
-import com.dinethdf.ClinicManagementSystem.config.TenantContext;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.PayoutStatus;
@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -37,27 +38,29 @@ public class PayoutServiceImpl implements PayoutService {
     private final DoctorSchedulePaymentRepo doctorBillRepo;
     private final OperationalExpenseRepo expenseRepo;
     private final ExpenseCategoryRepo categoryRepo;
-
-    //    private final LabVendorPayoutRepo labRepo;
-
     private final DoctorScheduleRepo scheduleRepo;
     private final FinancialRepo calculationRepo;
-
-
 
     @Override
     public DoctorPayoutResultDTO generateDoctorBill(Integer scheduleId, String createdBy) {
 
-        // 1. Fetch Schedule
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Fetch Schedule & Validate Tenant Ownership
         DoctorSchedule schedule = scheduleRepo.findById(Long.valueOf(scheduleId))
                 .orElseThrow(() -> new ValidationException("Schedule not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        // 2. Validate Duplicate
-        if (doctorBillRepo.existsByDoctorScheduleId(scheduleId)) {
+        if (!Objects.equals(schedule.getClinicId(), clinicId)) {
+            throw new ValidationException("Schedule not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+
+        // 2. Validate Duplicate (Scoped to Clinic)
+        if (doctorBillRepo.existsByDoctorScheduleIdAndClinicId(scheduleId, clinicId)) {
             throw new ValidationException("Bill already generated for this schedule", "DUPLICATE", HttpStatus.CONFLICT);
         }
 
-        List<ScheduleFinancialProjection> data = calculationRepo.getScheduleFinancials(scheduleId, TenantContext.getCurrentTenant());
+        // 3. Get Financials (Scoped to Clinic)
+        List<ScheduleFinancialProjection> data = calculationRepo.getScheduleFinancials(scheduleId, clinicId);
 
         if (data.isEmpty()) {
             throw new ValidationException("No appointment data found. Cannot generate bill.", "NO_DATA", HttpStatus.BAD_REQUEST);
@@ -70,6 +73,7 @@ public class PayoutServiceImpl implements PayoutService {
 
         // 5. Create the Bill (Liability)
         DoctorSchedulePayment bill = new DoctorSchedulePayment();
+        bill.setClinicId(clinicId); // <--- Set Clinic ID
         bill.setDoctorSchedule(schedule);
         bill.setTotalDoctorFee(fee);
         bill.setTotalDoctorDiscounts(discount);
@@ -79,8 +83,7 @@ public class PayoutServiceImpl implements PayoutService {
 
         DoctorSchedulePayment saved = doctorBillRepo.save(bill);
 
-        // --- 6. NEW: Update Schedule Status to PENDING ---
-        // This marks the schedule as "Bill Generated, Waiting for Payment"
+        // 6. Update Schedule Status
         schedule.setPayoutStatus(PayoutStatus.PENDING);
         schedule.setStatus(DoctorSchedule.ScheduleStatus.COMPLETED);
         scheduleRepo.save(schedule);
@@ -101,23 +104,30 @@ public class PayoutServiceImpl implements PayoutService {
     @Override
     public FinancialSummaryDTO getFinancialSummary(LocalDate startDate, LocalDate endDate) {
 
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // Pass Clinic ID to all sum queries
         BigDecimal totalPaidToDoctors = doctorBillRepo.sumByStatusAndDate(
-                DoctorSchedulePayment.PayoutStatus.PAID, startDate, endDate
+                DoctorSchedulePayment.PayoutStatus.PAID, startDate, endDate, clinicId
         );
 
         BigDecimal totalPendingDoctors = doctorBillRepo.sumByStatusAndDate(
-                DoctorSchedulePayment.PayoutStatus.PENDING, startDate, endDate
+                DoctorSchedulePayment.PayoutStatus.PENDING, startDate, endDate, clinicId
         );
 
-        BigDecimal totalExpenses = expenseRepo.sumExpensesByDate(startDate, endDate);
+        BigDecimal totalExpenses = expenseRepo.sumExpensesByDate(startDate, endDate, clinicId);
 
         return new FinancialSummaryDTO(totalPaidToDoctors, totalPendingDoctors, totalExpenses);
     }
 
-
     @Override
     public List<PendingBillView> getPendingDoctorBills(Integer doctorId) {
-        return doctorBillRepo.findPendingBillsFiltered(DoctorSchedulePayment.PayoutStatus.PENDING, doctorId);
+        // Filter by Clinic ID
+        return doctorBillRepo.findPendingBillsFiltered(
+                DoctorSchedulePayment.PayoutStatus.PENDING,
+                doctorId,
+                TenantContext.getCurrentTenant()
+        );
     }
 
     @Override
@@ -125,14 +135,23 @@ public class PayoutServiceImpl implements PayoutService {
                                           LocalDate startDate, LocalDate endDate, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("ds.scheduleDate").descending());
-        return doctorBillRepo.searchPayouts(doctorId, status, startDate, endDate, pageable);
-    }
 
+        // Pass Clinic ID
+        return doctorBillRepo.searchPayouts(
+                doctorId,
+                status,
+                startDate,
+                endDate,
+                TenantContext.getCurrentTenant(),
+                pageable
+        );
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BulkPaymentResponseDTO payDoctorsBulk(BulkPaymentRequestDTO request, String createdBy) {
 
+        Integer clinicId = TenantContext.getCurrentTenant();
         List<Integer> ids = request.getPaymentIds();
 
         if (ids == null || ids.isEmpty()) {
@@ -143,7 +162,7 @@ public class PayoutServiceImpl implements PayoutService {
 
         // Check if all requested IDs were found
         if (bills.size() != ids.size()) {
-            throw new ValidationException("One or more Bill IDs not found in database", "NOT_FOUND", HttpStatus.NOT_FOUND);
+            throw new ValidationException("One or more Bill IDs not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
         }
 
         Long referenceDoctorId = null;
@@ -151,37 +170,39 @@ public class PayoutServiceImpl implements PayoutService {
 
         for (DoctorSchedulePayment bill : bills) {
 
+            // SECURITY: Ensure bill belongs to current clinic
+            if (!Objects.equals(bill.getClinicId(), clinicId)) {
+                throw new ValidationException("Access Denied for Bill ID: " + bill.getId(), "UNAUTHORIZED", HttpStatus.FORBIDDEN);
+            }
+
             if (bill.getStatus() == DoctorSchedulePayment.PayoutStatus.PAID) {
                 throw new ValidationException(
-                        "Schedule #" + bill.getDoctorSchedule().getId() + " is already paid. Transaction Aborted.",
+                        "Schedule #" + bill.getDoctorSchedule().getId() + " is already paid.",
                         "ALREADY_PAID",
                         HttpStatus.CONFLICT
                 );
             }
 
-            // Check Doctor Must be same doctor
+            // Check Doctor Consistency
             Long currentDoctorId = bill.getDoctorSchedule().getDoctor().getId();
-
             if (referenceDoctorId == null) {
                 referenceDoctorId = currentDoctorId;
             } else {
                 if (!currentDoctorId.equals(referenceDoctorId)) {
                     throw new ValidationException(
-                            "Multi-Doctor Payment Not Allowed. You selected schedules for different doctors (IDs: "
-                                    + referenceDoctorId + " and " + currentDoctorId + "). Please select one doctor at a time.",
+                            "Multi-Doctor Payment Not Allowed. Please select one doctor at a time.",
                             "MIXED_DOCTORS",
                             HttpStatus.BAD_REQUEST
                     );
                 }
             }
 
-            // C. Sum up total
             calculatedTotal = calculatedTotal.add(bill.getFinalPayableAmount());
         }
 
         if (request.getTotalAmountToPay() != null && calculatedTotal.compareTo(request.getTotalAmountToPay()) != 0) {
             throw new ValidationException(
-                    "Total mismatch! System calculated: " + calculatedTotal + ", but you requested: " + request.getTotalAmountToPay(),
+                    "Total mismatch! System: " + calculatedTotal + ", Requested: " + request.getTotalAmountToPay(),
                     "AMOUNT_MISMATCH",
                     HttpStatus.BAD_REQUEST
             );
@@ -201,17 +222,13 @@ public class PayoutServiceImpl implements PayoutService {
             tx.setTransactionReference(request.getTransactionReference());
             tx.setCreatedBy(createdBy);
 
-            // 2. Update Bill Status
             bill.setStatus(DoctorSchedulePayment.PayoutStatus.PAID);
 
-            // 3. Link Transaction
             if (bill.getTransactions() == null) bill.setTransactions(new ArrayList<>());
             bill.getTransactions().add(tx);
 
-            // Add to batch list
             billsToSave.add(bill);
 
-            // NEW: Update DoctorSchedule Status ---
             DoctorSchedule schedule = bill.getDoctorSchedule();
             schedule.setPayoutStatus(PayoutStatus.PAID);
             schedulesToSave.add(schedule);
@@ -219,11 +236,9 @@ public class PayoutServiceImpl implements PayoutService {
             count++;
         }
 
-        // 4. Batch Save (Efficient)
         doctorBillRepo.saveAll(billsToSave);
         scheduleRepo.saveAll(schedulesToSave);
 
-        // --- RETURN SUCCESS ---
         BulkPaymentResponseDTO response = new BulkPaymentResponseDTO();
         response.setSuccessCount(count);
         response.setTotalProcessedAmount(calculatedTotal);
@@ -236,16 +251,18 @@ public class PayoutServiceImpl implements PayoutService {
     @Override
     public void reversePayment(Integer payoutId, String modifiedBy) {
 
-        // 1. Get the Bill
         DoctorSchedulePayment bill = doctorBillRepo.findById(payoutId)
                 .orElseThrow(() -> new ValidationException("Bill not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        // 2. Validate: Can only reverse PAID items
+        // SECURITY Check
+        if (!Objects.equals(bill.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Bill not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+
         if (bill.getStatus() != DoctorSchedulePayment.PayoutStatus.PAID) {
             throw new ValidationException("Only PAID bills can be reversed", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
         }
 
-        // 3. Reset Status
         bill.setStatus(DoctorSchedulePayment.PayoutStatus.PENDING);
         bill.setUpdatedBy(modifiedBy);
         bill.setUpdatedDate(LocalDateTime.now());
@@ -255,14 +272,16 @@ public class PayoutServiceImpl implements PayoutService {
         doctorBillRepo.save(bill);
     }
 
-
     @Override
     public OperationalExpense addExpense(ExpenseCreateDTO dto, String createdBy) {
+
+        Integer clinicId = TenantContext.getCurrentTenant();
 
         ExpenseCategory cat = categoryRepo.findById(dto.getExpenseCategoryId())
                 .orElseThrow(() -> new ValidationException("Invalid Category ID", "INVALID_CAT", HttpStatus.BAD_REQUEST));
 
         OperationalExpense exp = new OperationalExpense();
+        exp.setClinicId(clinicId); // <--- Set Clinic ID
         exp.setExpenseCategory(cat);
         exp.setDescription(dto.getDescription());
         exp.setAmount(dto.getAmount());

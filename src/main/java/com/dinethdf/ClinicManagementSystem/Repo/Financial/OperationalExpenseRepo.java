@@ -11,15 +11,18 @@ import java.time.LocalDate;
 
 @Repository
 public interface OperationalExpenseRepo extends JpaRepository<OperationalExpense, Integer> {
-    // Standard CRUD is sufficient
+
+    // Updated for Multi-Tenancy
     @Query("""
-        SELECT COALESCE(SUM(e.amount), 0) 
-        FROM OperationalExpense e 
-        WHERE (:startDate IS NULL OR e.dueDate >= :startDate)
+        SELECT COALESCE(SUM(e.amount), 0)
+        FROM OperationalExpense e
+        WHERE e.clinicId = :clinicId
+        AND (:startDate IS NULL OR e.dueDate >= :startDate)
         AND (:endDate IS NULL OR e.dueDate <= :endDate)
     """)
     BigDecimal sumExpensesByDate(
             @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("endDate") LocalDate endDate,
+            @Param("clinicId") Integer clinicId
     );
 }

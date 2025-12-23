@@ -13,7 +13,7 @@ import java.util.List;
 public interface FinancialRepo extends JpaRepository<Appointment, Long> {
 
     // Updated to pass clinicId for Multi-Tenancy
-    @Query(value = "CALL GetScheduleFinancials(:scheduleId, :clinicId)", nativeQuery = true)
+    @Query(value = "CALL GetScheduleFinancials(:clinicId, :scheduleId)", nativeQuery = true)
     List<ScheduleFinancialProjection> getScheduleFinancials(
             @Param("scheduleId") Integer scheduleId,
             @Param("clinicId") Integer clinicId
