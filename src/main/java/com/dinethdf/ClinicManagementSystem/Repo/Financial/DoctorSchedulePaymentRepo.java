@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Repo.Payout;
+package com.dinethdf.ClinicManagementSystem.Repo.Financial;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.PayoutView;
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.PendingBillView;
@@ -18,14 +18,11 @@ import java.util.Optional;
 @Repository
 public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorSchedulePayment, Integer> {
 
-    // Check if bill exists
-    boolean existsByDoctorScheduleId(Integer doctorScheduleId);
+    boolean existsByDoctorScheduleIdAndClinicId(Integer doctorScheduleId, Integer clinicId);
 
-    // Find bill by Schedule ID
-    Optional<DoctorSchedulePayment> findByDoctorScheduleId(Integer doctorScheduleId);
+    Optional<DoctorSchedulePayment> findByDoctorScheduleIdAndClinicId(Integer doctorScheduleId, Integer clinicId);
 
-    // Get list of unpaid bills for the Admin Table
-    List<DoctorSchedulePayment> findByStatus(DoctorSchedulePayment.PayoutStatus status);
+    List<DoctorSchedulePayment> findByStatusAndClinicId(DoctorSchedulePayment.PayoutStatus status, Integer clinicId);
 
     @Query("""
         SELECT
@@ -40,12 +37,14 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
         FROM DoctorSchedulePayment p
         JOIN p.doctorSchedule ds
         JOIN ds.doctor d
-        WHERE p.status = :status
+        WHERE p.clinicId = :clinicId
+        AND p.status = :status
         AND (:doctorId IS NULL OR d.id = :doctorId)
     """)
     List<PendingBillView> findPendingBillsFiltered(
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
-            @Param("doctorId") Integer doctorId
+            @Param("doctorId") Integer doctorId,
+            @Param("clinicId") Integer clinicId
     );
 
     @Query("""
@@ -62,16 +61,18 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
         JOIN p.doctorSchedule ds
         JOIN ds.doctor d
         WHERE
-            (:doctorId IS NULL OR d.id = :doctorId) AND
-            (:status IS NULL OR p.status = :status) AND
-            (:startDate IS NULL OR ds.scheduleDate >= :startDate) AND
-            (:endDate IS NULL OR ds.scheduleDate <= :endDate)
+            p.clinicId = :clinicId
+            AND (:doctorId IS NULL OR d.id = :doctorId)
+            AND (:status IS NULL OR p.status = :status)
+            AND (:startDate IS NULL OR ds.scheduleDate >= :startDate)
+            AND (:endDate IS NULL OR ds.scheduleDate <= :endDate)
     """)
     Page<PayoutView> searchPayouts(
             @Param("doctorId") Long doctorId,
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
+            @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
 
@@ -79,14 +80,16 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
     @Query("""
         SELECT COALESCE(SUM(p.finalPayableAmount), 0)
         FROM DoctorSchedulePayment p
-        JOIN p.doctorSchedule ds 
-        WHERE p.status = :status
+        JOIN p.doctorSchedule ds
+        WHERE p.clinicId = :clinicId
+        AND p.status = :status
         AND (:startDate IS NULL OR ds.scheduleDate >= :startDate)
         AND (:endDate IS NULL OR ds.scheduleDate <= :endDate)
     """)
     BigDecimal sumByStatusAndDate(
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
             @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("endDate") LocalDate endDate,
+            @Param("clinicId") Integer clinicId
     );
 }

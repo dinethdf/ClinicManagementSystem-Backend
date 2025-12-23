@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Service.Payout;
+package com.dinethdf.ClinicManagementSystem.Service.Financial;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.DoctorSchedulePayment;

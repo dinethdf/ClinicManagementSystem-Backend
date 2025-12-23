@@ -1,4 +1,4 @@
-package com.dinethdf.ClinicManagementSystem.Repo.Payout;
+package com.dinethdf.ClinicManagementSystem.Repo.Financial;
 
 import com.dinethdf.ClinicManagementSystem.Model.Financial.LabVendorPayout;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -231,8 +231,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         COALESCE(SUM(CASE WHEN status = 'PENDING_PAYMENT' THEN 1 ELSE 0 END), 0) AS pendingPayment,
         COALESCE(SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END), 0) AS cancelled
     FROM appointments
-    WHERE doctor_schedule_id = :scheduleId 
-      AND clinic_id = :clinicId -- <--- Tenant Filter
+    WHERE doctor_schedule_id = :scheduleId
+      AND clinic_id = :clinicId
 """)
     ScheduleAnalyticsDTO getScheduleAnalytics(
             @Param("scheduleId") Long scheduleId,

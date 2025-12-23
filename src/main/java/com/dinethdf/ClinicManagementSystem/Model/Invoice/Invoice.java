@@ -13,12 +13,17 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "invoices")
+@Table(name = "invoices", indexes = {
+        @Index(name = "idx_invoice_clinic", columnList = "clinic_id")
+})
 public class Invoice extends AuditWrapper {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- Multi-Tenant Field
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -34,6 +39,9 @@ public class Invoice extends AuditWrapper {
     private BigDecimal finalAmount;
 
     private LocalDate dueDate;
+
+    @Column(nullable = false)
+    private Boolean isApproved = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
