@@ -47,4 +47,7 @@ public abstract class CommonUserDetails extends AuditWrapper {
 
     @Column(name = "profileImg", length = 255)
     private String profileImg;
+
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId;
 }

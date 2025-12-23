@@ -8,6 +8,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.dinethdf.ClinicManagementSystem.util.PatientValidator;
@@ -26,6 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PatientServiceImpl implements PatientService {
@@ -44,6 +46,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public List<Patient> getAllPatients() {
+        // Note: For strict multi-tenancy, rely on getPatientList or ensure Hibernate Filter is enabled
         return patientDetailsRepo.findAll();
     }
 
@@ -51,6 +54,11 @@ public class PatientServiceImpl implements PatientService {
     public ApiResponse<Patient> getPatientDetailsByIdStaff(String id) {
         Patient patient = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+
+        // Multi-Tenant Security Check
+        if (!Objects.equals(patient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
 
         patient.setPatientAuth(null);
 
@@ -62,7 +70,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public List<GuardianResponseDTO> findGuardianByNicAndFullName(String nic, String fullName) {
-        List<GuardianResponseDTO> guardians = patientDetailsRepo.searchGuardianByNicAndFullName(nic, fullName);
+        // Updated to pass Clinic ID
+        List<GuardianResponseDTO> guardians = patientDetailsRepo.searchGuardianByNicAndFullName(nic, fullName, TenantContext.getCurrentTenant());
 
         if (guardians.isEmpty()) {
             throw new ValidationException("No guardian found matching the provided details.", "GUARDIAN_NOT_FOUND");
@@ -86,7 +95,8 @@ public class PatientServiceImpl implements PatientService {
             );
         }
 
-        List<PatientResponseDTO> patient = patientDetailsRepo.searchPatient(patientNo, nic, fullName, mobileNo);
+        // Updated to pass Clinic ID
+        List<PatientResponseDTO> patient = patientDetailsRepo.searchPatient(patientNo, nic, fullName, mobileNo, TenantContext.getCurrentTenant());
 
         if (patient.isEmpty()) {
             throw new ValidationException("No Patient found matching the provided details.", "PATIENT_NOT_FOUND");
@@ -97,6 +107,9 @@ public class PatientServiceImpl implements PatientService {
     public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
         Specification<Patient> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            // Multi-Tenant Filter
+            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
 
 //            predicates.add(cb.isTrue(root.get("isActive")));
 
@@ -148,9 +161,13 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public ApiResponse<Patient> registerPatientByStaff(Patient patient) {
 
-            patientValidator.validatePatient(patient);
+        patientValidator.validatePatient(patient);
         try {
+            // Set Clinic ID
+            patient.setClinicId(TenantContext.getCurrentTenant());
+
             System.out.println("Patient Save in Staff");
+            System.out.println(patient.toString());
             patient.setPatientNo(null);
 
             if (patient.isDependent()){
@@ -196,6 +213,9 @@ public class PatientServiceImpl implements PatientService {
 
         patientValidator.validatePublicPatientRegister(patient);
         try {
+            // Set Clinic ID
+            patient.setClinicId(TenantContext.getCurrentTenant());
+
             System.out.println("Patient Save in Staff");
             patient.setPatientNo(null);
 
@@ -241,12 +261,17 @@ public class PatientServiceImpl implements PatientService {
         Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
 
+        // Multi-Tenant Security Check
+        if (!Objects.equals(existingPatient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
+
         patientValidator.validatePatient(patientFromRequest);
 
         // Child Account Changing Type Update
 
         if(existingPatient.getGuardian() != null && patientFromRequest.getGuardian() == null){
-           throw  new ValidationException(messageSourceUtil.getMessage("patient.child.guardian.cannot.remove"),"CHILD_CANNOT_REMOVE_GUARDIAN");
+            throw  new ValidationException(messageSourceUtil.getMessage("patient.child.guardian.cannot.remove"),"CHILD_CANNOT_REMOVE_GUARDIAN");
         }
 
         try {
@@ -309,6 +334,11 @@ public class PatientServiceImpl implements PatientService {
         Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
 
+        // Multi-Tenant Security Check
+        if (!Objects.equals(existingPatient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
+
         if (existingPatient.getIsApproved()) {
             throw new ValidationException(messageSourceUtil.getMessage("patient.already.Approved"),  "PATIENT_ALREADY_APPROVED", null, HttpStatus.BAD_REQUEST);
         } else {
@@ -326,6 +356,11 @@ public class PatientServiceImpl implements PatientService {
         Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
                 () -> new ValidationException(messageSourceUtil.getMessage("patient.not.found"), "PATIENT_NOT_FOUND"));
 
+        // Multi-Tenant Security Check
+        if (!Objects.equals(existingPatient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
+
         // Toggle the status (If true -> make false. If false -> make true)
         boolean newStatus = !Boolean.TRUE.equals(existingPatient.getIsActive());
 
@@ -341,6 +376,11 @@ public class PatientServiceImpl implements PatientService {
     public ApiResponse<String> deletePatient(Integer patientId) {
         Patient existingPatient = patientDetailsRepo.findById(Long.valueOf(patientId)).orElseThrow(
                 () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+
+        // Multi-Tenant Security Check
+        if (!Objects.equals(existingPatient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
 
         if (existingPatient.getIsActive()) {
             throw new ValidationException(messageSourceUtil.getMessage("patient.active.cannot.delete"),  "PATIENT_DELETE_ACTIVE", null, HttpStatus.BAD_REQUEST);
@@ -366,7 +406,8 @@ public class PatientServiceImpl implements PatientService {
             );
         }
 
-        List<PatientSimpleResponseDTO> results = patientDetailsRepo.searchByPatientNo(patientNo);
+        // Updated to pass Clinic ID
+        List<PatientSimpleResponseDTO> results = patientDetailsRepo.searchByPatientNo(patientNo, TenantContext.getCurrentTenant());
 
         if (results.isEmpty()) {
             throw new ValidationException("No Patient found with this Patient Number.", "PATIENT_NOT_FOUND");
