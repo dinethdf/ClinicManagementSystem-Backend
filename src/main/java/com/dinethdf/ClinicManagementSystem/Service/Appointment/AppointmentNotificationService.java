@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentFullDetailsDTO;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,11 @@ public class AppointmentNotificationService {
     public void sendBookingConfirmation(Long appointmentId, String recipientEmail) {
 
         // 1. Fetch details
-        AppointmentFullDetailsDTO details = appointmentRepo.findAppointmentFullDetails(appointmentId)
+        AppointmentFullDetailsDTO details = appointmentRepo.findAppointmentFullDetails(appointmentId, TenantContext.getCurrentTenant())
                 .orElse(null);
 
         if (details == null) {
-            System.err.println("Error: Could not find appointment details for ID: " + appointmentId);
+            System.err.println("Error: Could not find appointment details for  : " + appointmentId);
             return;
         }
 

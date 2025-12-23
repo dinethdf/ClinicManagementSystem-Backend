@@ -5,14 +5,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "otpVerification") // Matches DB table
+@Table(
+        name = "otpVerification",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"clinic_id", "mobileNo"}) // Unique per Clinic
+        }
+)
 public class OtpVerification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- NEW: Tenant Link
+
+    @Column(nullable = false)
     private String mobileNo;
 
     private String email;
@@ -42,9 +50,17 @@ public class OtpVerification {
         if (createdBy == null) createdBy = "SYSTEM";
     }
 
-    // Getters and Setters...
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = LocalDateTime.now();
+    }
+
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Integer getClinicId() { return clinicId; }
+    public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
 
     public String getMobileNo() { return mobileNo; }
     public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
@@ -67,4 +83,15 @@ public class OtpVerification {
     public LocalDate getLastSmsDate() { return lastSmsDate; }
     public void setLastSmsDate(LocalDate lastSmsDate) { this.lastSmsDate = lastSmsDate; }
 
+    public LocalDateTime getCreatedDate() { return createdDate; }
+    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    public LocalDateTime getUpdatedDate() { return updatedDate; }
+    public void setUpdatedDate(LocalDateTime updatedDate) { this.updatedDate = updatedDate; }
+
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 }

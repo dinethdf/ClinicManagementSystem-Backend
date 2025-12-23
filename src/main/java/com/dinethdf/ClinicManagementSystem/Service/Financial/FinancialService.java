@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Financial;
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.ScheduleFinancialDTO;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,11 @@ public class FinancialService {
     @Transactional(readOnly = true)
     public List<ScheduleFinancialDTO> getFinancialsForSchedule(Integer scheduleId) {
 
-        List<ScheduleFinancialProjection> rawData = financialRepo.getScheduleFinancials(scheduleId);
+        // Pass Tenant ID to Repository
+        List<ScheduleFinancialProjection> rawData = financialRepo.getScheduleFinancials(
+                scheduleId,
+                TenantContext.getCurrentTenant()
+        );
 
         return rawData.stream()
                 .map(this::mapToDTO)

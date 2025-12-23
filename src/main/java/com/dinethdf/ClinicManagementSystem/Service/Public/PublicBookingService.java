@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentNotificationService;
 import com.dinethdf.ClinicManagementSystem.Service.Otp.OtpService;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -41,8 +42,10 @@ public class PublicBookingService {
     @Transactional
     public ApiResponse<Long> processPublicBooking(PublicBookingRequestDTO request) {
 
+        // 0. Capture Clinic ID (Critical for Multi-Tenancy)
+        Integer clinicId = TenantContext.getCurrentTenant();
+
         // 1. Verify OTP Status
-        // We check if the mobile is verified AND the verification is still valid
         if (!otpService.isVerified(request.getMobileNo())) {
             throw new ValidationException("Mobile number not verified or OTP expired.", "OTP_REQUIRED", HttpStatus.FORBIDDEN);
         }
@@ -57,7 +60,6 @@ public class PublicBookingService {
             newPatient.setNic(request.getNic());
             newPatient.setMobileNo(request.getMobileNo());
 
-            // Add Email (Optional) - Make sure Patient model has this field
             if(request.getEmail() != null && !request.getEmail().isEmpty()){
                 newPatient.setEmail(request.getEmail());
             }
@@ -78,8 +80,8 @@ public class PublicBookingService {
 
         String createdBy = "PUBLIC_WEB";
 
-        // 3. Call Stored Procedure
         Map<String, Object> spResult = appointmentRepo.sp_BookAppointment(
+                clinicId, // <--- Added Param
                 createdBy,
                 request.getScheduleId(),
                 finalPatientId,
@@ -101,15 +103,20 @@ public class PublicBookingService {
 
         // 4. Security: Invalidate OTP so it can't be used again
         otpService.invalidateOtp(request.getMobileNo());
-        System.out.println("email send Confirm" + request.getEmail());
+        System.out.println("email send Confirm " + request.getEmail());
 
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             System.out.println("Initiating email thread for: " + request.getEmail());
+
+            // Start background thread
             new Thread(() -> {
                 try {
-                    // CRITICAL:
-                    //  add a small delay to ensure the DB has the new row ready for reading.
-                    Thread.sleep(2000);
+                    // CRITICAL: We must MANUALLY set the Tenant Context for this new thread.
+                    // Threads do not inherit ThreadLocal variables by default.
+                    // If we don't do this, the DB queries inside sendBookingConfirmation will fail (clinic_id will be null).
+                    TenantContext.setCurrentTenant(clinicId);
+
+                    Thread.sleep(2000); // Wait for DB commit
                     appointmentNotificationService.sendBookingConfirmation(newAppointmentId, request.getEmail());
 
                 } catch (InterruptedException e) {
@@ -117,6 +124,9 @@ public class PublicBookingService {
                     System.err.println("Email thread interrupted");
                 } catch (Exception e) {
                     System.err.println("Failed to send confirmation email: " + e.getMessage());
+                } finally {
+                    // Always clear context in the thread
+                    TenantContext.clear();
                 }
             }).start();
         }

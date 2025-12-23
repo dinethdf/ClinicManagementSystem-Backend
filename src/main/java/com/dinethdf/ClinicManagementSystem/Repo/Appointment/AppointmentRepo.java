@@ -23,14 +23,15 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
 
     @Procedure(name = "Appointment.spBookAppointment")
     Map<String, Object> sp_BookAppointment(
+            @Param("p_clinic_id") Integer clinicId, // <--- Added Clinic ID
             @Param("p_createdBy") String createdBy,
             @Param("p_doctor_schedule_id") Long doctorScheduleId,
             @Param("p_patient_id") Long patientId,
             @Param("p_note") String note
     );
 
-    @Query("SELECT a.status FROM Appointment a WHERE a.id = :id")
-    Optional<Appointment.AppointmentStatus> findStatusById(@Param("id") Long id);
+    @Query("SELECT a.status FROM Appointment a WHERE a.id = :id AND a.clinicId = :clinicId")
+    Optional<Appointment.AppointmentStatus> findStatusById(@Param("id") Long id, @Param("clinicId") Integer clinicId);
 
     @Query(nativeQuery = true, value = """
     SELECT
@@ -63,10 +64,13 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     LEFT JOIN specialization s ON d.specialization_id = s.id
     LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
     LEFT JOIN item_types it ON ii.item_type_id = it.id
-    WHERE a.id = :apptId
+    WHERE a.id = :apptId 
+      AND a.clinic_id = :clinicId
     ORDER BY i.id, ii.id
 """)
-    List<InvoiceAppointmentFlatDTO> findRawInvoicesByAppointmentId(@Param("apptId") Long apptId);
+    List<InvoiceAppointmentFlatDTO> findRawInvoicesByAppointmentId(
+            @Param("apptId") Long apptId,
+            @Param("clinicId") Integer clinicId);
 
     @Query(nativeQuery = true, value = """
         SELECT
@@ -86,10 +90,13 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
         JOIN doctor d ON ds.doctor_id = d.id
         LEFT JOIN specialization s ON d.specialization_id = s.id
-        WHERE a.patient_id = :patientId
+        WHERE a.patient_id = :patientId 
+          AND a.clinic_id = :clinicId
         ORDER BY ds.scheduleDate DESC, ds.startTime ASC
     """)
-    List<PatientAppointmentDTO> findAppointmentsByPatientId(@Param("patientId") Long patientId);
+    List<PatientAppointmentDTO> findAppointmentsByPatientId(
+            @Param("patientId") Long patientId,
+            @Param("clinicId") Integer clinicId);
 
     @Query(nativeQuery = true, value = """
     SELECT
@@ -109,7 +116,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     JOIN doctor d ON ds.doctor_id = d.id
     JOIN patient p ON a.patient_id = p.id
     WHERE
-        (:patientId IS NULL OR a.patient_id = :patientId)
+        a.clinic_id = :clinicId
+        AND (:patientId IS NULL OR a.patient_id = :patientId)
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
     ORDER BY a.id DESC
@@ -119,7 +127,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     FROM appointments a
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     WHERE
-        (:patientId IS NULL OR a.patient_id = :patientId)
+        a.clinic_id = :clinicId
+        AND (:patientId IS NULL OR a.patient_id = :patientId)
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
 """)
@@ -128,6 +137,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("scheduleId") Long scheduleId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
+            @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
 
@@ -157,7 +167,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
         s.name AS specialization,
         
-        -- NEW: Invoice Details (Mapped to new DTO fields)
+        -- Invoice Details
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
         i.status AS invoiceStatus,
@@ -172,13 +182,14 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
     JOIN patient p ON a.patient_id = p.id
-    
-    -- LINK THE INVOICE TABLE
     LEFT JOIN invoices i ON a.invoice_id = i.id
 
     WHERE a.id = :appointmentId
+      AND a.clinic_id = :clinicId
 """)
-    Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(@Param("appointmentId") Long appointmentId);
+    Optional<AppointmentFullDetailsDTO> findAppointmentFullDetails(
+            @Param("appointmentId") Long appointmentId,
+            @Param("clinicId") Integer clinicId);
 
 
     @Query(nativeQuery = true, value = """
@@ -197,15 +208,18 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
         JOIN patient p ON a.patient_id = p.id
         WHERE a.doctor_schedule_id = :scheduleId
+          AND a.clinic_id = :clinicId
         ORDER BY a.queuePosition ASC
     """,
             countQuery = """
         SELECT COUNT(a.id)
         FROM appointments a
         WHERE a.doctor_schedule_id = :scheduleId
+          AND a.clinic_id = :clinicId
     """)
     Page<AppointmentByScheduleListDTO> findAppointmentsByScheduleId(
             @Param("scheduleId") Long scheduleId,
+            @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
 
@@ -217,9 +231,12 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         COALESCE(SUM(CASE WHEN status = 'PENDING_PAYMENT' THEN 1 ELSE 0 END), 0) AS pendingPayment,
         COALESCE(SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END), 0) AS cancelled
     FROM appointments
-    WHERE doctor_schedule_id = :scheduleId
+    WHERE doctor_schedule_id = :scheduleId 
+      AND clinic_id = :clinicId -- <--- Tenant Filter
 """)
-    ScheduleAnalyticsDTO getScheduleAnalytics(@Param("scheduleId") Long scheduleId);
+    ScheduleAnalyticsDTO getScheduleAnalytics(
+            @Param("scheduleId") Long scheduleId,
+            @Param("clinicId") Integer clinicId);
 
 
     @Query("""
@@ -237,17 +254,19 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         JOIN a.patient p
         WHERE a.doctorSchedule.id = :scheduleId
           AND p.id = :patientId
+          AND a.clinicId = :clinicId
     """)
     Optional<AppointmentCheckDTO> findDetailsByScheduleAndPatient(
             @Param("scheduleId") Long scheduleId,
-            @Param("patientId") Long patientId
+            @Param("patientId") Long patientId,
+            @Param("clinicId") Integer clinicId
     );
 
     @Procedure(name = "Appointment.cancel")
     String sp_CancelAppointment(
+            @Param("p_clinic_id") Integer clinicId,
             @Param("p_appointment_id") Integer appointmentId,
             @Param("p_cancel_reason") String cancelReason,
             @Param("p_cancelled_by") String cancelledBy
     );
-
 }

@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRep
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo; // EXISTING REPO (For Calculations)
 import com.dinethdf.ClinicManagementSystem.Repo.Payout.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
@@ -55,7 +56,7 @@ public class PayoutServiceImpl implements PayoutService {
             throw new ValidationException("Bill already generated for this schedule", "DUPLICATE", HttpStatus.CONFLICT);
         }
 
-        List<ScheduleFinancialProjection> data = calculationRepo.getScheduleFinancials(scheduleId);
+        List<ScheduleFinancialProjection> data = calculationRepo.getScheduleFinancials(scheduleId, TenantContext.getCurrentTenant());
 
         if (data.isEmpty()) {
             throw new ValidationException("No appointment data found. Cannot generate bill.", "NO_DATA", HttpStatus.BAD_REQUEST);
