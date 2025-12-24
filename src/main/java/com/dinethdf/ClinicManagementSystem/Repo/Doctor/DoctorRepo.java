@@ -15,14 +15,14 @@ import java.util.Optional;
 @Repository
 public interface DoctorRepo extends JpaRepository<Doctor, Long> {
 
-    boolean existsByUserAuthEmailAndIdNot(String email, Long id);
-    boolean existsByNicAndIdNot(String nic, Long id);
-    boolean existsBySlmcNumberAndIdNot(String slmcNumber, Long id);
+    boolean existsByUserAuthEmailAndClinicIdAndIdNot(String email, Integer clinicId, Long id);
+    boolean existsByNicAndClinicIdAndIdNot(String nic, Integer clinicId, Long id);
+    boolean existsBySlmcNumberAndClinicIdAndIdNot(String slmcNumber, Integer clinicId, Long id);
 
-    @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.specialization")
-    List<Doctor> findAllWithSpecialization();
+    @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.specialization WHERE d.clinicId = :clinicId")
+    List<Doctor> findAllWithSpecialization(@Param("clinicId") Integer clinicId);
 
-    Optional<Doctor> findByUserAuthEmail(String email);
+    Optional<Doctor> findByUserAuthEmailAndClinicId(String email, Integer clinicId);
 
     @Query("""
     SELECT new com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto(
@@ -32,11 +32,11 @@ public interface DoctorRepo extends JpaRepository<Doctor, Long> {
     )
     FROM Doctor d
     LEFT JOIN d.specialization s
-    WHERE
-        LOWER(d.nameWithInitials) LIKE LOWER(CONCAT('%', :query, '%')) OR
-        LOWER(CONCAT(d.firstName, ' ', d.lastName)) LIKE LOWER(CONCAT('%', :query, '%'))
+    WHERE d.clinicId = :clinicId
+      AND (LOWER(d.nameWithInitials) LIKE LOWER(CONCAT('%', :query, '%')) OR
+           LOWER(CONCAT(d.firstName, ' ', d.lastName)) LIKE LOWER(CONCAT('%', :query, '%')))
 """)
-    List<DoctorResponseDto> searchDoctors(@Param("query") String query);
+    List<DoctorResponseDto> searchDoctors(@Param("query") String query, @Param("clinicId") Integer clinicId);
 
     @Query("""
     SELECT new com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto(
@@ -46,8 +46,7 @@ public interface DoctorRepo extends JpaRepository<Doctor, Long> {
     )
     FROM Doctor d
     LEFT JOIN d.specialization s
+    WHERE d.clinicId = :clinicId
     """)
-    Page<DoctorResponseDto> findAllDoctorsPaginated(Pageable pageable);
+    Page<DoctorResponseDto> findAllDoctorsPaginated(Pageable pageable, @Param("clinicId") Integer clinicId);
 }
-
-

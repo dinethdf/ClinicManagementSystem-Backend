@@ -9,6 +9,7 @@ import com.dinethdf.ClinicManagementSystem.Model.Doctor.Specialization;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserRole;
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.SpecializationRepo;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorMapper;
 
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
@@ -51,7 +52,7 @@ public class DoctorServiceImpl implements DoctorService {
     @Transactional(readOnly = true)
     public List<Doctor> getAllDoctors() {
         try {
-            List<Doctor> doctors = doctorRepo.findAllWithSpecialization();
+            List<Doctor> doctors = doctorRepo.findAllWithSpecialization(TenantContext.getCurrentTenant());
             return doctors;
         } catch(Exception e){
             System.out.println(e.getMessage());
@@ -67,6 +68,10 @@ public class DoctorServiceImpl implements DoctorService {
                         messageSourceUtil.getMessage("doctor.not.found"), "ASDf"
                 ));
 
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("doctor.not.found"), "NOT_FOUND", null, HttpStatus.NOT_FOUND);
+        }
+
         return ApiResponse.success(
                 doctorMapper.toDetailsDto(doctor),
                 messageSourceUtil.getMessage("doctor.details.get.success")
@@ -81,7 +86,7 @@ public class DoctorServiceImpl implements DoctorService {
             throw new ValidationException(messageSourceUtil.getMessage("token.invalid"), "INVALID_TOKEN", null, HttpStatus.UNAUTHORIZED);
         }
 
-        Doctor doctor = doctorRepo.findByUserAuthEmail(email)
+        Doctor doctor = doctorRepo.findByUserAuthEmailAndClinicId(email, TenantContext.getCurrentTenant())
                 .orElseThrow(() -> new ValidationException(
                         messageSourceUtil.getMessage("doctor.not.found.for.user"),
                         "DOCTOR_PROFILE_NOT_FOUND",
@@ -100,7 +105,7 @@ public class DoctorServiceImpl implements DoctorService {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
-            return doctorRepo.findAllDoctorsPaginated(pageable);
+            return doctorRepo.findAllDoctorsPaginated(pageable, TenantContext.getCurrentTenant());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,7 +124,7 @@ public class DoctorServiceImpl implements DoctorService {
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        List<DoctorResponseDto> doctors = doctorRepo.searchDoctors(query.trim());
+        List<DoctorResponseDto> doctors = doctorRepo.searchDoctors(query.trim(), TenantContext.getCurrentTenant());
         return doctors;
     }
 
@@ -130,10 +135,14 @@ public class DoctorServiceImpl implements DoctorService {
         validateDoctor(doctor);
 
         try {
+            Integer clinicId = TenantContext.getCurrentTenant();
+            doctor.setClinicId(clinicId);
+
             UserAuth userAuth = new UserAuth();
             userAuth.setEmail(doctor.getEmail());
             userAuth.setPassword(encoder.encode(doctor.getNic()));
             userAuth.setEnable(true);
+            userAuth.setClinicId(clinicId);
 
             UserRole doctorRole = new UserRole();
             doctorRole.setId(3);
@@ -167,9 +176,13 @@ public class DoctorServiceImpl implements DoctorService {
         Doctor doctor = doctorRepo.findById(doctorId)
                 .orElseThrow(() -> new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND));
 
-        if(doctorRepo.existsByUserAuthEmailAndIdNot(requestDto.getEmail(), doctorId))
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND);
+        }
+
+        if(doctorRepo.existsByUserAuthEmailAndClinicIdAndIdNot(requestDto.getEmail(), TenantContext.getCurrentTenant(), doctorId))
             throw new ValidationException("Email already exists", "DUPLICATE", null, HttpStatus.BAD_REQUEST);
-        if(doctorRepo.existsByNicAndIdNot(requestDto.getNic(), doctorId))
+        if(doctorRepo.existsByNicAndClinicIdAndIdNot(requestDto.getNic(), TenantContext.getCurrentTenant(), doctorId))
             throw new ValidationException("NIC already exists", "DUPLICATE", null, HttpStatus.BAD_REQUEST);
 
         doctor.setFirstName(requestDto.getFirstName());
@@ -212,6 +225,10 @@ public class DoctorServiceImpl implements DoctorService {
         Doctor doctor = doctorRepo.findById(doctorId)
                 .orElseThrow(() -> new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND));
 
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND);
+        }
+
         try {
             doctor.setAvailabilityStatus(Doctor.AvailabilityStatus.valueOf(status));
             doctor.setUpdatedDate(LocalDateTime.now());
@@ -228,6 +245,10 @@ public class DoctorServiceImpl implements DoctorService {
         Doctor doctor = doctorRepo.findById(doctorId)
                 .orElseThrow(() -> new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND));
 
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND);
+        }
+
         doctor.setIsApproved(true);
         doctor.setApprovedDate(LocalDateTime.now());
         doctor.setApprovedBy(getCurrentUsername());
@@ -241,21 +262,25 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     @Transactional
     public void deleteDoctor(Long doctorId) {
-        if (!doctorRepo.existsById(doctorId)) {
+        Doctor doctor = doctorRepo.findById(doctorId)
+                .orElseThrow(() -> new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND));
+
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
             throw new ValidationException("Doctor not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND);
         }
+
         doctorRepo.deleteById(doctorId);
     }
 
 
     private void validateUpdateConflicts(Long id, DoctorUpdateDto dto) {
-        if (doctorRepo.existsByUserAuthEmailAndIdNot(dto.getEmail(), id)) {
+        if (doctorRepo.existsByUserAuthEmailAndClinicIdAndIdNot(dto.getEmail(), TenantContext.getCurrentTenant(), id)) {
             throw new ValidationException(messageSourceUtil.getMessage("doctor.email.exists.error"), "EMAIL_DUPLICATE", null, HttpStatus.BAD_REQUEST);
         }
-        if (doctorRepo.existsByNicAndIdNot(dto.getNic(), id)) {
+        if (doctorRepo.existsByNicAndClinicIdAndIdNot(dto.getNic(), TenantContext.getCurrentTenant(), id)) {
             throw new ValidationException(messageSourceUtil.getMessage("doctor.nic.exists.error"), "NIC_DUPLICATE", null, HttpStatus.BAD_REQUEST);
         }
-        if (doctorRepo.existsBySlmcNumberAndIdNot(dto.getSlmcNumber(), id)) {
+        if (doctorRepo.existsBySlmcNumberAndClinicIdAndIdNot(dto.getSlmcNumber(), TenantContext.getCurrentTenant(), id)) {
             throw new ValidationException("SLMC Number already exists", "SLMC_DUPLICATE", null, HttpStatus.BAD_REQUEST);
         }
     }

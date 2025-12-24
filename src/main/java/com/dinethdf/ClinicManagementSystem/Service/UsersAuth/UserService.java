@@ -8,6 +8,7 @@ import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationRes
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // NEW: Context Handling
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,6 @@ public class UserService {
     @Autowired
     AuthenticationManager authManager;
 
-
-
     @Autowired
     UserDetailsService userDetailsService;
 
@@ -45,70 +44,78 @@ public class UserService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public UserAuth register(UserAuth userAuth){
+        // Ensure Tenant is present
+        if(userAuth.getClinicId() == null) {
+            throw new ValidationException(messageSourceUtil.getMessageOrCustom("clinic.required", null, "Clinic ID Required"), "CLINIC_ID_MISSING");
+        }
+
         userAuth.setPassword(encoder.encode(userAuth.getPassword()));
         userAuth.setEnable(true);
-       return userRepo.save(userAuth);
+        return userRepo.save(userAuth);
     }
-
-
 
 
     public JwtAuthenticationResponse signIn(LoginRequest request){
 
         try {
+            // 1. Create Token with Clinic ID
             CustomAuthToken authToken = new CustomAuthToken(
                     request.getUsername(),
                     request.getPassword(),
-                    request.getLoginType()
+                    request.getLoginType(),
+                    request.getClinicId() // Pass Clinic ID to Auth Provider
             );
 
+            // 2. Authenticate
             Authentication auth = authManager.authenticate(authToken);
 
+            // 3. Generate JWT with Clinic ID Claim
+            // Note: You must update JWTService to accept this parameter
+            var jwt = jwtService.generateUserToken(request.getUsername(), request.getClinicId());
+            // var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername(), request.getClinicId());
 
-//         Authentication authentication =
-//              authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
+            jwtAuthenticationResponse.setAccessToken(jwt);
+            jwtAuthenticationResponse.setRefreshToken("refreshToken");
 
-           var jwt = jwtService.generateUserToken(request.getUsername());
-//           var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername());
+            return jwtAuthenticationResponse;
 
-            // hear add api call to user details and with the requst send user details for FE
-
-
-           JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-           jwtAuthenticationResponse.setAccessToken(jwt);
-           jwtAuthenticationResponse.setRefreshToken("refreshToken");
-
-           return jwtAuthenticationResponse;
-
-        }catch (BadCredentialsException e) {
+        } catch (BadCredentialsException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");
         } catch (AuthenticationException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "true");
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Email Or password");
+            // Often thrown if clinicId is null
+            throw new ValidationException("Invalid Login Request Data", "INVALID_REQUEST");
         }
     }
 
 
-
     public JwtAuthenticationResponse refreshToken (RefreshTokenRequest refreshTokenRequest) {
-        String userEmail ;
+        String userEmail;
+        Integer clinicId;
+
         try {
             userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        }catch (RuntimeException e){
-            System.out.println("asdasd");
-            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.werwe", null, "User not found in the system"), "dasd");
-        }catch (Exception e){
-            System.out.println("asdasd");
-            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.asda", null, "User not found in the system"), "ewrwerwer");
+            clinicId = jwtService.extractClinicId(refreshTokenRequest.getToken()); // New helper method needed
+        } catch (RuntimeException e){
+            throw new ValidationException(messageSourceUtil.getMessageOrCustom("user.not.found", null, "User not found"), "TOKEN_INVALID");
+        } catch (Exception e){
+            throw new ValidationException(messageSourceUtil.getMessageOrCustom("token.invalid", null, "Invalid Token"), "TOKEN_INVALID");
         }
 
-
         try {
+            // Set context so UserDetailsService knows where to look
+            if (clinicId != null) {
+                TenantContext.setCurrentTenant(clinicId);
+            }
+
             UserDetails user = userDetailsService.loadUserByUsername(userEmail);
 
             if (jwtService.validateToken(refreshTokenRequest.getToken(), user)){
-                var jwt = jwtService.generateUserToken(user.getUsername());
+                // Re-generate token with clinicId
+                var jwt = jwtService.generateUserToken(user.getUsername(), clinicId);
+
                 JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
                 jwtAuthenticationResponse.setAccessToken(jwt);
                 jwtAuthenticationResponse.setRefreshToken(refreshTokenRequest.getToken());
@@ -116,39 +123,39 @@ public class UserService {
                 return jwtAuthenticationResponse;
             }
 
-
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Email Or password");
+            throw new ValidationException("Invalid Token Credentials", "INVALID_TOKEN");
+        } finally {
+            // Cleanup context
+            TenantContext.clear();
         }
 
         return null;
     }
 
 
-
     public Map<String, Object> validateToken(String authHeader) {
+        Map<String, Object> response = new HashMap<>();
 
-    Map<String, Object> response = new HashMap<>();
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                response.put("valid", false);
-                return response;
-            }
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.put("valid", false);
+            return response;
+        }
 
-            String token = authHeader.substring(7);
+        String token = authHeader.substring(7);
+        try {
             String username = jwtService.extractUserName(token);
             if (jwtService.isRouteValidateToken(token)) {
                 response.put("valid", true);
                 response.put("username", username);
                 return response;
             }
-
-
+        } catch (Exception e) {
+            response.put("valid", false);
+            return response;
+        }
 
         response.put("valid", false);
         return response;
     }
-
-
-
-
 }

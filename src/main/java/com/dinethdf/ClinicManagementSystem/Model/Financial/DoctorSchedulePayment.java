@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Financial;
 
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule; // Check this import path
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -11,13 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "doctor_schedule_payments")
+@Table(name = "doctor_schedule_payments", indexes = {
+        @Index(name = "idx_payout_clinic", columnList = "clinic_id")
+})
 @Data
 public class DoctorSchedulePayment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- Multi-Tenant Field
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_schedule_id", nullable = false, unique = true)
@@ -50,7 +55,6 @@ public class DoctorSchedulePayment {
     private LocalDateTime approvedDate;
     private String approvedBy;
 
-    // --- INNER ENUM (No separate file needed) ---
     public enum PayoutStatus {
         PENDING,
         PARTIAL,

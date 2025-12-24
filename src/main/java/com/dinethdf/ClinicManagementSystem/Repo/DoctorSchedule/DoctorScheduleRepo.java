@@ -16,40 +16,47 @@ import java.util.List;
 @Repository
 public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>, JpaSpecificationExecutor<DoctorSchedule> {
 
-    boolean existsByIdAndDoctorId(Long id, Long doctorId);
+    boolean existsByIdAndDoctorIdAndClinicId(Long id, Long doctorId, Integer clinicId);
 
-    // Find all schedules for a specific doctor
-    List<DoctorSchedule> findByDoctorId(Long doctorId);
+    // Find all schedules for a specific doctor (Scoped to Clinic)
+    List<DoctorSchedule> findByDoctorIdAndClinicId(Long doctorId, Integer clinicId);
 
     // Find only ACTIVE schedules for a specific doctor
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.doctor.id = :doctorId AND s.status = 'ACTIVE'")
-    List<DoctorSchedule> findActiveByDoctorId(@Param("doctorId") Long doctorId);
+    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.doctor.id = :doctorId AND s.status = 'ACTIVE'")
+    List<DoctorSchedule> findActiveByDoctorId(@Param("doctorId") Long doctorId, @Param("clinicId") Integer clinicId);
 
-    // Find all ACTIVE schedules
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.status = 'ACTIVE'")
-    List<DoctorSchedule> findAllActive();
+    // Find all ACTIVE schedules (Scoped to Clinic)
+    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.status = 'ACTIVE'")
+    List<DoctorSchedule> findAllActive(@Param("clinicId") Integer clinicId);
 
     // Find ACTIVE schedules for a doctor on or after a certain date
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.doctor.id = :doctorId AND s.status = 'ACTIVE' AND s.scheduleDate >= :date")
-    List<DoctorSchedule> findActiveByDoctorIdAndScheduleDateAfter(@Param("doctorId") Long doctorId, @Param("date") LocalDate date);
+    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.doctor.id = :doctorId AND s.status = 'ACTIVE' AND s.scheduleDate >= :date")
+    List<DoctorSchedule> findActiveByDoctorIdAndScheduleDateAfter(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("clinicId") Integer clinicId
+    );
 
     // Upcoming schedules for a doctor
     @Query("SELECT s FROM DoctorSchedule s " +
-            "WHERE s.doctor.id = :doctorId " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND s.doctor.id = :doctorId " +
             "AND s.status = 'ACTIVE' " +
             "AND s.bookingStatus = 'OPEN' " +
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) )")
     List<DoctorSchedule> findUpcomingSchedulesByDoctorId(
             @Param("doctorId") Long doctorId,
             @Param("today") LocalDate today,
-            @Param("now") LocalTime now
+            @Param("now") LocalTime now,
+            @Param("clinicId") Integer clinicId
     );
 
     // Paginated list of all schedules with optional filters
     @Query("SELECT s FROM DoctorSchedule s " +
             "JOIN s.doctor d " +
             "JOIN d.specialization sp " +
-            "WHERE (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
             "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate) " +
             "ORDER BY CASE WHEN s.scheduleDate = :today THEN 1 WHEN s.scheduleDate > :today THEN 2 ELSE 3 END ASC, s.scheduleDate ASC, s.startTime ASC")
@@ -59,6 +66,7 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("doctorName") String doctorName,
             @Param("specialization") String specialization,
             @Param("searchDate") LocalDate searchDate,
+            @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
 
@@ -66,7 +74,8 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     @Query("SELECT s FROM DoctorSchedule s " +
             "JOIN s.doctor d " +
             "JOIN d.specialization sp " +
-            "WHERE s.status = 'ACTIVE' " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND s.status = 'ACTIVE' " +
             "AND s.bookingStatus = 'OPEN' " +
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
@@ -78,13 +87,15 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("doctorName") String doctorName,
             @Param("specialization") String specialization,
             @Param("searchDate") LocalDate searchDate,
+            @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
 
     // Overlapping schedule check for create
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
             "FROM DoctorSchedule s " +
-            "WHERE s.doctor.id = :doctorId " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND s.doctor.id = :doctorId " +
             "AND s.status = 'ACTIVE' " +
             "AND s.startTime < :endTime " +
             "AND s.endTime > :startTime " +
@@ -93,13 +104,15 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("doctorId") Long doctorId,
             @Param("scheduleDate") LocalDate scheduleDate,
             @Param("startTime") LocalTime startTime,
-            @Param("endTime") LocalTime endTime
+            @Param("endTime") LocalTime endTime,
+            @Param("clinicId") Integer clinicId
     );
 
     // Overlapping schedule check for update (exclude current schedule)
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
             "FROM DoctorSchedule s " +
-            "WHERE s.doctor.id = :doctorId " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND s.doctor.id = :doctorId " +
             "AND s.status = 'ACTIVE' " +
             "AND s.scheduleDate = :scheduleDate " +
             "AND s.id != :scheduleIdToExclude " +
@@ -110,6 +123,7 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("scheduleDate") LocalDate scheduleDate,
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime,
-            @Param("scheduleIdToExclude") Long scheduleIdToExclude
+            @Param("scheduleIdToExclude") Long scheduleIdToExclude,
+            @Param("clinicId") Integer clinicId
     );
 }

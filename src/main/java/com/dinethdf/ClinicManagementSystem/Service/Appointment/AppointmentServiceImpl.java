@@ -6,6 +6,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.AppointmentMapper;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -37,6 +38,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         validateAppointmentCreateDTO(createDTO);
 
         Map<String, Object> spResult = appointmentRepo.sp_BookAppointment(
+                TenantContext.getCurrentTenant(),
                 createBy,
                 createDTO.getDoctorScheduleId(),
                 createDTO.getPatientId(),
@@ -49,7 +51,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             handleSpError(statusMessage);
         }
 
-        // 3. CRITICAL FIX: Safe Casting from Integer (DB) to Long (Java)
         Object newIdObj = spResult.get("o_newAppointmentId");
         if (newIdObj == null) {
             throw new ValidationException("Database failed to return a valid Appointment ID", "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -75,15 +76,14 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new ValidationException("Invalid appointment ID.", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
 
-        // Fast Existence & Status Check
-        Appointment.AppointmentStatus status = appointmentRepo.findStatusById(appointmentId)
+        Appointment.AppointmentStatus status = appointmentRepo.findStatusById(appointmentId, TenantContext.getCurrentTenant())
                 .orElseThrow(() -> new ValidationException("Appointment not found.", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (status == Appointment.AppointmentStatus.CANCELLED) {
             throw new ValidationException("Appointment is CANCELLED.", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
         }
 
-        List<InvoiceAppointmentFlatDTO> rawData = appointmentRepo.findRawInvoicesByAppointmentId(appointmentId);
+        List<InvoiceAppointmentFlatDTO> rawData = appointmentRepo.findRawInvoicesByAppointmentId(appointmentId, TenantContext.getCurrentTenant());
 
         if (rawData.isEmpty()) {
             throw new ValidationException("No invoices generated for this appointment yet.", "NO_INVOICES", HttpStatus.NOT_FOUND);
@@ -97,15 +97,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         for (Map.Entry<Long, List<InvoiceAppointmentFlatDTO>> entry : groupedByInvoice.entrySet()) {
             List<InvoiceAppointmentFlatDTO> invoiceRows = entry.getValue();
 
-            // Safe check for list size
             if(invoiceRows.isEmpty()) continue;
 
             InvoiceAppointmentFlatDTO header = invoiceRows.get(0);
 
-            // Map Header
             AppointmentInvoiceViewDTO dto = new AppointmentInvoiceViewDTO();
             dto.setInvoiceId(header.getInvoiceId());
-            // Safe check for date
             if (header.getInvoiceDate() != null) {
                 dto.setDateIssued(header.getInvoiceDate().toLocalDate());
             }
@@ -114,7 +111,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             dto.setTotalDiscount(header.getTotalDiscount());
             dto.setFinalAmount(header.getFinalAmount());
 
-            // Map Patient
             dto.setPatientNo(header.getPatientNo());
             dto.setPatientName(header.getPatientFirstName() + " " + header.getPatientLastName());
             dto.setPatientAddress((header.getPatientAddress() != null ? header.getPatientAddress() : "") +
@@ -122,14 +118,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             dto.setPatientDob(header.getPatientDob());
             dto.setPatientContactNo(header.getPatientMobile());
 
-            // Map Appointment (they all share the same appt info in this case)
             dto.setAppointmentId(header.getApptId());
             dto.setAppointmentNumber(header.getApptNumber());
             dto.setAppointmentNote(header.getApptNote());
             dto.setDoctorName("Dr. " + header.getDoctorFirstName() + " " + header.getDoctorLastName());
             dto.setDoctorSpecialization(header.getDoctorSpec());
 
-            // Map Items for THIS specific invoice
             List<InvoiceItemViewDTO> items = invoiceRows.stream().map(row -> {
                 InvoiceItemViewDTO item = new InvoiceItemViewDTO();
                 item.setDescription(row.getItemDescription());
@@ -158,15 +152,15 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new ValidationException("Start date cannot be after end date", "INVALID_DATE_RANGE", HttpStatus.BAD_REQUEST);
         }
 
-        return appointmentRepo.findFilteredAppointments(patientId, scheduleId, start, end, pageable);
+        return appointmentRepo.findFilteredAppointments(patientId, scheduleId, start, end, TenantContext.getCurrentTenant(), pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AppointmentFullDetailsDTO getAppointmentDetails(Long appointmentId) {
-        return appointmentRepo.findAppointmentFullDetails(appointmentId)
+        return appointmentRepo.findAppointmentFullDetails(appointmentId, TenantContext.getCurrentTenant())
                 .orElseThrow(() -> new ValidationException(
-                        messageSourceUtil.getMessage("appointment.not.found"), // Ensure you have this key
+                        messageSourceUtil.getMessage("appointment.not.found"),
                         "APPOINTMENT_NOT_FOUND",
                         HttpStatus.NOT_FOUND
                 ));
@@ -175,13 +169,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional(readOnly = true)
     public Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable) {
-        return appointmentRepo.findAppointmentsByScheduleId(scheduleId, pageable);
+        return appointmentRepo.findAppointmentsByScheduleId(scheduleId, TenantContext.getCurrentTenant(), pageable);
     }
 
     @Transactional(readOnly = true)
     @Override
     public ScheduleAnalyticsDTO getAnalyticsByScheduleId(Long scheduleId) {
-        return appointmentRepo.getScheduleAnalytics(scheduleId);
+        return appointmentRepo.getScheduleAnalytics(scheduleId, TenantContext.getCurrentTenant());
     }
 
     @Override
@@ -190,13 +184,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (patientId == null || patientId <= 0) {
             throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
-        return appointmentRepo.findAppointmentsByPatientId(patientId);
+        return appointmentRepo.findAppointmentsByPatientId(patientId, TenantContext.getCurrentTenant());
     }
 
     @Override
     public AppointmentCheckDTO checkPatientAppointment(Long scheduleId, Long patientId) {
 
-        return appointmentRepo.findDetailsByScheduleAndPatient(scheduleId, patientId)
+        return appointmentRepo.findDetailsByScheduleAndPatient(scheduleId, patientId, TenantContext.getCurrentTenant())
                 .orElseThrow(() -> new ValidationException(
                         "No appointment found for this patient in the selected schedule.",
                         "APPOINTMENT_NOT_FOUND"
@@ -206,14 +200,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public String cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy) {
 
-        // 1. Call Stored Procedure (It returns the status string directly now)
         String statusMessage = appointmentRepo.sp_CancelAppointment(
+                TenantContext.getCurrentTenant(),
                 appointmentId.intValue(),
                 cancelDTO.getReason(),
                 cancelledBy
         );
 
-        // 2. Handle Response
         return switch (statusMessage) {
             case "CANCEL_SUCCESS" -> "Appointment Cancelled Successfully.";
             case "REFUND_SUCCESS" -> "Appointment Cancelled & Refund Recorded.";

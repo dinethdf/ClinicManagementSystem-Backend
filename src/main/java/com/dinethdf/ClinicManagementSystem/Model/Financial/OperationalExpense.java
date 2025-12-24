@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "operational_expenses")
+@Table(name = "operational_expenses", indexes = {
+        @Index(name = "idx_expense_clinic", columnList = "clinic_id")
+})
 @Data
 public class OperationalExpense {
 
@@ -18,8 +20,10 @@ public class OperationalExpense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // --- CHANGED: Now links to the new Table ---
-    @ManyToOne(fetch = FetchType.EAGER) // Eager because we usually always want to see the category name
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- Multi-Tenant Field
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "expense_category_id", nullable = false)
     private ExpenseCategory expenseCategory;
 

@@ -47,6 +47,9 @@ public class DoctorSchedule extends AuditWrapper {
     @Column(name = "registeredPatientCount", nullable = false)
     private Integer registeredPatientCount = 0;
 
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId = 0;
+
 //    @Column(name = "isActive", nullable = false)
 //    private Boolean isActive = true;
 

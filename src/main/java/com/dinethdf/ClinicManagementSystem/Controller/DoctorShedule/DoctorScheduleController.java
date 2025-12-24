@@ -6,6 +6,7 @@ import com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule.DoctorSchedule
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleUpdateDTO;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -77,25 +78,31 @@ public class DoctorScheduleController {
 
     @GetMapping("/upcoming-public")
     public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getUpcomingSchedules(
+            @RequestParam(required = true) String clinicId, // Taking ID from URL
             @RequestParam(required = false) String doctorName,
             @RequestParam(required = false) String specialization,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
 
-        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
-                doctorName,
-                specialization,
-                date,
-                pageable
-        );
+        try {
+            TenantContext.setCurrentTenant(Integer.valueOf(clinicId));
+            Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
+                    doctorName,
+                    specialization,
+                    date,
+                    pageable
+            );
 
-        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
-                schedules,
-                messageSourceUtil.getMessage("schedule.getupcoming.success")
-        );
+            ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+                    schedules,
+                    messageSourceUtil.getMessage("schedule.getupcoming.success")
+            );
+            return ResponseEntity.ok(response);
 
-        return ResponseEntity.ok(response);
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     @PostMapping

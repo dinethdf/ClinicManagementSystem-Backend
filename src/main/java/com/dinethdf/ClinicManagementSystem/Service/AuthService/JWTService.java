@@ -5,6 +5,7 @@ import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -50,39 +51,56 @@ public class JWTService {
     }
 
 
-    public String generateUserToken(String userEmail) {
-        Map<String, Object> claims = new HashMap<>();
-        UserAuth userAuth = userDetailsService.getUserByEmail(userEmail);
-        claims.put("userId", userAuth.getId());
-        claims.put("userDetailsId", userAuth.getDetailsId());
-        claims.put("role", userAuth.getRole().getName());
+    public String generateUserToken(String userEmail, Integer clinicId) {
+        // 1. Set Context so userDetailsService knows which clinic to look in
+        TenantContext.setCurrentTenant(clinicId);
 
-        return Jwts.builder()
-                .claims()
-                .add(claims)
-                .subject(userAuth.getEmail())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 604800000))
-                .and()
-                .signWith(getKey())
-                .compact();
+        try {
+            System.out.println(userEmail);
+            UserAuth userAuth = userDetailsService.getUserByEmail(userEmail);
+
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("clinicId", clinicId); // <--- Add to Claims
+            claims.put("userId", userAuth.getId());
+            claims.put("userDetailsId", userAuth.getDetailsId());
+            claims.put("role", userAuth.getRole().getName());
+
+            return Jwts.builder()
+                    .claims()
+                    .add(claims)
+                    .subject(userAuth.getEmail())
+                    .issuedAt(new Date(System.currentTimeMillis()))
+                    .expiration(new Date(System.currentTimeMillis() + 604800000))
+                    .and()
+                    .signWith(getKey())
+                    .compact();
+        } finally {
+            TenantContext.clear();
+        }
     }
 
-    public String generatePatientToken(String userEmail) {
-        Map<String, Object> claims = new HashMap<>();
-        PatientAuth patientAuth = patientDetailsService.getUserByEmail(userEmail);
-        claims.put("userName", "PatientIDNo");
-        claims.put("role", patientAuth.getRole().getName());
+    public String generatePatientToken(String userEmail, Integer clinicId) {
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            PatientAuth patientAuth = patientDetailsService.getUserByEmail(userEmail);
 
-        return Jwts.builder()
-                .claims()
-                .add(claims)
-                .subject(patientAuth.getEmail())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 604800000))
-                .and()
-                .signWith(getKey())
-                .compact();
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("clinicId", clinicId); // <--- Add to Claims
+            claims.put("userName", "PatientIDNo");
+            claims.put("role", patientAuth.getRole().getName());
+
+            return Jwts.builder()
+                    .claims()
+                    .add(claims)
+                    .subject(patientAuth.getEmail())
+                    .issuedAt(new Date(System.currentTimeMillis()))
+                    .expiration(new Date(System.currentTimeMillis() + 604800000))
+                    .and()
+                    .signWith(getKey())
+                    .compact();
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     private SecretKey getKey() {
@@ -97,6 +115,10 @@ public class JWTService {
 
     public String extractUserRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class)); // custom claim
+    }
+
+    public Integer extractClinicId(String token) {
+        return extractClaim(token, claims -> claims.get("clinicId", Integer.class)); // custom claim
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
