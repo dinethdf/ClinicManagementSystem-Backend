@@ -18,7 +18,6 @@ public class PatientAnalysisService {
 
     public Map<String, Object> getPatientAnalysis(Long patientId) {
 
-        System.out.println("back end patient Analysis call");
         Map<String, Object> analysis = new HashMap<>();
         Integer clinicId = TenantContext.getCurrentTenant();
 
