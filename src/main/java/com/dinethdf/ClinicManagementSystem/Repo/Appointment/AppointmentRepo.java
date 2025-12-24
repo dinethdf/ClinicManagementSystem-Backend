@@ -73,27 +73,34 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("clinicId") Integer clinicId);
 
     @Query(nativeQuery = true, value = """
-        SELECT
-            a.id AS appointmentId,
-            a.queuePosition AS queuePosition,
-            a.status AS status,
-            ds.scheduleDate AS scheduleDate,
-            ds.startTime AS startTime,
-            ds.doctorFee AS doctorFee,
-            ds.clinicFee AS clinicFee,
-            (ds.doctorFee + ds.clinicFee) AS totalFee,
-            d.firstName AS doctorFirstName,
-            d.lastName AS doctorLastName,
-            CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorFullName,
-            s.name AS specialization
-        FROM appointments a
-        JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
-        JOIN doctor d ON ds.doctor_id = d.id
-        LEFT JOIN specialization s ON d.specialization_id = s.id
-        WHERE a.patient_id = :patientId 
-          AND a.clinic_id = :clinicId
-        ORDER BY ds.scheduleDate DESC, ds.startTime ASC
-    """)
+    SELECT
+        a.id AS appointmentId,
+        a.queuePosition AS queuePosition,
+        a.status AS status,
+        ds.scheduleDate AS scheduleDate,
+        ds.startTime AS startTime,
+        ds.doctorFee AS doctorFee,
+        ds.clinicFee AS clinicFee,
+        (ds.doctorFee + ds.clinicFee) AS totalFee,
+        d.firstName AS doctorFirstName,
+        d.lastName AS doctorLastName,
+        CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorFullName,
+        s.name AS specialization
+    FROM appointments a
+    JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    JOIN doctor d ON ds.doctor_id = d.id
+    LEFT JOIN specialization s ON d.specialization_id = s.id
+    WHERE a.patient_id = :patientId 
+      AND a.clinic_id = :clinicId
+    ORDER BY 
+        CASE 
+            WHEN a.status = 'PENDING_PAYMENT' THEN 1
+            WHEN a.status = 'BOOKED' THEN 2
+            ELSE 3
+        END ASC,
+        ds.scheduleDate DESC, 
+        ds.startTime ASC
+""")
     List<PatientAppointmentDTO> findAppointmentsByPatientId(
             @Param("patientId") Long patientId,
             @Param("clinicId") Integer clinicId);

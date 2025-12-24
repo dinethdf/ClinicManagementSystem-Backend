@@ -293,6 +293,9 @@ CREATE TABLE clinic_staff (
     createdBy VARCHAR(50) NOT NULL,
     updatedDate DATETIME DEFAULT NULL,
     updatedBy VARCHAR(50),
+	approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+    isApproved TINYINT NOT NULL DEFAULT 0,
 
     CONSTRAINT fk_staff_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
     UNIQUE INDEX idx_staff_email_per_clinic (clinic_id, email),
