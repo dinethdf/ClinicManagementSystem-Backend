@@ -8,6 +8,7 @@ import com.dinethdf.ClinicManagementSystem.Model.ClinicStaff.Status;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserRole;
 import com.dinethdf.ClinicManagementSystem.Repo.ClinicStaff.ClinicStaffRepo;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class ClinicStaffServiceImpl implements ClinicStaffService {
@@ -37,7 +39,8 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
     @Override
     @Transactional(readOnly = true)
     public ClinicStaffResponseDto getStaffById(Long id) {
-        return clinicStaffRepo.findStaffDetailById(id)
+        // Find by ID AND Clinic ID (Security)
+        return clinicStaffRepo.findStaffDetailByIdAndClinicId(id, TenantContext.getCurrentTenant())
                 .orElseThrow(() -> new ValidationException(
                         "Staff member not found",
                         "NOT_FOUND",
@@ -51,11 +54,13 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
     @Override
     public ApiResponse<ClinicStaff> registerStaff(ClinicStaff staff) {
 
+        Integer clinicId = TenantContext.getCurrentTenant();
+
         // 1. Validate Input
         validateStaff(staff);
 
         try {
-
+            staff.setClinicId(clinicId);
             UserAuth userAuth = new UserAuth();
             userAuth.setEmail(staff.getEmail());
             // Default password is NIC, encrypted
@@ -64,12 +69,11 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
 
             UserRole role = new UserRole();
-
-
             int roleId = (staff.getAssignedRoleId() != null) ? staff.getAssignedRoleId() : 2;
 
             role.setId(roleId);
             userAuth.setRole(role);
+            userAuth.setClinicId(clinicId);
 
             staff.setUserAuth(userAuth);
 
@@ -78,7 +82,7 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
             }
 
             staff.setCreatedDate(LocalDateTime.now());
-             staff.setCreatedBy("ADMIN"); // Add your current user logic here
+            staff.setCreatedBy("ADMIN"); // Ideally fetch from SecurityContext
 
             // 5. Save
             ClinicStaff savedStaff = clinicStaffRepo.save(staff);
@@ -107,7 +111,9 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
         try {
             // Sort by ID descending (newest first)
             Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-            return clinicStaffRepo.findAllStaffPaginated(pageable);
+
+            // Pass Clinic ID to Repo
+            return clinicStaffRepo.findAllStaffPaginated(TenantContext.getCurrentTenant(), pageable);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,13 +126,21 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
     @Override
     public ClinicStaffResponseDto editStaffDetails(Long staffId, ClinicStaffUpdateDto requestDto) {
 
+        Integer clinicId = TenantContext.getCurrentTenant();
+
         ClinicStaff staff = clinicStaffRepo.findById(staffId)
                 .orElseThrow(() -> new ValidationException("Staff member not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND));
 
-        if(clinicStaffRepo.existsByUserAuthEmailAndIdNot(requestDto.getEmail(), staffId))
+        // SECURITY CHECK: Ensure staff belongs to this clinic
+        if (!Objects.equals(staff.getClinicId(), clinicId)) {
+            throw new ValidationException("Staff member not found", "NOT_FOUND", null, HttpStatus.NOT_FOUND);
+        }
+
+        // Validate duplicates within this clinic
+        if(clinicStaffRepo.existsByUserAuthEmailAndIdNotAndClinicId(requestDto.getEmail(), staffId, clinicId))
             throw new ValidationException("Email already exists", "DUPLICATE", null, HttpStatus.BAD_REQUEST);
 
-        if(clinicStaffRepo.existsByNicAndIdNot(requestDto.getNic(), staffId))
+        if(clinicStaffRepo.existsByNicAndIdNotAndClinicId(requestDto.getNic(), staffId, clinicId))
             throw new ValidationException("NIC already exists", "DUPLICATE", null, HttpStatus.BAD_REQUEST);
 
         // Update Fields
@@ -144,14 +158,12 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
         staff.setEmail(requestDto.getEmail());
 
         // --- CRITICAL: Update UserAuth Email ---
-        // Since @OneToOne(cascade = ALL) is likely set, updating the child object works here
         if(staff.getUserAuth() != null) {
             staff.getUserAuth().setEmail(requestDto.getEmail());
         }
 
         // Audit Fields
         staff.setUpdatedDate(LocalDateTime.now());
-        // staff.setUpdatedBy(getCurrentUsername()); // Implement your security util logic here
 
         ClinicStaff saved = clinicStaffRepo.save(staff);
 
@@ -196,7 +208,6 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     private void handleDataIntegrityViolation(String rootCauseMessage) {
         if (rootCauseMessage == null) {
-            // Throw a generic error if the message is null for some reason
             throw new ValidationException(
                     messageSourceUtil.getMessage("database.error.generic"),
                     "DATABASE_ERROR",
@@ -206,7 +217,7 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
         }
 
         String lowerCaseMessage = rootCauseMessage.toLowerCase();
-        System.out.println(lowerCaseMessage); // For debugging
+        System.out.println(lowerCaseMessage);
 
         // 1. Check for Duplicate Entry errors
         if (lowerCaseMessage.contains("duplicate entry")) {
@@ -244,7 +255,7 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
         if (lowerCaseMessage.contains("cannot be null")) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("validation.field.notnull"), // e.g., "A required field was left empty."
+                    messageSourceUtil.getMessage("validation.field.notnull"),
                     "NOT_NULL_VIOLATION",
                     null,
                     HttpStatus.BAD_REQUEST
@@ -258,5 +269,4 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
                 HttpStatus.BAD_REQUEST
         );
     }
-
 }

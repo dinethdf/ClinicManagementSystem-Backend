@@ -14,11 +14,13 @@ import java.util.Optional;
 @Repository
 public interface ClinicStaffRepo extends JpaRepository<ClinicStaff, Long> {
 
-    boolean existsByUserAuthEmail(String email);
-    boolean existsByNic(String nic);
+    // These now check duplicates ONLY within the specific clinic
+    boolean existsByUserAuthEmailAndClinicId(String email, Integer clinicId);
+    boolean existsByNicAndClinicId(String nic, Integer clinicId);
 
-    boolean existsByUserAuthEmailAndIdNot(String email, Long id);
-    boolean existsByNicAndIdNot(String nic, Long id);
+    // For Edit: Check duplicates in this clinic, excluding the current staff ID
+    boolean existsByUserAuthEmailAndIdNotAndClinicId(String email, Long id, Integer clinicId);
+    boolean existsByNicAndIdNotAndClinicId(String nic, Long id, Integer clinicId);
 
 
     @Query("""
@@ -27,8 +29,9 @@ public interface ClinicStaffRepo extends JpaRepository<ClinicStaff, Long> {
         s.nic, s.dob, s.nameWithInitials, s.designation, s.status, s.profileImg , s.gender
     )
     FROM ClinicStaff s
+    WHERE s.clinicId = :clinicId
     """)
-    Page<ClinicStaffResponseDto> findAllStaffPaginated(Pageable pageable);
+    Page<ClinicStaffResponseDto> findAllStaffPaginated(@Param("clinicId") Integer clinicId, Pageable pageable);
 
     @Query("""
        SELECT new com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto(
@@ -36,7 +39,7 @@ public interface ClinicStaffRepo extends JpaRepository<ClinicStaff, Long> {
            s.nic, s.dob, s.nameWithInitials, s.designation, s.status, s.profileImg, s.gender
        )
        FROM ClinicStaff s
-       WHERE s.id = :id
+       WHERE s.id = :id AND s.clinicId = :clinicId
     """)
-    Optional<ClinicStaffResponseDto> findStaffDetailById(@Param("id") Long id);
+    Optional<ClinicStaffResponseDto> findStaffDetailByIdAndClinicId(@Param("id") Long id, @Param("clinicId") Integer clinicId);
 }
