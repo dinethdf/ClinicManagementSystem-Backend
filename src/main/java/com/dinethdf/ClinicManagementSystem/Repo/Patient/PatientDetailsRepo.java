@@ -32,14 +32,16 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
         p.landNo
     )
     FROM Patient p
-    WHERE (:nic IS NULL OR LOWER(p.nic) LIKE LOWER(CONCAT('%', :nic, '%')))
+    WHERE p.clinicId = :clinicId
+      AND (:nic IS NULL OR LOWER(p.nic) LIKE LOWER(CONCAT('%', :nic, '%')))
       AND (:fullName IS NULL OR LOWER(p.fullName) LIKE LOWER(CONCAT('%', :fullName, '%')))
-      AND p.isActive IS TRUE
+      AND p.isActive = true
       AND (p.guardian IS NULL OR p.guardian.id = 0)
 """)
     List<GuardianResponseDTO> searchGuardianByNicAndFullName(
             @Param("nic") String nic,
-            @Param("fullName") String fullName);
+            @Param("fullName") String fullName,
+            @Param("clinicId") Integer clinicId);
 
     @Query("""
     SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO(
@@ -71,17 +73,19 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
     )
     FROM Patient p
     LEFT JOIN p.guardian g
-    WHERE (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
+    WHERE p.clinicId = :clinicId
+      AND (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
       AND (:mobileNo IS NULL OR LOWER(p.mobileNo) LIKE LOWER(CONCAT('%', :mobileNo, '%')))
       AND (:nic IS NULL OR LOWER(p.nic) LIKE LOWER(CONCAT('%', :nic, '%')))
       AND (:fullName IS NULL OR LOWER(p.fullName) LIKE LOWER(CONCAT('%', :fullName, '%')))
-      AND p.isActive IS TRUE
+      AND p.isActive = true
 """)
     List<PatientResponseDTO> searchPatient(
             @Param("patientNo") String patientNo,
             @Param("nic") String nic,
             @Param("fullName") String fullName,
-            @Param("mobileNo") String mobileNo);
+            @Param("mobileNo") String mobileNo,
+            @Param("clinicId") Integer clinicId);
 
     @Query("""
     SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO(
@@ -91,11 +95,12 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
         p.lastName
     )
     FROM Patient p
-    WHERE (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
-      AND p.isActive IS TRUE
+    WHERE p.clinicId = :clinicId
+      AND (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
+      AND p.isActive = true
     """)
-    List<PatientSimpleResponseDTO> searchByPatientNo(@Param("patientNo") String patientNo);
+    List<PatientSimpleResponseDTO> searchByPatientNo(
+            @Param("patientNo") String patientNo,
+            @Param("clinicId") Integer clinicId);
 
 }
-
-

@@ -16,6 +16,12 @@ public class PatientAuth {
     private Boolean isEnable;
     private Boolean isTempCredential;
 
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- ADD THIS
+
+    public Integer getClinicId() { return clinicId; }
+    public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
+
     public Boolean getEnable() {
         return isEnable;
     }
@@ -75,6 +81,7 @@ public class PatientAuth {
         return "User{" +
                 "Id=" + id +
                 ", username='" + email + '\'' +
+                ", clinicID='" + clinicId + '\'' +
                 ", isEnable='" + isEnable + '\'' +
                 ", isTempCredential='" + isTempCredential + '\'' +
                 ", password='" + password + '\'' +

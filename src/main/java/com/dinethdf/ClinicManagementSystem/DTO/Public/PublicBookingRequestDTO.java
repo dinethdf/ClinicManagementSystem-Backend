@@ -19,4 +19,5 @@ public class PublicBookingRequestDTO {
     private LocalDate dob;
     private String mobileNo;
     private String email;
+    private Integer clinicId;
 }

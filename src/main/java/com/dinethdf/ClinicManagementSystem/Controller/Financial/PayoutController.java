@@ -1,12 +1,11 @@
-package com.dinethdf.ClinicManagementSystem.Controller.Payout;
+package com.dinethdf.ClinicManagementSystem.Controller.Financial;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.DoctorSchedulePayment;
 import com.dinethdf.ClinicManagementSystem.Model.Financial.OperationalExpense;
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
-import com.dinethdf.ClinicManagementSystem.Service.Payout.PayoutService;
+import com.dinethdf.ClinicManagementSystem.Service.Financial.PayoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;

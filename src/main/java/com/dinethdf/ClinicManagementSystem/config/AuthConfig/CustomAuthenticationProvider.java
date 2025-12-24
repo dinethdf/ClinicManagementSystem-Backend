@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,14 +30,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         String rawPassword = authentication.getCredentials().toString();
-        String loginType = ((CustomAuthToken) authentication).getLoginType();
+
+        CustomAuthToken customToken = (CustomAuthToken) authentication;
+        String loginType = customToken.getLoginType();
+        Integer clinicId = customToken.getClinicId(); // <--- Get Clinic ID
+
         UserDetails user;
+        TenantContext.setCurrentTenant(clinicId);
         if ("PATIENT".equalsIgnoreCase(loginType)) {
-            user = patientDetailsService.loadUserByUsername(username);
+            user = patientDetailsService.loadUserByUsernameAndClinic(username, clinicId);
         } else if ("USER".equalsIgnoreCase(loginType)) {
-            user = userDetailsService.loadUserByUsername(username);
+            user = userDetailsService.loadUserByUsernameAndClinic(username, clinicId);
         } else {
-            throw new BadCredentialsException("Unknown login type: " + loginType);
+            throw new BadCredentialsException("Unknown login type");
         }
 
 

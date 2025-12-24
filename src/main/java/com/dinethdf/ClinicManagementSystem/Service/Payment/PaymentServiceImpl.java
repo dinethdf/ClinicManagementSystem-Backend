@@ -5,6 +5,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Repo.Payment.PaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +34,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         validatePaymentDTO(paymentDTO);
 
-
-        String createdBy = "receptionist_user";
+        // 1. Get Tenant ID
+        Integer clinicId = TenantContext.getCurrentTenant();
+        String createdBy = "receptionist_user"; // Ideally, fetch from SecurityContext
 
         String discountsJson = null;
         if (paymentDTO.getDiscounts() != null && !paymentDTO.getDiscounts().isEmpty()) {
@@ -44,8 +47,9 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
-        // 4. Call the Stored Procedure
+        // 4. Call the Stored Procedure (Added clinicId)
         Map<String, Object> spResult = paymentRepo.sp_AppointmentPaymentProcess(
+                clinicId, // <--- Clinic ID
                 paymentDTO.getInvoiceId(),
                 paymentDTO.getPaymentMethod(),
                 paymentDTO.getTransactionCode(),
@@ -61,9 +65,14 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 6. Retrieve the new Payment Object (Success Case)
         Integer newPaymentId = (Integer) spResult.get("o_new_payment_id");
+
         Payment newPayment = paymentRepo.findById(newPaymentId.longValue())
                 .orElseThrow(() -> new ValidationException("Failed to retrieve new payment", "PAYMENT_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR));
 
+        // 7. Security: Ensure payment belongs to current clinic
+        if (!Objects.equals(newPayment.getClinicId(), clinicId)) {
+            throw new ValidationException("Access Denied", "UNAUTHORIZED", HttpStatus.FORBIDDEN);
+        }
 
         String smsDeliveryNote = "SMS_SENT_SUCCESSFULLY";
 
@@ -71,7 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
             String rawMobile = paymentDTO.getPatientMobileNo();
             String formattedMobile = formatToLankaInternational(rawMobile);
 
-            String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + "Appointment Booked";
+            String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + " Appointment Booked";
 
 
             // disable for now After remove this

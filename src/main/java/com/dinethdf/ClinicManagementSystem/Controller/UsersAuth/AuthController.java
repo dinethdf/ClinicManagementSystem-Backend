@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-//@CrossOrigin(origins = "http://localhost:3000")
+// @CrossOrigin(origins = "http://localhost:3000") // Configure global CORS instead
 public class AuthController {
 
     @Autowired
@@ -25,21 +25,30 @@ public class AuthController {
 
     @PostMapping("register")
     public UserAuth registerUser(@RequestBody UserAuth userAuth){
+        if (userAuth.getClinicId() == null) {
+            throw new IllegalArgumentException("Clinic ID is required for registration");
+        }
         return userService.register(userAuth);
     }
 
-//    @PostMapping("login")
-//    public String login(@RequestBody User user){
-//      return userService.login(user);
-//    }
-
     @PostMapping("userSignIn")
     public ResponseEntity<JwtAuthenticationResponse> signIn (@RequestBody LoginRequest request){
+        // Security check
+        if (request.getClinicId() == null) {
+            throw new IllegalArgumentException("Clinic ID is required for login");
+        }
         return ResponseEntity.ok(userService.signIn(request));
     }
 
+    /**
+     * Patient Login
+     * Request body must include: username, password, loginType="PATIENT", clinicId
+     */
     @PostMapping("patientSignIn")
     public ResponseEntity<JwtAuthenticationResponse> patientSignIn (@RequestBody LoginRequest request){
+        if (request.getClinicId() == null) {
+            throw new IllegalArgumentException("Clinic ID is required for login");
+        }
         return ResponseEntity.ok(patientAuthService.patientSignIn(request));
     }
 
@@ -52,6 +61,4 @@ public class AuthController {
     public Map<String, Object> validateToken(@RequestHeader(value = "Authorization") String authHeader) {
         return userService.validateToken(authHeader);
     }
-
-
 }

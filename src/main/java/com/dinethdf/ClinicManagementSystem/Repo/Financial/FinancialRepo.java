@@ -12,7 +12,10 @@ import java.util.List;
 @Repository
 public interface FinancialRepo extends JpaRepository<Appointment, Long> {
 
-    // Using CALL syntax for Stored Procedure
-    @Query(value = "CALL GetScheduleFinancials(:scheduleId)", nativeQuery = true)
-    List<ScheduleFinancialProjection> getScheduleFinancials(@Param("scheduleId") Integer scheduleId);
+    // Updated to pass clinicId for Multi-Tenancy
+    @Query(value = "CALL GetScheduleFinancials(:clinicId, :scheduleId)", nativeQuery = true)
+    List<ScheduleFinancialProjection> getScheduleFinancials(
+            @Param("scheduleId") Integer scheduleId,
+            @Param("clinicId") Integer clinicId
+    );
 }

@@ -11,12 +11,17 @@ import java.util.List;
 
 @Entity
 @Data
-@Table(name = "prescriptions")
+@Table(name = "prescriptions", indexes = {
+        @Index(name = "idx_prescription_clinic", columnList = "clinic_id")
+})
 public class Prescription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // <--- Multi-Tenant Field
 
     // Relationship to Appointment
     @OneToOne(fetch = FetchType.LAZY)
@@ -46,4 +51,16 @@ public class Prescription {
     private String updatedBy;
     private LocalDateTime approvedDate;
     private String approvedBy;
+
+
+    // --- Auto-Fill Audit Fields ---
+    @PrePersist
+    protected void onCreate() {
+        if (createdDate == null) createdDate = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = LocalDateTime.now();
+    }
 }

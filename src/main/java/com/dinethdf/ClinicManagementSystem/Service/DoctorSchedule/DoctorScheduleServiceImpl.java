@@ -1,18 +1,16 @@
 package com.dinethdf.ClinicManagementSystem.Service.DoctorSchedule;
 
-import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleListDTO;
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
-import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleUpdateDTO;
+import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorScheduleMapper;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,29 +18,33 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor // Automatically injects final fields
-@Transactional // Makes all public methods transactional by default
+@RequiredArgsConstructor
+@Transactional
 public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     private final DoctorScheduleRepo doctorScheduleRepo;
     private final DoctorRepo doctorRepo;
-    private final DoctorScheduleMapper mapper; // Use a mapper for DTO conversion
+    private final DoctorScheduleMapper mapper;
     private final MessageSourceUtil messageSourceUtil;
 
     @Override
     @Transactional(readOnly = true)
     public boolean validateScheduleOwnership(Long doctorId, Long scheduleId) {
-        return doctorScheduleRepo.existsByIdAndDoctorId(scheduleId, doctorId);
+        // Multi-Tenant Check
+        return doctorScheduleRepo.existsByIdAndDoctorIdAndClinicId(
+                scheduleId,
+                doctorId,
+                TenantContext.getCurrentTenant()
+        );
     }
 
     @Override
@@ -67,17 +69,19 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             );
         }
 
+        // Multi-Tenant Overlap Check
         boolean exists = doctorScheduleRepo.existsOverlappingSchedule(
                 createDTO.getDoctorId(),
                 createDTO.getScheduleDate(),
                 createDTO.getStartTime(),
-                createDTO.getEndTime()
+                createDTO.getEndTime(),
+                TenantContext.getCurrentTenant() // <--- Clinic ID
         );
 
         if (exists) {
             throw new ValidationException(
                     messageSourceUtil.getMessage(
-                            "schedule.error.duplicate.range", // Use a new message key
+                            "schedule.error.duplicate.range",
                             new Object[] { createDTO.getScheduleDate(), createDTO.getStartTime(), createDTO.getEndTime() }
                     ),
                     "DUPLICATE_SCHEDULE_RANGE",
@@ -86,6 +90,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         }
 
         DoctorSchedule newSchedule = DoctorSchedule.builder()
+                .clinicId(TenantContext.getCurrentTenant()) // <--- Set Clinic ID
                 .doctor(doctor)
                 .scheduleDate(createDTO.getScheduleDate())
                 .startTime(createDTO.getStartTime())
@@ -102,7 +107,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(newSchedule);
         return mapper.toResponseDTO(savedSchedule);
-
     }
 
     @Override
@@ -115,56 +119,30 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
         LocalDate today = LocalDate.now();
 
+        // Pass Clinic ID to Repository
         Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findAllSchedules(
                 today,
                 now,
                 doctorName,
                 specialization,
                 searchDate,
+                TenantContext.getCurrentTenant(), // <--- Clinic ID
                 pageable
         );
 
-        // Map Entity Page to DTO Page
         return schedulePage.map(mapper::toResponseDTO);
     }
 
-//    private DoctorScheduleListDTO mapToDTO(DoctorSchedule s) {
-//        String fName = (s.getDoctor() != null) ? s.getDoctor().getFirstName() : "Unknown";
-//        String lName = (s.getDoctor() != null) ? s.getDoctor().getLastName() : "";
-//        String specName = (s.getDoctor() != null && s.getDoctor().getSpecialization() != null)
-//                ? s.getDoctor().getSpecialization().getName()
-//                : "General";
-//
-//        return new DoctorScheduleListDTO(
-//                s.getId(),
-//                fName,
-//                lName,
-//                specName,
-//                s.getScheduleDate(),
-//                s.getStartTime(),
-//                s.getEndTime(),
-//                s.getRegisteredPatientCount(),
-//                s.getMaxPatientCount(),
-//                Boolean.TRUE.equals(s.getIsActive())
-//        );
-//
-//    }
-
-    /**
-     * --- NEW BATCH METHOD IMPLEMENTATION ---
-     */
     @Override
-    @Transactional // This is explicit, but inherits from the class anyway
+    @Transactional
     public List<DoctorScheduleResponseDTO> createBatchSchedules(List<DoctorScheduleCreateDTO> createDTOs) {
-
-        // This re-uses all your validation for every item. and call the 'createSchedule' method for each one.
         return createDTOs.stream()
                 .map(this::createSchedule)
                 .collect(Collectors.toList());
     }
 
     @Override
-    @Transactional(readOnly = true) // Mark as read-only for performance
+    @Transactional(readOnly = true)
     public DoctorScheduleResponseDTO getScheduleById(Long id) {
         DoctorSchedule schedule = findScheduleById(id);
         return mapper.toResponseDTO(schedule);
@@ -174,11 +152,15 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Transactional(readOnly = true)
     public List<DoctorScheduleResponseDTO> getAllSchedules(boolean includeInactive) {
         List<DoctorSchedule> schedules;
+        Integer clinicId = TenantContext.getCurrentTenant();
+
         if (includeInactive) {
-            schedules = doctorScheduleRepo.findAll();
+            // Use Specification to filter by clinicId since we don't have a simple findAllByClinicId method
+            Specification<DoctorSchedule> spec = (root, query, cb) -> cb.equal(root.get("clinicId"), clinicId);
+            schedules = doctorScheduleRepo.findAll(spec);
         }
         else {
-            schedules = doctorScheduleRepo.findAllActive();
+            schedules = doctorScheduleRepo.findAllActive(clinicId);
         }
         return schedules.stream()
                 .map(mapper::toResponseDTO)
@@ -188,14 +170,14 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<DoctorScheduleResponseDTO> getSchedulesByDoctorId(Long doctorId, boolean includeInactive) {
-        // Ensure doctor exists first
+        // Ensure doctor exists and belongs to this clinic
         findDoctorById(doctorId);
 
         List<DoctorSchedule> schedules;
         if (includeInactive) {
-            schedules = doctorScheduleRepo.findByDoctorId(doctorId);
+            schedules = doctorScheduleRepo.findByDoctorIdAndClinicId(doctorId, TenantContext.getCurrentTenant());
         } else {
-            schedules = doctorScheduleRepo.findActiveByDoctorId(doctorId);
+            schedules = doctorScheduleRepo.findActiveByDoctorId(doctorId, TenantContext.getCurrentTenant());
         }
         return schedules.stream()
                 .map(mapper::toResponseDTO)
@@ -209,8 +191,13 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         findDoctorById(doctorId);
 
         LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+
         List<DoctorSchedule> schedules = doctorScheduleRepo.findUpcomingSchedulesByDoctorId(
-                doctorId, LocalDate.now(), now); // .minusDays(1) to include today
+                doctorId,
+                LocalDate.now(),
+                now,
+                TenantContext.getCurrentTenant() // <--- Clinic ID
+        );
 
         return schedules.stream()
                 .map(mapper::toResponseDTO)
@@ -220,32 +207,34 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional(readOnly = true)
     public Page<DoctorScheduleResponseDTO> getUpcomingSchedules(
-                String doctorName,
-                String specialization,
-                LocalDate searchDate,
-                Pageable pageable) {
+            String doctorName,
+            String specialization,
+            LocalDate searchDate,
+            Pageable pageable) {
 
-            LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
-            LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+        LocalDate today = LocalDate.now();
 
-            // Fetch paginated data
-            Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findUpcomingSchedules(
-                    today,
-                    now,
-                    doctorName,
-                    specialization,
-                    searchDate,
-                    pageable
-            );
+        System.out.println("Date : " + today);
+        System.out.println("Time : " + now);
 
-            // Map Entity Page to DTO Page
-            return schedulePage.map(mapper::toResponseDTO);
-        }
+        Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findUpcomingSchedules(
+                today,
+                now,
+                doctorName,
+                specialization,
+                searchDate,
+                TenantContext.getCurrentTenant(),
+                pageable
+        );
+
+        return schedulePage.map(mapper::toResponseDTO);
+    }
 
     @Override
-    @Transactional // Make sure your method is transactional
+    @Transactional
     public DoctorScheduleResponseDTO updateSchedule(Long id, DoctorScheduleUpdateDTO updateDTO) {
-        // 1. Find existing schedule
+        // 1. Find existing schedule (Multi-tenant safe)
         DoctorSchedule existingSchedule = findScheduleById(id);
 
         // 2. Validate new DTO data
@@ -268,19 +257,20 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new ValidationException("Clinic Fee must be > 0", "INVALID_CLINIC_FEE", HttpStatus.BAD_REQUEST);
         }
 
-
+        // 3. Multi-Tenant Overlap Check for Update
         boolean exists = doctorScheduleRepo.existsOverlappingScheduleForUpdate(
                 existingSchedule.getDoctor().getId(),
                 existingSchedule.getScheduleDate(),
                 updateDTO.getStartTime(),
                 updateDTO.getEndTime(),
-                id
+                id,
+                TenantContext.getCurrentTenant() // <--- Clinic ID
         );
 
         if (exists) {
             throw new ValidationException(
                     messageSourceUtil.getMessage(
-                            "schedule.error.duplicate.range.update", // A new message key
+                            "schedule.error.duplicate.range.update",
                             new Object[] { existingSchedule.getScheduleDate(), updateDTO.getStartTime(), updateDTO.getEndTime() }
                     ),
                     "DUPLICATE_SCHEDULE_RANGE",
@@ -312,7 +302,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             );
         }
 
-        // You could also prevent deactivating COMPLETED schedules if needed
         if (schedule.getStatus() == DoctorSchedule.ScheduleStatus.COMPLETED) {
             throw new ValidationException(
                     "Cannot deactivate a completed schedule",
@@ -338,7 +327,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             );
         }
 
-        // Optional: prevent reactivating past schedules
         if (schedule.getScheduleDate().isBefore(LocalDate.now())) {
             throw new ValidationException(
                     "Cannot reactivate a schedule in the past",
@@ -354,39 +342,41 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     public void hardDeleteSchedule(Long id) {
-        // Check if it exists first
         DoctorSchedule schedule = findScheduleById(id);
-
-        // Add business logic here. E.g., Don't allow delete if
-        // appointments are already booked for this schedule.
-        // if (appointmentRepo.existsByScheduleId(id)) {
-        //    throw new ValidationException("Cannot delete schedule with active appointments", "SCHEDULE_IN_USE", HttpStatus.CONFLICT);
-        // }
-
+        // Add additional logic check here if appointments exist...
         doctorScheduleRepo.delete(schedule);
     }
 
     // --- Private Helper Methods ---
 
     /**
-     * Finds a schedule by ID or throws ResourceNotFoundException.
+     * Finds a schedule by ID and ensures it belongs to the current tenant.
      */
     private DoctorSchedule findScheduleById(Long id) {
-        return doctorScheduleRepo.findById(id)
-                .orElseThrow(() -> new ValidationException("  not found with id: " + id, "DOCTOR_SCHEDULE_NOT_FOUND"));
+        DoctorSchedule schedule = doctorScheduleRepo.findById(id)
+                .orElseThrow(() -> new ValidationException("Schedule not found with id: " + id, "DOCTOR_SCHEDULE_NOT_FOUND"));
+
+        // Tenant Security Check
+        if (!Objects.equals(schedule.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Schedule not found", "DOCTOR_SCHEDULE_NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+        return schedule;
     }
 
     /**
-     * Finds a doctor by ID or throws ResourceNotFoundException.
+     * Finds a doctor by ID and ensures they belong to the current tenant.
      */
     private Doctor findDoctorById(Long doctorId) {
-        return doctorRepo.findById(doctorId)
+        Doctor doctor = doctorRepo.findById(doctorId)
                 .orElseThrow(() -> new ValidationException("Doctor not found with id: " + doctorId, "DOCTOR_NOT_FOUND"));
+
+        // Tenant Security Check
+        if (!Objects.equals(doctor.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException("Doctor not found", "DOCTOR_NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+        return doctor;
     }
 
-    /**
-     * Validates the input DTO for creating a new schedule.
-     */
     private void validateCreateDTO(DoctorScheduleCreateDTO schedule) {
         if (schedule.getDoctorId() == null) {
             throw new ValidationException("Doctor is required for schedule", "DOCTOR_REQUIRED", HttpStatus.BAD_REQUEST);
@@ -394,8 +384,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (schedule.getScheduleDate() == null) {
             throw new ValidationException("Schedule date is required", "DATE_REQUIRED", HttpStatus.BAD_REQUEST);
         }
-
-        // --- Updated Time Checks ---
         if (schedule.getStartTime() == null) {
             throw new ValidationException("Start time is required", "START_TIME_REQUIRED", HttpStatus.BAD_REQUEST);
         }
@@ -405,8 +393,6 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if (schedule.getStartTime().isAfter(schedule.getEndTime()) || schedule.getStartTime().equals(schedule.getEndTime())) {
             throw new ValidationException("End time must be after start time", "INVALID_TIME_RANGE", HttpStatus.BAD_REQUEST);
         }
-        // --- End Updated Time Checks ---
-
         if (schedule.getMaxPatientCount() == null || schedule.getMaxPatientCount() <= 0) {
             throw new ValidationException("Max patient count must be greater than 0", "INVALID_PATIENT_COUNT", HttpStatus.BAD_REQUEST);
         }
