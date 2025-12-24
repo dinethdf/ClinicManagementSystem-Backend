@@ -9,11 +9,13 @@ import com.dinethdf.ClinicManagementSystem.util.MobileFormatUtil;
 import com.dinethdf.ClinicManagementSystem.util.SmsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
+@Transactional
 public class OtpService {
 
     @Autowired private OtpRepo otpRepository;
@@ -29,8 +31,10 @@ public class OtpService {
         boolean smsEnabled = configService.isSmsEnabled();
         boolean emailEnabled = configService.isEmailEnabled();
         LocalDate today = LocalDate.now();
+
         Integer clinicId = TenantContext.getCurrentTenant();
 
+        // Find existing record for THIS clinic
         OtpVerification entity = otpRepository.findByMobileNoAndClinicId(mobile, clinicId)
                 .orElse(new OtpVerification());
 
@@ -40,16 +44,18 @@ public class OtpService {
             entity.setLastSmsDate(today);
         }
 
+        // 3. Prevent spamming (Check if active OTP exists)
         if (entity.getOtpCode() != null
                 && entity.getExpiresAt().isAfter(LocalDateTime.now())
                 && !entity.isVerified()) {
-
+            // Masked OTP for security in response
             return "Active OTP already exists. Please check your inbox for code: " + entity.getOtpCode().substring(0, 2) + "****";
         }
 
         String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
 
-        entity.setClinicId(clinicId);
+        // 4. Update/Set Entity Details
+        entity.setClinicId(clinicId); // Ensure Clinic ID is set
         entity.setMobileNo(mobile);
         entity.setEmail(email);
         entity.setOtpCode(otp);
@@ -100,6 +106,7 @@ public class OtpService {
     public boolean verifyOtp(String rawMobile, String otp) {
         String mobile = mobileFormatUtil.formatToLankaInternational(rawMobile);
 
+        // Find by Mobile AND Clinic ID (from Context)
         OtpVerification entity = otpRepository.findByMobileNoAndClinicId(
                 mobile, TenantContext.getCurrentTenant()
         ).orElse(null);
@@ -117,7 +124,6 @@ public class OtpService {
     public boolean isVerified(String rawMobile) {
         String mobile = mobileFormatUtil.formatToLankaInternational(rawMobile);
 
-        // Find by Mobile AND Clinic ID
         OtpVerification entity = otpRepository.findByMobileNoAndClinicId(
                 mobile, TenantContext.getCurrentTenant()
         ).orElse(null);
@@ -139,5 +145,4 @@ public class OtpService {
             otpRepository.save(entity);
         });
     }
-
 }

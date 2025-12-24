@@ -51,7 +51,9 @@ CREATE TABLE expense_categories (
 ) ENGINE=InnoDB;
 
 CREATE TABLE systemConfig (
-    clinic_id INT NOT NULL, -- Tenant Link
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    clinic_id INT NOT NULL,               -- Tenant Link
     configKey VARCHAR(100) NOT NULL,
     configValue VARCHAR(255) NOT NULL,
 
@@ -60,15 +62,15 @@ CREATE TABLE systemConfig (
     updatedDate DATETIME DEFAULT NULL,
     updatedBy VARCHAR(50) DEFAULT NULL,
 
-    -- PRIMARY KEY is now Composite
-    -- You identify a config by "Which Clinic?" + "Which Key?"
-    PRIMARY KEY (clinic_id, configKey),
+    -- One config key per clinic
+    CONSTRAINT uq_clinic_config UNIQUE (clinic_id, configKey),
 
     CONSTRAINT fk_config_clinic
         FOREIGN KEY (clinic_id)
         REFERENCES clinics(id)
         ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+
 
 
 CREATE TABLE userAuth (
@@ -460,8 +462,7 @@ CREATE TABLE prescription_items (
     quantity VARCHAR(50),
     duration VARCHAR(50),
     instructions TEXT,
-
-    CONSTRAINT fk_pres_item_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id)
+    CONSTRAINT fk_items_prescription FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ==================================================================================

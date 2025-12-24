@@ -112,7 +112,7 @@ public class AppointmentNotificationService {
                                     <strong>Date:</strong> %s<br>
                                     <strong>Time:</strong> %s<br>
                                     <strong>Queue No:</strong> <span style="background-color: #eef6ff; padding: 2px 6px; border-radius: 4px; color: #003366; font-weight:bold;">#%d</span><br>
-                                    <strong>Doctor:</strong> Dr. %s<br>
+                                    <strong>Doctor:</strong> %s<br>
                                     <strong>Specialization:</strong> %s
                                 </div>
                             </td>
