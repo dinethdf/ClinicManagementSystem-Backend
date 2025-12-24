@@ -7,25 +7,22 @@ DROP PROCEDURE IF EXISTS PrepareSeedData $$
 DROP PROCEDURE IF EXISTS GenerateData2025 $$
 
 -- ==============================================================================
--- STEP 1: PREPARE DATA (Create Missing Doctors & Patients)
+-- STEP 1: PREPARE DATA (Create Missing Doctors & Patients for BOTH Clinics)
 -- ==============================================================================
 CREATE PROCEDURE PrepareSeedData()
 BEGIN
-    -- 1. Doctor 4
+    -- ------------------------------------------------------------------
+    -- A. SEED CLINIC 1 DATA
+    -- ------------------------------------------------------------------
+    -- 1. Doctors for Clinic 1 (IDs: 4, 10, 16)
     INSERT IGNORE INTO doctor (id, clinic_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy)
-    VALUES (4, 1, 'Ravi', 'Silva', 'R. Silva', 1, '1978-01-20', '780201234V', 'ravi.silva@clinic.com', '0761234567', '88 Park Street', 'Matara', 'Matara', 'DOC004', 1, 'MBBS, MD (Neurology)', 18, 'AVAILABLE', 1, NOW(), 'seed');
+    VALUES
+    (4, 1, 'Ravi', 'Silva', 'R. Silva', 1, '1978-01-20', '780201234V', 'ravi.silva@clinic.com', '0761234567', '88 Park Street', 'Matara', 'Matara', 'DOC004', 1, 'MBBS, MD (Neurology)', 18, 'AVAILABLE', 1, NOW(), 'seed'),
+    (10, 1, 'Bimal', 'Jayasuriya', 'B. Jayasuriya', 1, '1976-11-25', '763301234V', 'bimal.jayasuriya@clinic.com', '0719876543', '23 Cross Street', 'Colombo', 'Colombo', 'DOC010', 2, 'MBBS, MD (Oncology)', 19, 'AVAILABLE', 1, NOW(), 'seed'),
+    (16, 1, 'Arun', 'Prakash', 'A. Prakash', 1, '1981-09-07', '812511234V', 'arun.prakash@clinic.com', '0777890123', '33 Sea Street', 'Trincomalee', 'Trincomalee', 'DOC016', 3, 'MBBS, MD (Cardiology)', 16, 'AVAILABLE', 1, NOW(), 'seed');
 
-    -- 2. Doctor 10
-    INSERT IGNORE INTO doctor (id, clinic_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy)
-    VALUES (10, 1, 'Bimal', 'Jayasuriya', 'B. Jayasuriya', 1, '1976-11-25', '763301234V', 'bimal.jayasuriya@clinic.com', '0719876543', '23 Cross Street', 'Colombo', 'Colombo', 'DOC010', 2, 'MBBS, MD (Oncology)', 19, 'AVAILABLE', 1, NOW(), 'seed');
-
-    -- 3. Doctor 16
-    INSERT IGNORE INTO doctor (id, clinic_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy)
-    VALUES (16, 1, 'Arun', 'Prakash', 'A. Prakash', 1, '1981-09-07', '812511234V', 'arun.prakash@clinic.com', '0777890123', '33 Sea Street', 'Trincomalee', 'Trincomalee', 'DOC016', 3, 'MBBS, MD (Cardiology)', 16, 'AVAILABLE', 1, NOW(), 'seed');
-
-    -- 4. Patients 50-70 Loop
+    -- 2. Patients for Clinic 1 (IDs: 50-70)
     SET @p_id = 50;
-
     WHILE @p_id <= 70 DO
         INSERT IGNORE INTO patient (
             id, clinic_id, patientNo, firstName, lastName, fullName,
@@ -43,17 +40,48 @@ BEGIN
         SET @p_id = @p_id + 1;
     END WHILE;
 
-    COMMIT; -- Explicit Commit to release locks immediately
+    -- ------------------------------------------------------------------
+    -- B. SEED CLINIC 2 DATA
+    -- ------------------------------------------------------------------
+    -- 3. Doctors for Clinic 2 (IDs: 24, 30, 36)
+    INSERT IGNORE INTO doctor (id, clinic_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy)
+    VALUES
+    (24, 2, 'Nalini', 'Perera', 'N. Perera', 2, '1982-05-15', '825551234V', 'nalini.perera@clinic2.com', '0751234567', '45 Kandy Rd', 'Kandy', 'Kandy', 'DOC024', 1, 'MBBS, MD (Pediatrics)', 12, 'AVAILABLE', 1, NOW(), 'seed'),
+    (30, 2, 'Suren', 'Dias', 'S. Dias', 1, '1979-08-20', '798801234V', 'suren.dias@clinic2.com', '0729876543', '12 Lake Drive', 'Kandy', 'Kandy', 'DOC030', 2, 'MBBS, MD (Dermatology)', 15, 'AVAILABLE', 1, NOW(), 'seed'),
+    (36, 2, 'Fathima', 'Riaz', 'F. Riaz', 2, '1985-03-10', '853311234V', 'fathima.riaz@clinic2.com', '0787890123', '99 Hill Street', 'Kandy', 'Kandy', 'DOC036', 3, 'MBBS, MD (General)', 10, 'AVAILABLE', 1, NOW(), 'seed');
+
+    -- 4. Patients for Clinic 2 (IDs: 150-170) - Distinct ID range
+    SET @p2_id = 150;
+    WHILE @p2_id <= 170 DO
+        INSERT IGNORE INTO patient (
+            id, clinic_id, patientNo, firstName, lastName, fullName,
+            ethnicity, gender, maritalStatus, nic, dob,
+            address, city, district, email, mobileNo,
+            bloodGroup, registrationDate, isActive, isApproved,
+            createdDate, createdBy
+        ) VALUES (
+            @p2_id, 2, CONCAT('P2025-', @p2_id), CONCAT('Patient', @p2_id), 'Smith', CONCAT('Patient ', @p2_id, ' Smith'),
+            1, 2, 1, CONCAT('1990', @p2_id, '000V'), '1992-05-05',
+            '456 Kandy Lane', 'Kandy', 'Kandy', CONCAT('patient', @p2_id, '@test.com'), '0711234567',
+            'A+', NOW(), 1, 1,
+            NOW(), 'seed'
+        );
+        SET @p2_id = @p2_id + 1;
+    END WHILE;
+
+    COMMIT;
 END $$
 
 -- ==============================================================================
--- STEP 2: GENERATE 2025 TRANSACTION DATA
+-- STEP 2: GENERATE 2025 TRANSACTION DATA (For BOTH Clinics)
 -- ==============================================================================
 CREATE PROCEDURE GenerateData2025()
 BEGIN
     DECLARE m INT DEFAULT 1;
     DECLARE i INT DEFAULT 1;
-    DECLARE v_clinic_id INT DEFAULT 1;
+    DECLARE c INT DEFAULT 1; -- Clinic Iterator
+
+    DECLARE v_clinic_id INT;
     DECLARE v_doc_id INT;
     DECLARE v_pat_id INT;
     DECLARE v_sched_date DATE;
@@ -68,55 +96,84 @@ BEGIN
         -- Loop 4 times per month
         WHILE i <= 4 DO
 
-            -- Rotate Doctors (4, 10, 16)
-            IF (m + i) % 3 = 0 THEN SET v_doc_id = 4;
-            ELSEIF (m + i) % 3 = 1 THEN SET v_doc_id = 10;
-            ELSE SET v_doc_id = 16;
-            END IF;
+            -- NEW: Loop through Clinics (1 and 2)
+            SET c = 1;
+            WHILE c <= 2 DO
+                SET v_clinic_id = c;
 
-            -- Random Patient (50-69)
-            SET v_pat_id = 50 + FLOOR(RAND() * 20);
+                -- -----------------------------------------------------
+                -- LOGIC SELECTOR BASED ON CLINIC ID
+                -- -----------------------------------------------------
+                IF v_clinic_id = 1 THEN
+                    -- CLINIC 1 LOGIC
+                    -- Rotate Doctors (4, 10, 16)
+                    IF (m + i) % 3 = 0 THEN SET v_doc_id = 4;
+                    ELSEIF (m + i) % 3 = 1 THEN SET v_doc_id = 10;
+                    ELSE SET v_doc_id = 16;
+                    END IF;
 
-            -- Date & Time
-            SET v_sched_date = DATE(CONCAT('2025-', m, '-', (i * 5) + 1));
-            SET v_created_datetime = CONCAT(v_sched_date, ' 08:00:00');
-            SET v_amount = 1500 + FLOOR(RAND() * 3000);
+                    -- Random Patient (50-69)
+                    SET v_pat_id = 50 + FLOOR(RAND() * 20);
 
-            -- A. Insert Schedule
-            INSERT INTO doctorSchedule (clinic_id, doctor_id, scheduleDate, startTime, endTime, doctorFee, clinicFee, maxPatientCount, isActive, isApproved, createdDate, createdBy)
-            VALUES (v_clinic_id, v_doc_id, v_sched_date, '09:00:00', '13:00:00', v_amount - 500, 500, 15, 1, 1, v_created_datetime, 'AutoGen');
-            SET v_sched_id = LAST_INSERT_ID();
+                ELSE
+                    -- CLINIC 2 LOGIC
+                    -- Rotate Doctors (24, 30, 36)
+                    IF (m + i) % 3 = 0 THEN SET v_doc_id = 24;
+                    ELSEIF (m + i) % 3 = 1 THEN SET v_doc_id = 30;
+                    ELSE SET v_doc_id = 36;
+                    END IF;
 
-            -- B. Insert Invoice
-            INSERT INTO invoices (clinic_id, patient_id, status, subtotalAmount, totalDiscount, finalAmount, isApproved, createdDate, createdBy)
-            VALUES (v_clinic_id, v_pat_id, 'PAID', v_amount, 0, v_amount, 1, v_created_datetime, 'AutoGen');
-            SET v_inv_id = LAST_INSERT_ID();
+                    -- Random Patient (150-169)
+                    SET v_pat_id = 150 + FLOOR(RAND() * 20);
+                END IF;
+                -- -----------------------------------------------------
 
-            -- C. Insert Invoice Item
-            INSERT INTO invoice_items (clinic_id, invoice_id, item_type_id, description, amount, isApproved, createdDate, createdBy)
-            VALUES (v_clinic_id, v_inv_id, 1, CONCAT('Consultation Fee - Dr ', v_doc_id), v_amount, 1, v_created_datetime, 'AutoGen');
+                -- Date & Time Generation
+                SET v_sched_date = DATE(CONCAT('2025-', m, '-', (i * 5) + 1));
+                SET v_created_datetime = CONCAT(v_sched_date, ' 08:00:00');
+                SET v_amount = 1500 + FLOOR(RAND() * 3000);
 
-            -- D. Insert Payment
-            INSERT INTO payments (clinic_id, invoice_id, amountPaid, paymentMethod, paymentStatus, isApproved, createdDate, createdBy)
-            VALUES (v_clinic_id, v_inv_id, v_amount, 'CASH', 'COMPLETED', 1, v_created_datetime, 'AutoGen');
+                -- A. Insert Schedule
+                INSERT INTO doctorSchedule (clinic_id, doctor_id, scheduleDate, startTime, endTime, doctorFee, clinicFee, maxPatientCount, isActive, isApproved, createdDate, createdBy)
+                VALUES (v_clinic_id, v_doc_id, v_sched_date, '09:00:00', '13:00:00', v_amount - 500, 500, 15, 1, 1, v_created_datetime, 'AutoGen');
+                SET v_sched_id = LAST_INSERT_ID();
 
-            -- E. Insert Appointment
-            INSERT INTO appointments (clinic_id, queuePosition, status, doctor_schedule_id, patient_id, invoice_id, isApproved, createdDate, createdBy)
-            VALUES (v_clinic_id, 1, 'COMPLETED', v_sched_id, v_pat_id, v_inv_id, 1, v_created_datetime, 'AutoGen');
+                -- B. Insert Invoice
+                INSERT INTO invoices (clinic_id, patient_id, status, subtotalAmount, totalDiscount, finalAmount, isApproved, createdDate, createdBy)
+                VALUES (v_clinic_id, v_pat_id, 'PAID', v_amount, 0, v_amount, 1, v_created_datetime, 'AutoGen');
+                SET v_inv_id = LAST_INSERT_ID();
+
+                -- C. Insert Invoice Item
+                INSERT INTO invoice_items (clinic_id, invoice_id, item_type_id, description, amount, isApproved, createdDate, createdBy)
+                VALUES (v_clinic_id, v_inv_id, 1, CONCAT('Consultation Fee - Dr ', v_doc_id), v_amount, 1, v_created_datetime, 'AutoGen');
+
+                -- D. Insert Payment
+                INSERT INTO payments (clinic_id, invoice_id, amountPaid, paymentMethod, paymentStatus, isApproved, createdDate, createdBy)
+                VALUES (v_clinic_id, v_inv_id, v_amount, 'CASH', 'COMPLETED', 1, v_created_datetime, 'AutoGen');
+
+                -- E. Insert Appointment
+                INSERT INTO appointments (clinic_id, queuePosition, status, doctor_schedule_id, patient_id, invoice_id, isApproved, createdDate, createdBy)
+                VALUES (v_clinic_id, 1, 'COMPLETED', v_sched_id, v_pat_id, v_inv_id, 1, v_created_datetime, 'AutoGen');
+
+                SET c = c + 1;
+            END WHILE; -- End Clinic Loop
 
             SET i = i + 1;
-        END WHILE;
+        END WHILE; -- End Week Loop
 
-        COMMIT; -- Commit after every month to prevent huge lock build-up
+        COMMIT;
         SET m = m + 1;
-    END WHILE;
+    END WHILE; -- End Month Loop
 END $$
 
 DELIMITER ;
 
-
+-- ==============================================================================
+-- EXECUTION
+-- ==============================================================================
 CALL PrepareSeedData();
 CALL GenerateData2025();
 
+-- CLEANUP
 DROP PROCEDURE IF EXISTS PrepareSeedData;
 DROP PROCEDURE IF EXISTS GenerateData2025;
