@@ -13,4 +13,11 @@ public class ClinicManagementSystemApplication {
 		SpringApplication.run(ClinicManagementSystemApplication.class, args);
 	}
 
+	@PostConstruct
+	public void init() {
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Colombo"));
+
+		System.out.println("Global Timezone set to: Asia/Colombo");
+	}
+
 }
