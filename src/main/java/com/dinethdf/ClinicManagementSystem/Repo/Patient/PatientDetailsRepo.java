@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
@@ -102,5 +103,29 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
     List<PatientSimpleResponseDTO> searchByPatientNo(
             @Param("patientNo") String patientNo,
             @Param("clinicId") Integer clinicId);
+
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO(
+        p.id, p.patientNo, p.firstName, p.lastName, p.nic,
+        p.address, p.dob,
+        new com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO(
+            g.id, g.patientNo, g.firstName, g.lastName, g.nic,
+            g.address, g.city, g.district, g.email, g.mobileNo, g.landNo
+        ),
+        p.city, p.district, p.email, p.mobileNo, p.landNo
+        )
+        FROM Patient p
+        LEFT JOIN p.guardian g
+        WHERE p.clinicId = :clinicId
+          AND p.nic = :nic
+          AND p.isActive = true
+    """)
+    List<PatientResponseDTO> findPatientDataByNic( // <--- Return List explicitly
+                                                   @Param("nic") String nic,
+                                                   @Param("clinicId") Integer clinicId
+    );
+
+    @Query("SELECT p.id FROM Patient p WHERE p.clinicId = :clinicId AND p.nic = :nic AND p.isActive = true")
+    Optional<Long> findIdByNic(@Param("nic") String nic, @Param("clinicId") Integer clinicId);
 
 }

@@ -42,7 +42,7 @@ public class PublicBookingService {
     @Transactional
     public ApiResponse<Long> processPublicBooking(PublicBookingRequestDTO request) {
 
-        // 0. Capture Clinic ID (Critical for Multi-Tenancy)
+// 0. Capture Clinic ID
         Integer clinicId = TenantContext.getCurrentTenant();
 
         // 1. Verify OTP Status
@@ -52,30 +52,37 @@ public class PublicBookingService {
 
         Long finalPatientId = request.getExistingPatientId();
 
-        // 2. Handle New Patient Registration
+        // 2. Logic to Find or Create Patient
         if (finalPatientId == null) {
-            Patient newPatient = new Patient();
-            newPatient.setFirstName(request.getFirstName());
-            newPatient.setLastName(request.getLastName());
-            newPatient.setNic(request.getNic());
-            newPatient.setMobileNo(request.getMobileNo());
 
-            if(request.getEmail() != null && !request.getEmail().isEmpty()){
-                newPatient.setEmail(request.getEmail());
+            // A. Check if patient exists by NIC (Prevent Duplicates)
+            Long foundId = patientService.findExistingPatientIdByNic(request.getNic());
+            System.out.println(foundId);
+            if (foundId != null) {
+                // Patient exists! Use their ID.
+                finalPatientId = foundId;
+            } else {
+
+                Patient newPatient = new Patient();
+                newPatient.setFirstName(request.getFirstName());
+                newPatient.setLastName(request.getLastName());
+                newPatient.setNic(request.getNic());
+                newPatient.setMobileNo(request.getMobileNo());
+
+                if(request.getEmail() != null && !request.getEmail().isEmpty()){
+                    newPatient.setEmail(request.getEmail());
+                }
+
+                newPatient.setFullName((request.getFirstName() + " " + request.getLastName()).trim());
+                newPatient.setDob(request.getDob());
+                newPatient.setGender(request.getGender());
+                newPatient.setIsActive(true);
+                newPatient.setIsApproved(false); // Public registration usually requires approval or verification
+
+                // Call your internal register method (ensure it returns the saved Patient object)
+                ApiResponse<Patient> registrationResponse = patientService.registerPatientPublic(newPatient);
+                finalPatientId = registrationResponse.getData().getId();
             }
-
-            newPatient.setFullName(request.getFirstName() + " " + request.getLastName());
-            newPatient.setDob(request.getDob());
-            newPatient.setGender(request.getGender());
-            newPatient.setIsActive(true);
-            newPatient.setIsApproved(false);
-
-            ApiResponse<Patient> registrationResponse = patientService.registerPatientPublic(newPatient);
-
-            if(registrationResponse.getData() == null) {
-                throw new ValidationException("Failed to register new patient.", "REGISTRATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            finalPatientId = registrationResponse.getData().getId();
         }
 
         String createdBy = "PUBLIC_WEB";

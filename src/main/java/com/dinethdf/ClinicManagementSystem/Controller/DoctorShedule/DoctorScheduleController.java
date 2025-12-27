@@ -106,7 +106,7 @@ public class DoctorScheduleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> createSchedule(
             @RequestBody DoctorScheduleCreateDTO createDTO) {
 
@@ -119,14 +119,13 @@ public class DoctorScheduleController {
                 messageSourceUtil.getMessage("schedule.create.success")
         );
 
-        // Return 201 Created status
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 
 
     @PostMapping("/batch")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR', 'USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> createBatchSchedules(
             @RequestBody List<DoctorScheduleCreateDTO> createDTOs) {
 
@@ -177,17 +176,20 @@ public class DoctorScheduleController {
 
     @GetMapping("/by-doctor/{doctorId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF','DOCTOR')")
-    public ResponseEntity<ApiResponse<List<DoctorScheduleResponseDTO>>> getSchedulesByDoctor(
+    public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getSchedulesByDoctor(
             @PathVariable Long doctorId,
-            @RequestParam(defaultValue = "false") boolean includeInactive) {
+            @RequestParam(defaultValue = "false") boolean includeInactive,
+            @PageableDefault(size = 10, sort = "scheduleDate", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        List<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getSchedulesByDoctorId(doctorId, includeInactive);
-
-        ApiResponse<List<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+        Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getSchedulesByDoctorId(
+                doctorId,
+                includeInactive,
+                pageable
+        );
+        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
                 schedules,
                 messageSourceUtil.getMessage("schedule.getbydoctor.success")
         );
-
         return ResponseEntity.ok(response);
     }
 
@@ -208,7 +210,7 @@ public class DoctorScheduleController {
 
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> updateSchedule(
             @PathVariable Long id,
             @RequestBody DoctorScheduleUpdateDTO updateDTO) {
@@ -225,7 +227,7 @@ public class DoctorScheduleController {
 
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> deactivateSchedule(@PathVariable Long id) {
 
         DoctorScheduleResponseDTO deactivatedSchedule = doctorScheduleService.deactivateSchedule(id);
@@ -243,7 +245,7 @@ public class DoctorScheduleController {
      * Accessible by ADMIN or STAFF.
      */
     @PostMapping("/{id}/reactivate") // Using POST for an action
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> reactivateSchedule(@PathVariable Long id) {
 
         DoctorScheduleResponseDTO reactivatedSchedule = doctorScheduleService.reactivateSchedule(id);

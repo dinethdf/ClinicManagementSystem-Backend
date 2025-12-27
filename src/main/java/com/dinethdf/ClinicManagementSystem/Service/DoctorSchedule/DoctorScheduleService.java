@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorScheduleUpdat
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -39,13 +40,8 @@ public interface DoctorScheduleService {
      */
     List<DoctorScheduleResponseDTO> getAllSchedules(boolean includeInactive);
 
-    /**
-     * Retrieves all schedules for a specific doctor.
-     * @param doctorId The ID of the doctor.
-     * @param includeInactive If true, returns all schedules for the doctor. If false, only active.
-     * @return A list of schedule Response DTOs.
-     */
-    List<DoctorScheduleResponseDTO> getSchedulesByDoctorId(Long doctorId, boolean includeInactive);
+
+    Page<DoctorScheduleResponseDTO> getSchedulesByDoctorId(Long doctorId, boolean includeInactive, Pageable pageable);
 
     /**
      * Retrieves all upcoming (today and future) active schedules for a specific doctor.
