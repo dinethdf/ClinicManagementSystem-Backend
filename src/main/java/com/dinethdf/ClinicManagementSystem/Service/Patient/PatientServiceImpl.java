@@ -416,6 +416,40 @@ public class PatientServiceImpl implements PatientService {
         return results;
     }
 
+
+    @Override
+    public Long findExistingPatientIdByNic(String nic) {
+
+        if (nic == null || nic.trim().length() < 10) {
+            throw new ValidationException(
+                    "Please provide a valid NIC.",
+                    "INVALID_SEARCH_CRITERIA"
+            );
+        }
+
+        return patientDetailsRepo.findIdByNic(nic, TenantContext.getCurrentTenant())
+                .orElse(null);
+    }
+
+    @Override
+    public PatientResponseDTO findPatientDetailsByNic(String nic) {
+        if (nic == null || nic.trim().length() < 10) {
+            return null;
+        }
+
+        List<PatientResponseDTO> matches = patientDetailsRepo.findPatientDataByNic(nic, TenantContext.getCurrentTenant());
+
+        if (matches.isEmpty()) {
+            return null;
+        }
+
+        if (matches.size() > 1) {
+            System.out.println("WARNING: Duplicate patients found for NIC: " + nic);
+        }
+
+        return matches.getFirst();
+    }
+
     private String generatePatientNo(Long id) {
         int year = LocalDate.now().getYear();
         String yearSuffix = String.valueOf(year).substring(2);

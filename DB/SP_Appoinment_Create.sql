@@ -79,7 +79,7 @@ BEGIN
         WHERE clinic_id = p_clinic_id
           AND doctor_schedule_id = p_doctor_schedule_id
           AND patient_id = p_patient_id
-          AND status IN ('BOOKED', 'PENDING_PAYMENT');
+          AND status IN ('BOOKED', 'PENDING_PAYMENT','ONGOING','COMPLETED');
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';

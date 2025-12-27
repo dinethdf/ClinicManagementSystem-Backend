@@ -22,24 +22,38 @@ public class PublicBookingController {
     @Autowired
     private PublicBookingService publicBookingService;
 
-    // 1. Search Patient (Step 2 of Wizard)
     @GetMapping("/check-patient")
     public ResponseEntity<ApiResponse<PatientResponseDTO>> checkPatient(
             @RequestParam(required = false) String nic,
-            @RequestParam(required = false) String mobileNo
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = true) String clinicId
     ) {
         try {
-            // We reuse your existing search logic
-            List<PatientResponseDTO> results = patientService.findPatientBySearching(null, nic, null, mobileNo);
-
-            if (!results.isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.success(results.get(0), "Patient Found"));
+            TenantContext.setCurrentTenant(Integer.valueOf(clinicId));
+            PatientResponseDTO foundPatient = null;
+            if (nic != null && !nic.trim().isEmpty()) {
+                foundPatient = patientService.findPatientDetailsByNic(nic);
             }
-        } catch (Exception e) {
-            // If validation fails (not found), we return NULL data so frontend knows to show Register Form
-        }
 
-        return ResponseEntity.ok(ApiResponse.success(null, "Patient not found"));
+            else if (mobileNo != null && !mobileNo.trim().isEmpty()) {
+                List<PatientResponseDTO> results = patientService.findPatientBySearching(null, null, null, mobileNo);
+                if (!results.isEmpty()) {
+                    foundPatient = results.get(0); // Take the first match
+                }
+            }
+
+            // 4. Return Result
+            if (foundPatient != null) {
+                return ResponseEntity.ok(ApiResponse.success(foundPatient, "Patient Found"));
+            }
+
+            // If we reach here, no patient was found -> Return success with NULL data
+            return ResponseEntity.ok(ApiResponse.success(null, "Patient not found"));
+
+        } finally {
+            // 5. Always clear tenant to prevent data leaks in thread pool
+            TenantContext.clear();
+        }
     }
 
     @PostMapping("/book-public")

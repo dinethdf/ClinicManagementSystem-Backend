@@ -40,4 +40,8 @@ public interface PatientService {
 
 
     List<PatientSimpleResponseDTO> findPatientOnlyByNo(String patientNo);
+
+    Long findExistingPatientIdByNic(String nic);
+
+    PatientResponseDTO findPatientDetailsByNic(String nic);
 }
