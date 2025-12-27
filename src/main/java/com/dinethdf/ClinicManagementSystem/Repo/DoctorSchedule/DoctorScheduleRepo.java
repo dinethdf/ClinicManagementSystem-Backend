@@ -19,11 +19,20 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     boolean existsByIdAndDoctorIdAndClinicId(Long id, Long doctorId, Integer clinicId);
 
     // Find all schedules for a specific doctor (Scoped to Clinic)
-    List<DoctorSchedule> findByDoctorIdAndClinicId(Long doctorId, Integer clinicId);
+    Page<DoctorSchedule> findByDoctorIdAndClinicId(Long doctorId, Integer clinicId, Pageable pageable);
 
-    // Find only ACTIVE schedules for a specific doctor
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.doctor.id = :doctorId AND s.status = 'ACTIVE'")
-    List<DoctorSchedule> findActiveByDoctorId(@Param("doctorId") Long doctorId, @Param("clinicId") Integer clinicId);
+    // 2. Find ONLY ACTIVE with Pagination
+    // We hardcode the sort here to ensure "Latest to Oldest" is always enforced for this specific query
+    @Query("""
+        SELECT s FROM DoctorSchedule s
+        WHERE s.clinicId = :clinicId
+          AND s.doctor.id = :doctorId
+          AND s.status = 'ACTIVE'
+        ORDER BY s.scheduleDate DESC, s.startTime DESC
+    """)
+    Page<DoctorSchedule> findActiveByDoctorId(@Param("doctorId") Long doctorId,
+                                              @Param("clinicId") Integer clinicId,
+                                              Pageable pageable);
 
     // Find all ACTIVE schedules (Scoped to Clinic)
     @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.status = 'ACTIVE'")

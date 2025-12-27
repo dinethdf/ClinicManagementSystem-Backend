@@ -221,6 +221,7 @@ public class PayoutServiceImpl implements PayoutService {
             tx.setPaymentMethod(request.getPaymentMethod());
             tx.setTransactionReference(request.getTransactionReference());
             tx.setCreatedBy(createdBy);
+            tx.setClinicId(clinicId);
 
             bill.setStatus(DoctorSchedulePayment.PayoutStatus.PAID);
 

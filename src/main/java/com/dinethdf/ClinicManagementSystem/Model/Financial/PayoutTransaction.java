@@ -23,6 +23,10 @@ public class PayoutTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // --- TENANT ISOLATION (New) ---
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId;
+
     // --- FOREIGN KEYS ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_payment_id")
@@ -61,6 +65,8 @@ public class PayoutTransaction {
 
     @PrePersist
     protected void onCreate() {
-        this.createdDate = LocalDateTime.now();
+        if (this.createdDate == null) {
+            this.createdDate = LocalDateTime.now();
+        }
     }
 }

@@ -167,21 +167,23 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .collect(Collectors.toList());
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public List<DoctorScheduleResponseDTO> getSchedulesByDoctorId(Long doctorId, boolean includeInactive) {
-        // Ensure doctor exists and belongs to this clinic
+    @Override
+    public Page<DoctorScheduleResponseDTO> getSchedulesByDoctorId(Long doctorId, boolean includeInactive, Pageable pageable) {
+        // Ensure doctor exists
         findDoctorById(doctorId);
 
-        List<DoctorSchedule> schedules;
+        Integer clinicId = TenantContext.getCurrentTenant();
+        Page<DoctorSchedule> schedules;
+
         if (includeInactive) {
-            schedules = doctorScheduleRepo.findByDoctorIdAndClinicId(doctorId, TenantContext.getCurrentTenant());
+            schedules = doctorScheduleRepo.findByDoctorIdAndClinicId(doctorId, clinicId, pageable);
         } else {
-            schedules = doctorScheduleRepo.findActiveByDoctorId(doctorId, TenantContext.getCurrentTenant());
+            schedules = doctorScheduleRepo.findActiveByDoctorId(doctorId, clinicId, pageable);
         }
-        return schedules.stream()
-                .map(mapper::toResponseDTO)
-                .collect(Collectors.toList());
+
+        // Convert Page<Entity> to Page<DTO> efficiently
+        return schedules.map(mapper::toResponseDTO);
     }
 
     @Override
