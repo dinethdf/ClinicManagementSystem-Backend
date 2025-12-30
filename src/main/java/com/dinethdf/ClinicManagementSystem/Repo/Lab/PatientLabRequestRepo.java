@@ -23,7 +23,7 @@ public interface PatientLabRequestRepo extends JpaRepository<PatientLabRequest, 
 
     // 3. Search (Admin/Technician View)
     @Query("""
-        SELECT r FROM PatientLabRequest r 
+        SELECT r FROM PatientLabRequest r
         JOIN r.patient p
         JOIN r.labTestType t
         WHERE r.clinicId = :clinicId

@@ -25,8 +25,8 @@ public interface LabTestTypeRepo extends JpaRepository<LabTestType, Integer> {
 
     // Search
     @Query("""
-        SELECT l FROM LabTestType l 
-        WHERE l.clinicId = :clinicId 
+        SELECT l FROM LabTestType l
+        WHERE l.clinicId = :clinicId
           AND (:search IS NULL OR LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(l.code) LIKE LOWER(CONCAT('%', :search, '%')))
     """)
     Page<LabTestType> searchAll(@Param("search") String search,
