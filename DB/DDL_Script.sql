@@ -563,3 +563,89 @@ CREATE TABLE payout_transactions (
     CONSTRAINT fk_tx_lab FOREIGN KEY (lab_payout_id) REFERENCES lab_vendor_payouts(id) ON DELETE RESTRICT,
     CONSTRAINT fk_tx_expense FOREIGN KEY (expense_id) REFERENCES operational_expenses(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+
+
+-- =============================================
+-- 1. LAB TEST TYPES (Catalog)
+-- =============================================
+DROP TABLE IF EXISTS lab_test_types;
+
+CREATE TABLE lab_test_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL, -- Multi-tenancy
+
+    name VARCHAR(150) NOT NULL, -- e.g., "Full Blood Count (FBC)"
+    code VARCHAR(50), -- e.g., "LAB-001"
+    description TEXT,
+
+    -- Financials
+    test_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00, -- Base cost (e.g., chemicals/external lab)
+    clinic_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00, -- Clinic's profit margin
+    -- REMOVED: total_price (Calculated field, removed per your Dec 29 update)
+
+    isActive TINYINT DEFAULT 1, -- 1=Available, 0=Hidden from menu
+    isApproved TINYINT NOT NULL DEFAULT 0,
+
+    -- System Audit
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    -- CONSTRAINTS
+    CONSTRAINT fk_lab_type_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
+    -- NEW: Ensures a code is unique within a specific clinic
+    CONSTRAINT uk_lab_code_clinic UNIQUE (clinic_id, code)
+
+) ENGINE=InnoDB;
+
+-- =============================================
+-- 2. PATIENT LAB REQUESTS (The Order)
+-- =============================================
+DROP TABLE IF EXISTS patient_lab_requests;
+
+CREATE TABLE patient_lab_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+    patient_id INT NOT NULL,
+
+    -- LINKING
+    invoice_id INT NULL,       -- NULL initially, linked when Bill is generated
+    appointment_id INT NULL,   -- NULL = Walk-in/Self Request. NOT NULL = Prescribed by Doctor.
+
+    -- WHAT TEST?
+    lab_test_type_id INT NOT NULL,
+
+    -- STATUS TRACKING
+    status ENUM('PENDING', 'SAMPLE_COLLECTED', 'COMPLETED', 'CANCELLED') DEFAULT 'PENDING',
+    payment_status ENUM('PENDING', 'PAID', 'REFUND') DEFAULT 'PENDING',
+
+    -- RESULTS
+    technician_notes TEXT,
+    report_url VARCHAR(500), -- Path to uploaded PDF
+
+    -- FINANCIAL SNAPSHOT (Saved at moment of booking)
+    -- Important: Snapshotted because prices in lab_test_types might change later
+    billed_amount DECIMAL(10, 2) NOT NULL,
+
+    isApproved TINYINT NOT NULL DEFAULT 0,
+
+    -- SYSTEM AUDIT
+    createdDate DATETIME NOT NULL,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50),
+    completedDate DATETIME NULL, -- When results were uploaded
+	approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50),
+
+    -- CONSTRAINTS
+    CONSTRAINT fk_lab_req_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
+    -- CHECK: Ensure table name is 'patient' (singular) or 'patients' (plural) in your DB
+    CONSTRAINT fk_lab_req_patient FOREIGN KEY (patient_id) REFERENCES patient(id),
+    CONSTRAINT fk_lab_req_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_lab_req_appt FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_lab_req_type FOREIGN KEY (lab_test_type_id) REFERENCES lab_test_types(id)
+) ENGINE=InnoDB;
