@@ -26,4 +26,6 @@ public interface PatientLabRequestService {
 
     // 5. Get Single Request Details
     LabRequestResponseDTO getLabRequestById(Integer id);
+
+    void deleteLabRequest(Integer id);
 }

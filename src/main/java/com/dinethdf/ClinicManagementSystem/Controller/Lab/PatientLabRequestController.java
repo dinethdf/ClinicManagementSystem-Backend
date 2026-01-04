@@ -4,7 +4,9 @@ import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Lab.LabRequestCreateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Lab.LabRequestResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Lab.LabRequestUpdateDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Lab.LabTestTypeResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Lab.PatientLabRequest.LabStatus;
+import com.dinethdf.ClinicManagementSystem.Service.Lab.LabTestTypeService;
 import com.dinethdf.ClinicManagementSystem.Service.Lab.PatientLabRequestService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 public class PatientLabRequestController {
 
     private final PatientLabRequestService requestService;
+    private final LabTestTypeService labService;
+
     private final MessageSourceUtil messageSourceUtil;
 
     /**
@@ -59,6 +63,21 @@ public class PatientLabRequestController {
         return ResponseEntity.ok(ApiResponse.success(
                 page,
                 messageSourceUtil.getMessage("lab.request.list.success")
+        ));
+    }
+
+    // 3. List Active Only (For Dropdowns - Doctor/Reception)
+    @GetMapping("/types/active")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR', 'USER')")
+    public ResponseEntity<ApiResponse<Page<LabTestTypeResponseDTO>>> getActive(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 50, sort = "name") Pageable pageable) {
+
+        Page<LabTestTypeResponseDTO> list = labService.getActiveTestTypes(search, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                list,
+                messageSourceUtil.getMessage("lab.type.active.success")
         ));
     }
 
@@ -109,6 +128,17 @@ public class PatientLabRequestController {
         return ResponseEntity.ok(ApiResponse.success(
                 response,
                 messageSourceUtil.getMessage("lab.request.update.success")
+        ));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable Integer id) {
+        requestService.deleteLabRequest(id);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                null,
+                messageSourceUtil.getMessage("lab.request.delete.success")
         ));
     }
 }

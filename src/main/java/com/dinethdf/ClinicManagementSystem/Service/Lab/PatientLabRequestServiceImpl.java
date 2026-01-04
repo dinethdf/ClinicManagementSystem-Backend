@@ -260,4 +260,69 @@ public class PatientLabRequestServiceImpl implements PatientLabRequestService {
 
         return dto;
     }
+
+    @Override
+    @Transactional
+    public void deleteLabRequest(Integer id) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Fetch Request
+        PatientLabRequest request = requestRepo.findById(id)
+                .filter(r -> Objects.equals(r.getClinicId(), clinicId))
+                .orElseThrow(() -> new ValidationException(
+                        "Lab Request not found",
+                        "REQUEST_NOT_FOUND",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // 2. Safety Check: Status must be PENDING
+        if (request.getStatus() != PatientLabRequest.LabStatus.PENDING) {
+            throw new ValidationException(
+                    "Cannot delete this request because it is " + request.getStatus() + ". Only PENDING requests can be deleted.",
+                    "DELETE_NOT_ALLOWED",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // 3. Security Check: Doctor Ownership
+        // If the user is a DOCTOR, they can ONLY delete requests linked to THEIR OWN appointments.
+        if (isCurrentUserDoctor()) {
+
+            // A. Check if the request is even linked to an appointment
+            if (request.getAppointment() == null) {
+                // If it's a walk-in request (no appointment), a Doctor generally shouldn't be deleting it
+                // (unless your business logic allows doctors to manage walk-ins).
+                // Assuming strict rules:
+                throw new ValidationException(
+                        "Doctors can only delete requests linked to their own appointments.",
+                        "ACCESS_DENIED",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+            // B. Get the Current Logged-in Doctor
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            Doctor currentDoctor = doctorRepo.findByUserAuthEmailAndClinicId(email, clinicId)
+                    .orElseThrow(() -> new ValidationException(
+                            messageSourceUtil.getMessage("doctor.not.found.for.user"),
+                            "DOCTOR_PROFILE_NOT_FOUND",
+                            HttpStatus.NOT_FOUND
+                    ));
+
+            // C. Compare IDs
+            // Request -> Appointment -> DoctorSchedule -> Doctor -> ID
+            Long appointmentDoctorId = request.getAppointment().getDoctorSchedule().getDoctor().getId();
+
+            if (!appointmentDoctorId.equals(currentDoctor.getId())) {
+                throw new ValidationException(
+                        "You do not have permission to delete this request. It belongs to another doctor's appointment.",
+                        "ACCESS_DENIED",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+        }
+
+        // 4. Delete
+        requestRepo.delete(request);
+    }
 }

@@ -53,20 +53,7 @@ public class LabTestTypeController {
         ));
     }
 
-    // 3. List Active Only (For Dropdowns - Doctor/Reception)
-    @GetMapping("/active")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<Page<LabTestTypeResponseDTO>>> getActive(
-            @RequestParam(required = false) String search,
-            @PageableDefault(size = 50, sort = "name") Pageable pageable) {
 
-        Page<LabTestTypeResponseDTO> list = labService.getActiveTestTypes(search, pageable);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                list,
-                messageSourceUtil.getMessage("lab.type.active.success")
-        ));
-    }
 
     // 4. Update details
     @PutMapping("/{id}")
