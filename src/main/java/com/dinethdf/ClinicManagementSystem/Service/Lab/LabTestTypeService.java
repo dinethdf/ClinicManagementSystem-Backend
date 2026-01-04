@@ -15,7 +15,7 @@ public interface LabTestTypeService {
     Page<LabTestTypeResponseDTO> getAllTestTypes(String search, Pageable pageable);
 
     // 3. List Active Tests Only (For Doctor/Reception Dropdowns)
-    Page<LabTestTypeResponseDTO> getActiveTestTypes(Pageable pageable);
+    Page<LabTestTypeResponseDTO> getActiveTestTypes(String search, Pageable pageable);
 
     // 4. Update Test Details (Name, Price, etc.)
     LabTestTypeResponseDTO updateTestType(Integer id, LabTestTypeUpdateDTO updateDTO);

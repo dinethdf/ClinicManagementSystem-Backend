@@ -20,8 +20,8 @@ public interface LabTestTypeRepo extends JpaRepository<LabTestType, Integer> {
     boolean existsByCodeAndClinicIdAndIdNot(String code, Integer clinicId, Integer id);
 
     // Get Active Tests
-    @Query("SELECT l FROM LabTestType l WHERE l.clinicId = :clinicId AND l.isActive = true ORDER BY l.name ASC")
-    Page<LabTestType> findAllActive(@Param("clinicId") Integer clinicId, Pageable pageable);
+    @Query("SELECT l FROM LabTestType l WHERE l.clinicId = :clinicId AND l.isActive = true AND (:search IS NULL OR LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(l.code) LIKE LOWER(CONCAT('%', :search, '%'))) ORDER BY l.name ASC")
+    Page<LabTestType> findAllActive(@Param("search") String search, @Param("clinicId") Integer clinicId, Pageable pageable);
 
     // Search
     @Query("""

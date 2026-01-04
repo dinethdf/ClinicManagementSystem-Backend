@@ -28,9 +28,9 @@ public interface PatientLabRequestRepo extends JpaRepository<PatientLabRequest, 
         JOIN r.labTestType t
         WHERE r.clinicId = :clinicId
           AND (:status IS NULL OR r.status = :status)
-          AND (:search IS NULL OR 
-               LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR 
-               LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR 
+          AND (:search IS NULL OR
+               LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+               LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')))
     """)
     Page<PatientLabRequest> searchRequests(@Param("clinicId") Integer clinicId,

@@ -83,8 +83,8 @@ public class LabTestTypeServiceImpl implements LabTestTypeService {
     }
 
     @Override
-    public Page<LabTestTypeResponseDTO> getActiveTestTypes(Pageable pageable) {
-        return labRepo.findAllActive(TenantContext.getCurrentTenant(), pageable)
+    public Page<LabTestTypeResponseDTO> getActiveTestTypes(String search, Pageable pageable) {
+        return labRepo.findAllActive(search, TenantContext.getCurrentTenant(), pageable)
                 .map(this::mapToDTO);
     }
 
