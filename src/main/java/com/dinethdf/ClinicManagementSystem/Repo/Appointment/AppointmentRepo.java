@@ -171,6 +171,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         p.nic AS patientNic,
         
         -- Doctor Details
+        d.id AS doctorId,
         CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
         s.name AS specialization,
         

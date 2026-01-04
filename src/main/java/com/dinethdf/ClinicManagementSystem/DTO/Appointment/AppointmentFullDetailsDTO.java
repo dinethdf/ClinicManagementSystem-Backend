@@ -27,6 +27,7 @@ public interface AppointmentFullDetailsDTO {
     String getPatientNic();
 
     // Doctor Info
+    Long getDoctorId();
     String getDoctorName();
     String getSpecialization();
 
