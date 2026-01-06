@@ -22,6 +22,8 @@ public interface DoctorService {
 
     Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size);
 
+    DoctorDetailsDto getDoctorDetailsByIdForLoging(Long id, Integer clinicId);
+
     ApiResponse<DoctorDetailsDto> getDoctorFullDetailsById(String id);
 
     ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email);

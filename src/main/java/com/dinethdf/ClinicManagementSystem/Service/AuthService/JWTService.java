@@ -51,24 +51,21 @@ public class JWTService {
     }
 
 
-    public String generateUserToken(String userEmail, Integer clinicId) {
+    public String generateUserToken(String userEmail, String role, Long detailsId, Integer clinicId) {
         // 1. Set Context so userDetailsService knows which clinic to look in
         TenantContext.setCurrentTenant(clinicId);
 
         try {
-            System.out.println(userEmail);
-            UserAuth userAuth = userDetailsService.getUserByEmail(userEmail);
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("clinicId", clinicId); // <--- Add to Claims
-            claims.put("userId", userAuth.getId());
-            claims.put("userDetailsId", userAuth.getDetailsId());
-            claims.put("role", userAuth.getRole().getName());
+            claims.put("userDetailsId", detailsId);
+            claims.put("role", role);
 
             return Jwts.builder()
                     .claims()
                     .add(claims)
-                    .subject(userAuth.getEmail())
+                    .subject(userEmail)
                     .issuedAt(new Date(System.currentTimeMillis()))
                     .expiration(new Date(System.currentTimeMillis() + 604800000))
                     .and()

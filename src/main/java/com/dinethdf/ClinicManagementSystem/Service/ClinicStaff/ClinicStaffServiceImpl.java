@@ -49,6 +49,19 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
                 ));
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public ClinicStaffResponseDto getStaffByIdForLogin(Long id, Integer clinicId) {
+        // Find by ID AND Clinic ID (Security)
+        return clinicStaffRepo.findStaffDetailByIdAndClinicId(id, clinicId)
+                .orElseThrow(() -> new ValidationException(
+                        "Staff member not found",
+                        "NOT_FOUND",
+                        null,
+                        HttpStatus.NOT_FOUND
+                ));
+    }
+
 
     @Transactional
     @Override
