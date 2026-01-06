@@ -1,0 +1,111 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_GetDoctorScheduleSummaryReport$$
+
+CREATE PROCEDURE sp_GetDoctorScheduleSummaryReport(
+    IN p_clinic_id INT,
+    IN p_startDate DATETIME,
+    IN p_endDate DATETIME
+)
+BEGIN
+    SELECT 
+        -- 1. Schedule & Doctor Details
+        ds.id AS ScheduleID,
+        CONCAT(ds.scheduleDate , ' : ', ds.startTime) AS ScheduleDateTime, -- Verify if your column is 'availableDate' or 'scheduleDate'
+        CONCAT(d.firstName, ' ', d.lastName) AS DoctorName,
+        spec.name AS Specialization,
+        
+        -- 2. Appointment Counts
+        COUNT(DISTINCT appt.id) AS TotalAppointments,
+        
+        -- 3. Doctor Financials (Aggregated)
+        -- Total Base = Count * Fee
+        (COUNT(DISTINCT appt.id) * ds.doctorFee) AS TotalBaseDoctorFee,
+        
+        -- Total Discounts (Sum of negative values)
+        COALESCE(SUM(CASE 
+            WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount 
+            ELSE 0 
+        END), 0) AS TotalDoctorDiscount,
+        
+        -- Net Pay = Base + Discount (if discount is negative)
+        (
+            (COUNT(DISTINCT appt.id) * ds.doctorFee) + 
+            COALESCE(SUM(CASE 
+                WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount 
+                ELSE 0 
+            END), 0)
+        ) AS NetDoctorPay,
+        
+        -- 4. Clinic Financials (Aggregated)
+        (COUNT(DISTINCT appt.id) * ds.clinicFee) AS TotalBaseClinicFee,
+        
+        COALESCE(SUM(CASE 
+            WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount 
+            ELSE 0 
+        END), 0) AS TotalClinicDiscount,
+        
+        (
+            (COUNT(DISTINCT appt.id) * ds.clinicFee) + 
+            COALESCE(SUM(CASE 
+                WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount 
+                ELSE 0 
+            END), 0)
+        ) AS NetClinicProfit,
+        
+        -- 5. Total Collectable (Total Bill for Patients)
+        -- (NetDoctor + NetClinic)
+        (
+            (COUNT(DISTINCT appt.id) * (ds.doctorFee + ds.clinicFee)) + 
+            COALESCE(SUM(CASE 
+                WHEN it.typeName IN ('DOCTOR_DISCOUNT', 'CLINIC_DISCOUNT') THEN ii.amount 
+                ELSE 0 
+            END), 0)
+        ) AS TotalPatientPayable
+        
+    FROM 
+        doctorSchedule ds
+    
+    -- Join Doctor to get Names
+    JOIN 
+        doctor d ON ds.doctor_id = d.id
+    JOIN 
+	specialization spec ON d.specialization_id = spec.id
+        
+    -- Join Appointments (The core data source)
+    JOIN 
+        appointments appt ON ds.id = appt.doctor_schedule_id 
+        AND appt.clinic_id = p_clinic_id
+        
+    -- Join Invoices 
+    LEFT JOIN 
+        invoices inv ON appt.invoice_id = inv.id 
+        AND inv.clinic_id = p_clinic_id
+        
+    -- Join Items for Discounts
+    LEFT JOIN 
+        invoice_items ii ON inv.id = ii.invoice_id 
+        AND ii.clinic_id = p_clinic_id
+    LEFT JOIN 
+        item_types it ON ii.item_type_id = it.id
+        
+    WHERE 
+        ds.clinic_id = p_clinic_id
+        -- Filter by Date Range (using the Schedule's date)
+        AND ds.scheduleDate BETWEEN p_startDate AND p_endDate
+        -- Exclude Cancelled Appointments from calculations
+        AND appt.status != 'CANCELLED'
+        
+    GROUP BY 
+        ds.id, ds.scheduleDate, d.id, d.firstName, d.lastName, ds.doctorFee, ds.clinicFee
+        
+    ORDER BY 
+        ds.scheduleDate DESC, d.firstName ASC;
+END$$
+
+DELIMITER ;
+
+
+-- Syntax: CALL sp_GetDoctorScheduleSummaryReport(clinic_id, 'start_date', 'end_date');
+
+CALL sp_GetDoctorScheduleSummaryReport(1, '2025-01-01 00:00:00', '2027-01-31 23:59:59');

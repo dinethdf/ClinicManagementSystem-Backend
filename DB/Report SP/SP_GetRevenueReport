@@ -1,0 +1,65 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_GetRevenueReport$$
+
+CREATE PROCEDURE sp_GetRevenueReport(
+    IN p_clinicId INT,          -- New Parameter for Clinic ID
+    IN p_startDate DATETIME,
+    IN p_endDate DATETIME,
+    IN p_revenueType VARCHAR(20) -- 'APPOINTMENT', 'LAB_TEST', or 'ALL'
+)
+BEGIN
+    SELECT
+        p.id AS payment_id,
+        p.paymentTimestamp,
+        p.invoice_id,
+        -- Determine the Source (Appointment vs Lab)
+        CASE
+            WHEN a.id IS NOT NULL THEN 'APPOINTMENT'
+            WHEN l.id IS NOT NULL THEN 'LAB_TEST'
+            ELSE 'UNKNOWN'
+        END AS service_type,
+
+        -- Get the specific Reference ID
+        COALESCE(a.id, l.id) AS reference_id,
+
+        -- Payment Details
+        p.paymentMethod,
+        p.transactionId,
+        p.amountPaid, -- Positive for income, negative for refunds
+        p.paymentStatus
+
+    FROM
+        payments p
+    -- Try to match with Appointments
+    LEFT JOIN
+        appointments a ON p.invoice_id = a.invoice_id
+    -- Try to match with Lab Requests
+    LEFT JOIN
+        patient_lab_requests l ON p.invoice_id = l.invoice_id
+
+    WHERE
+        -- 1. Security Filter: Match specific Clinic ID
+        p.clinic_id = p_clinicId
+
+        -- 2. Date Range Filter
+        AND p.paymentTimestamp BETWEEN p_startDate AND p_endDate
+
+        -- 3. Filter only completed/refunded transactions
+        AND p.paymentStatus IN ('COMPLETED', 'REFUNDED')
+
+        -- 4. Dynamic Revenue Type Filter
+        AND (
+            p_revenueType = 'ALL'
+            OR (p_revenueType = 'APPOINTMENT' AND a.id IS NOT NULL)
+            OR (p_revenueType = 'LAB_TEST' AND l.id IS NOT NULL)
+        )
+
+    ORDER BY
+        p.paymentTimestamp DESC;
+END$$
+
+DELIMITER ;
+
+-- Expectation: Should only see the $500 row. Should NOT see the $9000 row.
+CALL sp_GetRevenueReport(1, '2025-01-01', '2027-12-31', 'ALL');
