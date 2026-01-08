@@ -78,6 +78,9 @@ public class SecurityConfig {
                          .requestMatchers("/api/admin-analysis/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("/api/patient-analysis/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
 
+                         .requestMatchers("/api/patient-portal/**").hasAnyAuthority("ADMIN", "PATIENT") // remove admin
+
+
                          .requestMatchers("/api/report/admin/**").hasAnyAuthority("ADMIN", "USER")
 
                          .requestMatchers("/api/queue/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")

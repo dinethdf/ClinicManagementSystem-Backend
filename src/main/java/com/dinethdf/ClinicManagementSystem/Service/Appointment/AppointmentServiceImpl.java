@@ -166,6 +166,17 @@ public class AppointmentServiceImpl implements AppointmentService {
                 ));
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public AppointmentFullDetailsDTO getAppointmentDetailsByAppoinemtnPatientId(Long appointmentId, Long patientId) {
+        return appointmentRepo.findAppointmentFullDetailsByPatientIdANDAppointmentId(appointmentId, patientId, TenantContext.getCurrentTenant())
+                .orElseThrow(() -> new ValidationException(
+                        messageSourceUtil.getMessage("appointment.not.found"),
+                        "APPOINTMENT_NOT_FOUND",
+                        HttpStatus.NOT_FOUND
+                ));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable) {
@@ -180,7 +191,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId) {
+    public List<PatientAppointmentDTO>  getAppointmentsByPatient(Long patientId) {
         if (patientId == null || patientId <= 0) {
             throw new ValidationException("Invalid Patient ID", "INVALID_INPUT", HttpStatus.BAD_REQUEST);
         }
