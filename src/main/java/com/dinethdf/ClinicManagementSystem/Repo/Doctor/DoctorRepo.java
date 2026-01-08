@@ -15,8 +15,11 @@ import java.util.Optional;
 @Repository
 public interface DoctorRepo extends JpaRepository<Doctor, Long> {
 
+    Optional<Doctor> findByIdAndClinicId(Long aLong, Integer clinicId);
+
     boolean existsByUserAuthEmailAndClinicIdAndIdNot(String email, Integer clinicId, Long id);
     boolean existsByNicAndClinicIdAndIdNot(String nic, Integer clinicId, Long id);
+
     boolean existsBySlmcNumberAndClinicIdAndIdNot(String slmcNumber, Integer clinicId, Long id);
 
     @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.specialization WHERE d.clinicId = :clinicId")

@@ -11,6 +11,8 @@ public interface ClinicStaffService {
 
     ClinicStaffResponseDto getStaffById(Long id);
 
+    ClinicStaffResponseDto getStaffByIdForLogin(Long id, Integer clinicId);
+
     @Transactional
     ApiResponse<ClinicStaff> registerStaff(ClinicStaff staff);
 

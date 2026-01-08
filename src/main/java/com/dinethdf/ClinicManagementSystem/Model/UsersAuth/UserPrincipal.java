@@ -24,10 +24,14 @@ public class UserPrincipal implements UserDetails {
 //    public String getName() {
 //        return user.getName();
 //    }
-//
-//    public UserRole getRole() {
-//        return user.getRole();
-//    }
+
+    public UserRole getRole() {
+        return userAuth.getRole();
+    }
+
+    public Integer getClinicId() {
+        return userAuth.getClinicId();
+    }
 
     @Override
     public String getPassword() {

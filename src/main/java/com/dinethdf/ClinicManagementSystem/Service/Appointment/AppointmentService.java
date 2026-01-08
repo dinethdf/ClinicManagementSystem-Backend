@@ -16,6 +16,9 @@ public interface AppointmentService {
 
      List<AppointmentInvoiceViewDTO> getInvoicesByAppointmentId(Long appointmentId) ;
 
+    @Transactional(readOnly = true)
+    AppointmentFullDetailsDTO getAppointmentDetailsByAppoinemtnPatientId(Long appointmentId, Long patientId);
+
     Page<AppointmentByScheduleListDTO> getAppointmentsBySchedule(Long scheduleId, Pageable pageable);
 
     ScheduleAnalyticsDTO getAnalyticsByScheduleId(Long scheduleId);
