@@ -62,6 +62,16 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
+    public DoctorDetailsDto getDoctorDetailsByIdForLoging(Long id, Integer clinicId) {
+
+        Doctor doctor = doctorRepo.findByIdAndClinicId(id, clinicId)
+                .orElseThrow(() -> new ValidationException(
+                        messageSourceUtil.getMessage("doctor.not.found"), "ASDf"
+                ));
+        return doctorMapper.toDetailsDto(doctor);
+    }
+
+    @Override
     public ApiResponse<DoctorDetailsDto> getDoctorFullDetailsById(String id) {
         Doctor doctor = doctorRepo.findById(Long.valueOf(id))
                 .orElseThrow(() -> new ValidationException(

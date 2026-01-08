@@ -1,12 +1,17 @@
 package com.dinethdf.ClinicManagementSystem.Service.UsersAuth;
 
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
+import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
+import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // NEW: Context Handling
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -22,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class UserService {
@@ -37,6 +43,12 @@ public class UserService {
 
     @Autowired
     UserDetailsService userDetailsService;
+
+    @Autowired
+    ClinicStaffService clinicStaffService;
+
+    @Autowired
+    DoctorService doctorService;
 
     @Autowired
     private MessageSourceUtil messageSourceUtil;
@@ -68,17 +80,48 @@ public class UserService {
 
             // 2. Authenticate
             Authentication auth = authManager.authenticate(authToken);
+            UserPrincipal user = (UserPrincipal) auth.getPrincipal();
 
-            // 3. Generate JWT with Clinic ID Claim
-            // Note: You must update JWTService to accept this parameter
-            var jwt = jwtService.generateUserToken(request.getUsername(), request.getClinicId());
-            // var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), request.getUsername(), request.getClinicId());
+            System.out.println("Authenticated: " + auth.isAuthenticated());
+            System.out.println("Principal:s " + user.getUserDetailsId());
+            System.out.println("Authorities: " + auth.getAuthorities());
+            System.out.println("Details: " + auth.getDetails());
 
             JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-            jwtAuthenticationResponse.setAccessToken(jwt);
-            jwtAuthenticationResponse.setRefreshToken("refreshToken");
+
+            if (auth.isAuthenticated()) {
+
+                var jwt = jwtService.generateUserToken(user.getUsername(), user.getRole().getName(), user.getUserDetailsId(), user.getClinicId());
+
+
+                jwtAuthenticationResponse.setAccessToken(jwt);
+                jwtAuthenticationResponse.setRefreshToken("NotSet");
+
+                if (user.getUserDetailsId() != null){
+
+                    if (Objects.equals(user.getRole().getName(), "DOCTOR")) {
+                        DoctorDetailsDto staffUser = doctorService.getDoctorDetailsByIdForLoging(user.getUserDetailsId(), user.getClinicId());
+
+                        jwtAuthenticationResponse.setUserName(staffUser.getFirstName() + " " + staffUser.getLastName() );
+                        jwtAuthenticationResponse.setUserEmail(staffUser.getEmail());
+                        jwtAuthenticationResponse.setUserImg(staffUser.getProfileImg());
+
+                    }else {
+                        ClinicStaffResponseDto staffUser = clinicStaffService.getStaffByIdForLogin(user.getUserDetailsId(), user.getClinicId());
+
+                        jwtAuthenticationResponse.setUserName(staffUser.getFirstName() + " " + staffUser.getLastName() );
+                        jwtAuthenticationResponse.setUserEmail(staffUser.getEmail());
+                        jwtAuthenticationResponse.setUserImg(staffUser.getProfileImg());
+
+                    }
+
+                jwtAuthenticationResponse.setUserRole(user.getRole().getName());
+                }
+                return jwtAuthenticationResponse;
+            }
 
             return jwtAuthenticationResponse;
+
 
         } catch (BadCredentialsException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "true");
@@ -114,10 +157,11 @@ public class UserService {
 
             if (jwtService.validateToken(refreshTokenRequest.getToken(), user)){
                 // Re-generate token with clinicId
-                var jwt = jwtService.generateUserToken(user.getUsername(), clinicId);
+
+//                var jwt = jwtService.generateUserToken(user.getUsername(), clinicId); // Un comment this whern u sue that
 
                 JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-                jwtAuthenticationResponse.setAccessToken(jwt);
+                jwtAuthenticationResponse.setAccessToken("jwt");
                 jwtAuthenticationResponse.setRefreshToken(refreshTokenRequest.getToken());
 
                 return jwtAuthenticationResponse;
