@@ -17,7 +17,7 @@ public class ClinicManagementSystemApplication {
 	public void init() {
 		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Colombo"));
 
-		System.out.println("Global Timezone set to: Asia/Colombo");
+		System.out.println("Global Timezone set to: Asia/Colombo set");
 	}
 
 }
