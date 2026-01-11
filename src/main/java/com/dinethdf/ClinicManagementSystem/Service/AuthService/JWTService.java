@@ -76,20 +76,19 @@ public class JWTService {
         }
     }
 
-    public String generatePatientToken(String userEmail, Integer clinicId) {
+    public String generatePatientToken(String userEmail, String role, Long detailsId, Integer clinicId) {
         TenantContext.setCurrentTenant(clinicId);
         try {
-            PatientAuth patientAuth = patientDetailsService.getUserByEmail(userEmail);
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("clinicId", clinicId); // <--- Add to Claims
-            claims.put("userName", "PatientIDNo");
-            claims.put("role", patientAuth.getRole().getName());
+            claims.put("userDetailsId", detailsId);
+            claims.put("role", role);
 
             return Jwts.builder()
                     .claims()
                     .add(claims)
-                    .subject(patientAuth.getEmail())
+                    .subject(userEmail)
                     .issuedAt(new Date(System.currentTimeMillis()))
                     .expiration(new Date(System.currentTimeMillis() + 604800000))
                     .and()

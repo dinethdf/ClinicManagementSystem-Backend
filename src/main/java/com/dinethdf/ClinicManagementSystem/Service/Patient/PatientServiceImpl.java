@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
@@ -38,8 +39,8 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private MessageSourceUtil messageSourceUtil;
 
-    @Autowired
-    PatientAuthService patientAuthService;
+//    @Autowired
+//    PatientAuthService patientAuthService;
 
     @Autowired
     PatientValidator patientValidator;
@@ -66,6 +67,19 @@ public class PatientServiceImpl implements PatientService {
                 patient,
                 messageSourceUtil.getMessage("patient.details.get.success")
         );
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public  PatientResponseDTO getPatientByIdForLogin(Long id, Integer clinicId) {
+        // Find by ID AND Clinic ID (Security)
+        return patientDetailsRepo.findPatientDetailByIdAndClinicId(id, clinicId)
+                .orElseThrow(() -> new ValidationException(
+                        "Patient not found",
+                        "NOT_FOUND",
+                        null,
+                        HttpStatus.NOT_FOUND
+                ));
     }
 
     @Override
