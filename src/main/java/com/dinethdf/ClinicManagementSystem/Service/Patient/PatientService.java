@@ -16,6 +16,8 @@ public interface PatientService {
      */
     List<Patient> getAllPatients();
 
+    ApiResponse<Patient> getPatientDetailsByIdAll(String id);
+
     PatientResponseDTO getPatientByIdForLogin(Long id, Integer clinicId);
 
     ApiResponse<Patient> getPatientDetailsByIdStaff(String id);
@@ -32,6 +34,9 @@ public interface PatientService {
      * Update patient details by staff/admin
      */
     ApiResponse<Patient> updatePatientByStaff(Integer id, Patient patient);
+
+    ApiResponse<Patient> updatePatientBySelf(Long id, Patient patientFromRequest);
+
     /**
      * Approve patient (e.g., after staff verification)
      */
