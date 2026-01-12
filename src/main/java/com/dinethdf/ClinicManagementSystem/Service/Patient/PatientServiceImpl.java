@@ -7,7 +7,6 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
-import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientAuthService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -38,8 +37,8 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private MessageSourceUtil messageSourceUtil;
 
-    @Autowired
-    PatientAuthService patientAuthService;
+//    @Autowired
+//    PatientAuthService patientAuthService;
 
     @Autowired
     PatientValidator patientValidator;
@@ -66,6 +65,37 @@ public class PatientServiceImpl implements PatientService {
                 patient,
                 messageSourceUtil.getMessage("patient.details.get.success")
         );
+    }
+
+    @Override
+    public ApiResponse<Patient> getPatientDetailsByIdAll(String id) {
+        Patient patient = patientDetailsRepo.findById(Long.valueOf(id)).orElseThrow(
+                () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+
+        // Multi-Tenant Security Check
+        if (!Objects.equals(patient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
+
+        patient.setPatientAuth(null);
+
+        return ApiResponse.success(
+                patient,
+                messageSourceUtil.getMessage("patient.details.get.success")
+        );
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public  PatientResponseDTO getPatientByIdForLogin(Long id, Integer clinicId) {
+        // Find by ID AND Clinic ID (Security)
+        return patientDetailsRepo.findPatientDetailByIdAndClinicId(id, clinicId)
+                .orElseThrow(() -> new ValidationException(
+                        "Patient not found",
+                        "NOT_FOUND",
+                        null,
+                        HttpStatus.NOT_FOUND
+                ));
     }
 
     @Override
@@ -328,6 +358,81 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @Override
+    public ApiResponse<Patient> updatePatientBySelf(Long id, Patient patientFromRequest) {
+
+        Patient existingPatient = patientDetailsRepo.findById(id).orElseThrow(
+                () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+
+        // Multi-Tenant Security Check
+        if (!Objects.equals(existingPatient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
+        }
+
+        patientValidator.validatePatient(patientFromRequest);
+
+        // Child Account Changing Type Update
+
+        if(existingPatient.getGuardian() != null && patientFromRequest.getGuardian() == null){
+            throw  new ValidationException(messageSourceUtil.getMessage("patient.child.guardian.cannot.remove"),"CHILD_CANNOT_REMOVE_GUARDIAN");
+        }
+
+        try {
+            existingPatient.setFirstName(patientFromRequest.getFirstName());
+            existingPatient.setLastName(patientFromRequest.getLastName());
+            existingPatient.setFullName(patientFromRequest.getFullName()); // Assuming this can be updated
+            existingPatient.setDob(patientFromRequest.getDob());
+
+            // Attributes (Enums/Integers)
+            existingPatient.setEthnicity(patientFromRequest.getEthnicity());
+            existingPatient.setGender(patientFromRequest.getGender());
+            existingPatient.setMaritalStatus(patientFromRequest.getMaritalStatus());
+            existingPatient.setBloodGroup(patientFromRequest.getBloodGroup());
+
+            if (!existingPatient.isDependent()){
+                // Contact & Address
+                existingPatient.setNic(patientFromRequest.getNic());
+                existingPatient.setAddress(patientFromRequest.getAddress());
+                existingPatient.setCity(patientFromRequest.getCity());
+                existingPatient.setDistrict(patientFromRequest.getDistrict());
+                existingPatient.setEmail(patientFromRequest.getEmail());
+                existingPatient.setMobileNo(patientFromRequest.getMobileNo());
+                existingPatient.setLandNo(patientFromRequest.getLandNo());
+            }
+
+
+            // Emergency Contact
+            existingPatient.setEmergencyContactName(patientFromRequest.getEmergencyContactName());
+            existingPatient.setEmergencyContactRelationship(patientFromRequest.getEmergencyContactRelationship());
+            existingPatient.setEmergencyContactMobile(patientFromRequest.getEmergencyContactMobile());
+            existingPatient.setEmergencyContactEmail(patientFromRequest.getEmergencyContactEmail());
+
+            // Other
+            existingPatient.setProfileImg(patientFromRequest.getProfileImg());
+
+            Patient savedPatient = patientDetailsRepo.save(existingPatient);
+            return ApiResponse.success(
+                    patientDetailsRepo.save(savedPatient),
+                    messageSourceUtil.getMessage("patient.update.success")
+            );
+
+        } catch (DataIntegrityViolationException e) {
+            String rootCauseMessage = e.getMostSpecificCause().getMessage();
+
+            // for Duplicate Field Error handle
+            handleDataIntegrityViolation(rootCauseMessage);
+
+            // Any other Database Level error Handle
+            throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
+        }
+        catch (Exception e){
+            System.out.println("Exception Level Error");
+            System.out.println(e.getMessage());
+            throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
     @Override
     public ApiResponse<String> approvePatient(Integer patientId) {

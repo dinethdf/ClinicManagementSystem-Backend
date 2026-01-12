@@ -17,5 +17,6 @@ public record PatientResponseDTO(
         String district,
         String email,
         String mobileNo,
-        String landNo
+        String landNo,
+        String profileImg
 ) {}

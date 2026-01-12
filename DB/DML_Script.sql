@@ -20,12 +20,20 @@ INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`) VA
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@staff.com', '1', '5'),
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@staff.com', '1', '5');
 
--- Doctor User (We need to insert Doctor first to get ID, or insert Auth first and update.
--- Standard flow: Auth first -> Doctor Profile -> Link.
--- For seeding, we'll insert Auth, then Doctor with Auth ID 3, then update Auth with Details ID 1)
+
+UPDATE userAuth
+SET
+    detailsId = 1
+WHERE email = 'dineth@admin.com';
+
+
 INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`, `detailsId`) VALUES
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor.com', '1', '3', 1);
 
+INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district,
+							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy )
+			VALUES ( 1, 1, 1, 'Dineth', 'Dilshan', 'D. Dilshan', 1, '2000-01-12', '809934567V', 'admin@clinic.com', '0711234567', '123, Galle Road', 'Colombo', 'Colombo',
+								NOW(),'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin', 'ACTIVE', 1, NOW(), 'Super Admin' );
 
 -- 4. Specializations (Global)
 INSERT INTO specialization (name, note) VALUES
@@ -42,15 +50,15 @@ INSERT INTO specialization (name, note) VALUES
 
 
 -- 5. Doctors (Linked to Clinic 1)
-INSERT INTO doctor (id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy) VALUES
-(1, 1, 6, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '809934567V', 'test1@doctor.com', '0711234567', '123, Galle Road, Colombo', 'DOC001', '1', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1, NOW(), 'admin'),
-(2, 1, NULL, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851299567V', 'saman.fernando@clinic.com', '0779876543', '45, Temple Road, Kandy', 'DOC002', '2', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1, NOW(), 'admin'),
-(3, 1, NULL, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234599V', 'nimali.jayasinghe@clinic.com', '0705674321', '67, Main Street, Gampaha', 'DOC003', '3', 'MBBS, DCH', 8, 'ON_LEAVE', 1, NOW(), 'admin');
+INSERT INTO doctor (id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, profileImg, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy) VALUES
+(1, 1, 6, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '809934567V', 'test1@doctor.com', '0711234567', '123, Galle Road, Colombo', 'https://t4.ftcdn.net/jpg/02/29/53/11/360_F_229531197_jmFcViuzXaYOQdoOK1qyg7uIGdnuKhpt.jpg', 'DOC001', '1', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1, NOW(), 'admin'),
+(2, 1, NULL, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851299567V', 'saman.fernando@clinic.com', '0779876543', '45, Temple Road, Kandy', null, 'DOC002', '2', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1, NOW(), 'admin'),
+(3, 1, NULL, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234599V', 'nimali.jayasinghe@clinic.com', '0705674321', '67, Main Street, Gampaha', null, 'DOC003', '3', 'MBBS, DCH', 8, 'ON_LEAVE', 1, NOW(), 'admin');
 
 
 -- 6. Patients (Linked to Clinic 1)
-INSERT INTO patientAuth (`clinic_id`, `password`, `email`, `isEnable`, `isTempCredential`, `role`) VALUES
-(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '4');
+INSERT INTO patientAuth (`clinic_id`, `password`, `email`, `isEnable`, `isTempCredential`, `role`, `detailsId`) VALUES
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '4', 51);
 
 INSERT INTO patient (id, clinic_id, patient_auth_id, patientNo, firstName, lastName, fullName, ethnicity, gender, maritalStatus, nic, dob, address, city, district, email, mobileNo, landNo, emergencyContactName, emergencyContactRelationship, emergencyContactMobile, emergencyContactEmail, bloodGroup, registrationDate, profileImg, isActive, isApproved, createdDate, createdBy, updatedDate, updatedBy)
 VALUES

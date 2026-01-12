@@ -99,6 +99,7 @@ CREATE TABLE patientAuth (
     isEnable TINYINT NOT NULL DEFAULT 1,
     isTempCredential TINYINT NOT NULL DEFAULT 1,
     role INT DEFAULT NULL,
+	detailsId INT DEFAULT NULL,
 
     CONSTRAINT fk_patientAuth_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
     FOREIGN KEY (role) REFERENCES user_role(id) ON DELETE SET NULL,

@@ -13,6 +13,8 @@ public class PatientAuth {
     private String email;
     private String password;
 
+    private Long detailsId;
+
     private Boolean isEnable;
     private Boolean isTempCredential;
 
@@ -71,6 +73,14 @@ public class PatientAuth {
 
     public Boolean getTempCredential() {
         return isTempCredential;
+    }
+
+    public Long getDetailsId() {
+        return detailsId;
+    }
+
+    public void setDetailsId(Long id) {
+        this.detailsId = id;
     }
 
     public void setTempCredential(Boolean tempCredential) {
