@@ -26,9 +26,13 @@ public class PatientPrincipal implements UserDetails {
 //        return user.getName();
 //    }
 //
-//    public UserRole getRole() {
-//        return user.getRole();
-//    }
+    public UserRole getRole() {
+        return patientAuth.getRole();
+    }
+
+    public Integer getClinicId() {
+        return patientAuth.getClinicId();
+    }
 
     @Override
     public String getPassword() {
@@ -43,6 +47,10 @@ public class PatientPrincipal implements UserDetails {
     @Override
     public boolean isAccountNonExpired() {
         return true;
+    }
+
+    public Long getPatientDetailsId() {
+        return patientAuth.getDetailsId();
     }
 
     @Override

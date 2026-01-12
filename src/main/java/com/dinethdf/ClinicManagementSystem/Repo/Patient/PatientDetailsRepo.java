@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Repo.Patient;
 
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
@@ -70,7 +71,8 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
         p.district,
         p.email,
         p.mobileNo,
-        p.landNo
+        p.landNo,
+        p.profileImg
     )
     FROM Patient p
     LEFT JOIN p.guardian g
@@ -112,7 +114,7 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
             g.id, g.patientNo, g.firstName, g.lastName, g.nic,
             g.address, g.city, g.district, g.email, g.mobileNo, g.landNo
         ),
-        p.city, p.district, p.email, p.mobileNo, p.landNo
+        p.city, p.district, p.email, p.mobileNo, p.landNo, p.profileImg
         )
         FROM Patient p
         LEFT JOIN p.guardian g
@@ -127,5 +129,33 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
 
     @Query("SELECT p.id FROM Patient p WHERE p.clinicId = :clinicId AND p.nic = :nic AND p.isActive = true")
     Optional<Long> findIdByNic(@Param("nic") String nic, @Param("clinicId") Integer clinicId);
+
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO(
+        p.id,
+        p.patientNo,
+        p.firstName,
+        p.lastName,
+        p.nic,
+        p.address,
+        p.dob,
+        null,
+        p.city,
+        p.district,
+        p.email,
+        p.mobileNo,
+        p.landNo,
+        p.profileImg
+    )
+    FROM Patient p
+    WHERE p.id = :id
+      AND p.clinicId = :clinicId
+      AND p.isActive = true
+""")
+    Optional<PatientResponseDTO> findPatientDetailByIdAndClinicId(
+            @Param("id") Long id,
+            @Param("clinicId") Integer clinicId
+    );
+
 
 }

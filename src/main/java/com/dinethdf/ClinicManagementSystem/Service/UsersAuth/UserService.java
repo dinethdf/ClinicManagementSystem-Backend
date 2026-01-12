@@ -83,7 +83,7 @@ public class UserService {
             UserPrincipal user = (UserPrincipal) auth.getPrincipal();
 
             System.out.println("Authenticated: " + auth.isAuthenticated());
-            System.out.println("Principal:s " + user.getUserDetailsId());
+            System.out.println("Principal: " + user.getUserDetailsId());
             System.out.println("Authorities: " + auth.getAuthorities());
             System.out.println("Details: " + auth.getDetails());
 

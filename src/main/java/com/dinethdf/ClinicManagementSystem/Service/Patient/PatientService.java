@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
@@ -14,6 +15,10 @@ public interface PatientService {
      * Get all patients (for admin/staff)
      */
     List<Patient> getAllPatients();
+
+    ApiResponse<Patient> getPatientDetailsByIdAll(String id);
+
+    PatientResponseDTO getPatientByIdForLogin(Long id, Integer clinicId);
 
     ApiResponse<Patient> getPatientDetailsByIdStaff(String id);
 
@@ -29,6 +34,9 @@ public interface PatientService {
      * Update patient details by staff/admin
      */
     ApiResponse<Patient> updatePatientByStaff(Integer id, Patient patient);
+
+    ApiResponse<Patient> updatePatientBySelf(Long id, Patient patientFromRequest);
+
     /**
      * Approve patient (e.g., after staff verification)
      */
