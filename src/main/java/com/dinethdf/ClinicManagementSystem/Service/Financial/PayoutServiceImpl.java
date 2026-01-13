@@ -121,12 +121,16 @@ public class PayoutServiceImpl implements PayoutService {
     }
 
     @Override
-    public List<PendingBillView> getPendingDoctorBills(Integer doctorId) {
-        // Filter by Clinic ID
+    public Page<PendingBillView> getPendingDoctorBills(Integer doctorId, int page, int size) {
+        // 1. Create PageRequest (Sort by date usually makes sense for bills)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("ds.scheduleDate").descending());
+
+        // 2. Fetch only the requested slice
         return doctorBillRepo.findPendingBillsFiltered(
                 DoctorSchedulePayment.PayoutStatus.PENDING,
                 doctorId,
-                TenantContext.getCurrentTenant()
+                TenantContext.getCurrentTenant(),
+                pageable
         );
     }
 

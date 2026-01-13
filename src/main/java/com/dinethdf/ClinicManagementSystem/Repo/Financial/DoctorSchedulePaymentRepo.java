@@ -24,27 +24,37 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
 
     List<DoctorSchedulePayment> findByStatusAndClinicId(DoctorSchedulePayment.PayoutStatus status, Integer clinicId);
 
-    @Query("""
-        SELECT
-            p.id AS payoutId,
-            ds.id AS scheduleId,
-            CONCAT(d.firstName, ' ', d.lastName) AS doctorName,
-            ds.scheduleDate AS scheduleDate,
-            p.totalDoctorFee AS totalFee,
-            p.totalDoctorDiscounts AS totalDoctorDiscounts,
-            p.finalPayableAmount AS finalPayableAmount,
-            p.status AS status
-        FROM DoctorSchedulePayment p
-        JOIN p.doctorSchedule ds
-        JOIN ds.doctor d
-        WHERE p.clinicId = :clinicId
-        AND p.status = :status
-        AND (:doctorId IS NULL OR d.id = :doctorId)
-    """)
-    List<PendingBillView> findPendingBillsFiltered(
+    @Query(value = """
+    SELECT
+        p.id AS payoutId,
+        ds.id AS scheduleId,
+        CONCAT(d.firstName, ' ', d.lastName) AS doctorName,
+        ds.scheduleDate AS scheduleDate,
+        p.totalDoctorFee AS totalFee,
+        p.totalDoctorDiscounts AS totalDoctorDiscounts,
+        p.finalPayableAmount AS finalPayableAmount,
+        p.status AS status
+    FROM DoctorSchedulePayment p
+    JOIN p.doctorSchedule ds
+    JOIN ds.doctor d
+    WHERE p.clinicId = :clinicId
+    AND p.status = :status
+    AND (:doctorId IS NULL OR d.id = :doctorId)
+""",
+            countQuery = """
+    SELECT COUNT(p)
+    FROM DoctorSchedulePayment p
+    JOIN p.doctorSchedule ds
+    JOIN ds.doctor d
+    WHERE p.clinicId = :clinicId
+    AND p.status = :status
+    AND (:doctorId IS NULL OR d.id = :doctorId)
+""")
+    Page<PendingBillView> findPendingBillsFiltered(
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
             @Param("doctorId") Integer doctorId,
-            @Param("clinicId") Integer clinicId
+            @Param("clinicId") Integer clinicId,
+            Pageable pageable // <--- Add this!
     );
 
     @Query("""
