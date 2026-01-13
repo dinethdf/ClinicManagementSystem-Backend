@@ -17,7 +17,7 @@ public interface PayoutService {
     FinancialSummaryDTO getFinancialSummary(LocalDate startDate, LocalDate endDate);
 
     // Update this line
-    List<PendingBillView> getPendingDoctorBills(Integer doctorId);
+    Page<PendingBillView> getPendingDoctorBills(Integer doctorId, int page, int size) ;
 
     Page<PayoutView> searchPayouts(Long doctorId, DoctorSchedulePayment.PayoutStatus status,
                                    LocalDate startDate, LocalDate endDate, int page, int size);

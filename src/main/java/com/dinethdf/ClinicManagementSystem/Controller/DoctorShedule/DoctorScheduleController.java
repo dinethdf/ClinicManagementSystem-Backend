@@ -39,6 +39,12 @@ public class DoctorScheduleController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
+        System.out.println("Page No " + pageable.getPageNumber());
+        System.out.println("P{age Size " + pageable.getPageSize());
+        System.out.println("Date " + date);
+        System.out.println("doctorName " + doctorName);
+        System.out.println("specialization " + specialization);
+        System.out.println("Page  " + pageable.toString());
 
         Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getAllSchedulesList(
                 doctorName,
@@ -47,6 +53,9 @@ public class DoctorScheduleController {
                 pageable
         );
 
+
+        System.out.println(schedules.getPageable());
+        System.out.println( " Total Elements: " + schedules.getTotalElements());
         ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
                 schedules,
                 messageSourceUtil.getMessage("schedule.success")

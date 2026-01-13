@@ -33,8 +33,8 @@ public class PayoutController {
             @RequestParam(required = false) DoctorSchedulePayment.PayoutStatus status,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size
     ) {
         Page<PayoutView> result = payoutService.searchPayouts(Long.valueOf(doctorId), status, startDate, endDate, page, size);
         return ResponseEntity.ok(ApiResponse.success(result, "Search Results"));
@@ -88,14 +88,16 @@ public class PayoutController {
 
     @GetMapping("/doctor/pending")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResponse<List<PendingBillView>>> getPendingDoctorBills(
-            @RequestParam(required = false) Integer doctorId
+    public ResponseEntity<ApiResponse<Page<PendingBillView>>> getPendingDoctorBills(
+            @RequestParam(required = false) Integer doctorId,
+            @RequestParam(defaultValue = "0") int page, // Default to first page
+            @RequestParam(defaultValue = "10") int size // Default 10 items
     ) {
 
-        List<PendingBillView> list = payoutService.getPendingDoctorBills(doctorId);
+        Page<PendingBillView> pagedData = payoutService.getPendingDoctorBills(doctorId, page, size);
 
         return ResponseEntity.ok(ApiResponse.success(
-                list,
+                pagedData,
                 "Fetched Pending Bills"
         ));
     }
