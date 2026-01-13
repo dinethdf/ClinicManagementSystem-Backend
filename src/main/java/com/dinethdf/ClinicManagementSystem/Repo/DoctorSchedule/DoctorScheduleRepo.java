@@ -62,8 +62,8 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
 
     // Paginated list of all schedules with optional filters
     @Query("SELECT s FROM DoctorSchedule s " +
-            "JOIN s.doctor d " +
-            "JOIN d.specialization sp " +
+            "JOIN FETCH s.doctor d " +          // <--- Changed to JOIN FETCH
+            "JOIN FETCH d.specialization sp " + // <--- Changed to JOIN FETCH
             "WHERE s.clinicId = :clinicId " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
@@ -101,15 +101,14 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     );
 
     // Overlapping schedule check for create
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
-            "FROM DoctorSchedule s " +
+    @Query("SELECT s FROM DoctorSchedule s " +
             "WHERE s.clinicId = :clinicId " +
             "AND s.doctor.id = :doctorId " +
             "AND s.status = 'ACTIVE' " +
             "AND s.startTime < :endTime " +
             "AND s.endTime > :startTime " +
             "AND s.scheduleDate = :scheduleDate")
-    boolean existsOverlappingSchedule(
+    List<DoctorSchedule> findOverlappingSchedules(
             @Param("doctorId") Long doctorId,
             @Param("scheduleDate") LocalDate scheduleDate,
             @Param("startTime") LocalTime startTime,
@@ -117,17 +116,16 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("clinicId") Integer clinicId
     );
 
-    // Overlapping schedule check for update (exclude current schedule)
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
-            "FROM DoctorSchedule s " +
+    // Overlapping schedule check for update (returns the actual conflicting schedules)
+    @Query("SELECT s FROM DoctorSchedule s " +
             "WHERE s.clinicId = :clinicId " +
             "AND s.doctor.id = :doctorId " +
             "AND s.status = 'ACTIVE' " +
             "AND s.scheduleDate = :scheduleDate " +
-            "AND s.id != :scheduleIdToExclude " +
+            "AND s.id != :scheduleIdToExclude " + // Crucial: Ignore the schedule we are currently editing
             "AND s.startTime < :endTime " +
             "AND s.endTime > :startTime")
-    boolean existsOverlappingScheduleForUpdate(
+    List<DoctorSchedule> findOverlappingSchedulesForUpdate(
             @Param("doctorId") Long doctorId,
             @Param("scheduleDate") LocalDate scheduleDate,
             @Param("startTime") LocalTime startTime,

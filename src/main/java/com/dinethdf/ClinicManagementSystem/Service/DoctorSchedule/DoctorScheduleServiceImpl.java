@@ -69,20 +69,27 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             );
         }
 
-        // Multi-Tenant Overlap Check
-        boolean exists = doctorScheduleRepo.existsOverlappingSchedule(
+// 1. Check for overlaps
+        List<DoctorSchedule> overlappingSchedules = doctorScheduleRepo.findOverlappingSchedules(
                 createDTO.getDoctorId(),
                 createDTO.getScheduleDate(),
                 createDTO.getStartTime(),
                 createDTO.getEndTime(),
-                TenantContext.getCurrentTenant() // <--- Clinic ID
+                TenantContext.getCurrentTenant()
         );
 
-        if (exists) {
+// 2. If overlap exists, grab the details and throw error
+        if (!overlappingSchedules.isEmpty()) {
+            // Get the first conflicting schedule
+            DoctorSchedule existing = overlappingSchedules.get(0);
+
             throw new ValidationException(
-                    messageSourceUtil.getMessage(
-                            "schedule.error.duplicate.range",
-                            new Object[] { createDTO.getScheduleDate(), createDTO.getStartTime(), createDTO.getEndTime() }
+                    String.format("Doctor already has a schedule on %s from %s to %s. You are trying to book %s - %s.",
+                            existing.getScheduleDate(),
+                            existing.getStartTime(),
+                            existing.getEndTime(),
+                            createDTO.getStartTime(),
+                            createDTO.getEndTime()
                     ),
                     "DUPLICATE_SCHEDULE_RANGE",
                     HttpStatus.CONFLICT
@@ -260,20 +267,23 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         }
 
         // 3. Multi-Tenant Overlap Check for Update
-        boolean exists = doctorScheduleRepo.existsOverlappingScheduleForUpdate(
+        List<DoctorSchedule> overlappingSchedules = doctorScheduleRepo.findOverlappingSchedulesForUpdate(
                 existingSchedule.getDoctor().getId(),
                 existingSchedule.getScheduleDate(),
                 updateDTO.getStartTime(),
                 updateDTO.getEndTime(),
-                id,
-                TenantContext.getCurrentTenant() // <--- Clinic ID
+                id, // The ID of the schedule being updated (to exclude it)
+                TenantContext.getCurrentTenant()
         );
 
-        if (exists) {
+        if (!overlappingSchedules.isEmpty()) {
+            // Get the first conflicting schedule
+            DoctorSchedule conflict = overlappingSchedules.get(0);
+
             throw new ValidationException(
-                    messageSourceUtil.getMessage(
-                            "schedule.error.duplicate.range.update",
-                            new Object[] { existingSchedule.getScheduleDate(), updateDTO.getStartTime(), updateDTO.getEndTime() }
+                    String.format("Cannot update. This overlaps with an existing schedule: %s to %s.",
+                            conflict.getStartTime(),
+                            conflict.getEndTime()
                     ),
                     "DUPLICATE_SCHEDULE_RANGE",
                     HttpStatus.CONFLICT
