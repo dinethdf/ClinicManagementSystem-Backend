@@ -106,13 +106,19 @@ public class PatientController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<PatientListDTO>>> getPatientList(
-            @RequestParam(required = false) String search,
-
+            @RequestParam(required = false) String patientNo,
+            @RequestParam(required = false) String nic,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) String name,
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-
-        Page<PatientListDTO> patients = patientServiceImpl.getAllPatientsPaginated(search, pageable);
-
+        Page<PatientListDTO> patients = patientServiceImpl.getAllPatientsPaginated(
+                patientNo,
+                nic,
+                mobile,
+                name,
+                pageable
+        );
         return ResponseEntity.ok(ApiResponse.success(patients, "Patient list fetched successfully"));
     }
 

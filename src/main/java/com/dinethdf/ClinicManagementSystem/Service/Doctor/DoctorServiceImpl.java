@@ -18,9 +18,7 @@ import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -109,13 +107,31 @@ public class DoctorServiceImpl implements DoctorService {
         );
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size) {
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
-            return doctorRepo.findAllDoctorsPaginated(pageable, TenantContext.getCurrentTenant());
+    @Transactional(readOnly = true)
+    @Override
+    public Page<DoctorResponseDto> getAllDoctorsPaginated(
+            String name,
+            String mobile,
+            String slmc,
+            String specialization,
+            Pageable pageable
+    ) {
+        try {
+            // Convert empty strings to NULL so the query ignores them
+            String filterName = (name != null && !name.trim().isEmpty()) ? name.trim() : null;
+            String filterMobile = (mobile != null && !mobile.trim().isEmpty()) ? mobile.trim() : null;
+            String filterSlmc = (slmc != null && !slmc.trim().isEmpty()) ? slmc.trim() : null;
+            String filterSpec = (specialization != null && !specialization.trim().isEmpty()) ? specialization.trim() : null;
+
+            return doctorRepo.searchDoctorsAdvanced(
+                    filterName,
+                    filterMobile,
+                    filterSlmc,
+                    filterSpec,
+                    TenantContext.getCurrentTenant(),
+                    pageable
+            );
 
         } catch (Exception e) {
             e.printStackTrace();

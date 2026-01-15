@@ -31,7 +31,13 @@ public interface PatientService {
     List<PatientResponseDTO> findPatientBySearching(String patientNo, String nic, String fullName, String mobileNo);
 
     @Transactional(readOnly = true)
-    Page<PatientListDTO> getAllPatientsPaginated(String search, Pageable pageable);
+    Page<PatientListDTO> getAllPatientsPaginated(
+            String patientNo,
+            String nic,
+            String mobile,
+            String name,
+            Pageable pageable
+    );
 
     /**
      * Add patient details by staff/admin

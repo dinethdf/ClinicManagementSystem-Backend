@@ -50,6 +50,17 @@ public interface DoctorRepo extends JpaRepository<Doctor, Long> {
     FROM Doctor d
     LEFT JOIN d.specialization s
     WHERE d.clinicId = :clinicId
+    AND (:name IS NULL OR (LOWER(d.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :name, '%'))))
+    AND (:mobile IS NULL OR d.mobileNo LIKE CONCAT('%', :mobile, '%'))
+    AND (:slmc IS NULL OR LOWER(d.slmcNumber) LIKE LOWER(CONCAT('%', :slmc, '%')))
+    AND (:specialization IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :specialization, '%')))
     """)
-    Page<DoctorResponseDto> findAllDoctorsPaginated(Pageable pageable, @Param("clinicId") Integer clinicId);
+        Page<DoctorResponseDto> searchDoctorsAdvanced(
+                @Param("name") String name,
+                @Param("mobile") String mobile,
+                @Param("slmc") String slmc,
+                @Param("specialization") String specialization,
+                @Param("clinicId") Integer clinicId,
+                Pageable pageable
+        );
 }

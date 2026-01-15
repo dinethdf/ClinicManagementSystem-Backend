@@ -11,20 +11,16 @@ import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.dinethdf.ClinicManagementSystem.util.PatientValidator;
-import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -136,19 +132,31 @@ public class PatientServiceImpl implements PatientService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<PatientListDTO> getAllPatientsPaginated(String search, Pageable pageable) {
+    public Page<PatientListDTO> getAllPatientsPaginated(
+            String patientNo,
+            String nic,
+            String mobile,
+            String name,
+            Pageable pageable
+    ) {
         try {
-            // Validation: If search is just whitespace, treat as null
-            String searchQuery = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+            // Helper to convert empty strings "" to null, so the query ignores them
+            String filterNo = (patientNo != null && !patientNo.trim().isEmpty()) ? patientNo.trim() : null;
+            String filterNic = (nic != null && !nic.trim().isEmpty()) ? nic.trim() : null;
+            String filterMobile = (mobile != null && !mobile.trim().isEmpty()) ? mobile.trim() : null;
+            String filterName = (name != null && !name.trim().isEmpty()) ? name.trim() : null;
 
-            return patientDetailsRepo.searchPatients(
-                    searchQuery,
+            return patientDetailsRepo.searchPatientsAdvanced(
+                    filterNo,
+                    filterNic,
+                    filterMobile,
+                    filterName,
                     TenantContext.getCurrentTenant(),
                     pageable
             );
 
         } catch (Exception e) {
-            e.printStackTrace(); // Log the error properly in real apps
+            e.printStackTrace();
             throw new ValidationException(
                     "Error fetching patient list",
                     "SERVER_ERROR",

@@ -36,17 +36,19 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
     )
     FROM Patient p
     WHERE p.clinicId = :clinicId
-    AND (:search IS NULL OR :search = '' OR
-        (
-            LOWER(p.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(p.nic) LIKE LOWER(CONCAT('%', :search, '%')) OR
-            LOWER(p.mobileNo) LIKE LOWER(CONCAT('%', :search, '%'))
-        )
-    )
+    AND (:patientNo IS NULL OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :patientNo, '%')))
+    AND (:nic IS NULL OR LOWER(p.nic) LIKE LOWER(CONCAT('%', :nic, '%')))
+    AND (:mobile IS NULL OR p.mobileNo LIKE CONCAT('%', :mobile, '%'))
+    AND (:name IS NULL OR (
+        LOWER(p.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR 
+        LOWER(p.lastName) LIKE LOWER(CONCAT('%', :name, '%'))
+    ))
 """)
-    Page<PatientListDTO> searchPatients(
-            @Param("search") String search,
+    Page<PatientListDTO> searchPatientsAdvanced(
+            @Param("patientNo") String patientNo,
+            @Param("nic") String nic,
+            @Param("mobile") String mobile,
+            @Param("name") String name,
             @Param("clinicId") Integer clinicId,
             Pageable pageable
     );
