@@ -1,27 +1,42 @@
 package com.dinethdf.ClinicManagementSystem.DTO.Patient;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 @Data
+@NoArgsConstructor
 public class PatientListDTO {
     private Long id;
     private String patientNo;
-    private String fullName;
+    private String firstName;
+    private String lastName;
     private String mobileNo;
     private String nic;
-    private Integer gender; // You might want to convert this to String (e.g., "Male"/"Female") in a real app
-    private int age;
-    private Boolean isActive;
+    private String city;
+    private LocalDate dob;
+//    private boolean isActive;
 
-    // Constructor matching the fields for easy mapping
-    public PatientListDTO(Long id, String patientNo, String firstName, String lastName, String mobileNo, String nic, Integer gender, int age, Boolean isActive) {
+    @JsonProperty("isActive")
+    private boolean isActive;
+
+    // ✅ JPA Constructor - Matches the Repo Query order EXACTLY
+    public PatientListDTO(Long id, String patientNo, String firstName, String lastName,
+                          String mobileNo, String nic, String city, LocalDate dob, boolean isActive) {
         this.id = id;
         this.patientNo = patientNo;
-        this.fullName = firstName + " " + lastName; // Combining names for easier display
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.mobileNo = mobileNo;
         this.nic = nic;
-        this.gender = gender;
-        this.age = age;
+        this.city = city;
+        this.dob = dob;
         this.isActive = isActive;
+    }
+
+    public int getAge() {
+        if (this.dob == null) return 0;
+        return java.time.Period.between(this.dob, java.time.LocalDate.now()).getYears();
     }
 }
