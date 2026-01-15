@@ -8,6 +8,9 @@ import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,19 +29,28 @@ public class DoctorController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<DoctorResponseDto>>> getAllDoctors(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            // Specific Filters
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) String slmc,
+            @RequestParam(required = false) String specialization,
+
+            // Dynamic Pagination & Sorting (Default sort by ID desc)
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
 
-        // Call the new service method
-        Page<DoctorResponseDto> doctorsPage = doctorServiceImpl.getAllDoctorsPaginated(page, size);
-
-        ApiResponse<Page<DoctorResponseDto>> response = ApiResponse.success(
-                doctorsPage,
-                "Successfully retrieved doctors list"
+        Page<DoctorResponseDto> doctorsPage = doctorServiceImpl.getAllDoctorsPaginated(
+                name,
+                mobile,
+                slmc,
+                specialization,
+                pageable
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(
+                doctorsPage,
+                "Successfully retrieved doctors list"
+        ));
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")

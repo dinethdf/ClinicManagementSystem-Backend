@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorUpdateDto;
 import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -20,13 +21,19 @@ public interface DoctorService {
     List<Doctor> getAllDoctors();
 
 
-    Page<DoctorResponseDto> getAllDoctorsPaginated(int page, int size);
-
     DoctorDetailsDto getDoctorDetailsByIdForLoging(Long id, Integer clinicId);
 
     ApiResponse<DoctorDetailsDto> getDoctorFullDetailsById(String id);
 
     ApiResponse<DoctorResponseDto> getDoctorDetailsByEmail(String email);
+
+    Page<DoctorResponseDto> getAllDoctorsPaginated(
+            String name,
+            String mobile,
+            String slmc,
+            String specialization,
+            Pageable pageable
+    );
 
     List<DoctorResponseDto> searchDoctors(String query);
 

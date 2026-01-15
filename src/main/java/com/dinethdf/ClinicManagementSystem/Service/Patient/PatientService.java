@@ -3,9 +3,13 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +29,15 @@ public interface PatientService {
     List<GuardianResponseDTO> findGuardianByNicAndFullName(String nic, String fullName);
 
     List<PatientResponseDTO> findPatientBySearching(String patientNo, String nic, String fullName, String mobileNo);
+
+    @Transactional(readOnly = true)
+    Page<PatientListDTO> getAllPatientsPaginated(
+            String patientNo,
+            String nic,
+            String mobile,
+            String name,
+            Pageable pageable
+    );
 
     /**
      * Add patient details by staff/admin

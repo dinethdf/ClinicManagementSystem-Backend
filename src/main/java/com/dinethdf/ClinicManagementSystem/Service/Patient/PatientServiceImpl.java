@@ -11,20 +11,16 @@ import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.dinethdf.ClinicManagementSystem.util.PatientValidator;
-import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -134,58 +130,93 @@ public class PatientServiceImpl implements PatientService {
         return patient;
     }
 
-    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
-        Specification<Patient> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+    @Transactional(readOnly = true)
+    @Override
+    public Page<PatientListDTO> getAllPatientsPaginated(
+            String patientNo,
+            String nic,
+            String mobile,
+            String name,
+            Pageable pageable
+    ) {
+        try {
+            // Helper to convert empty strings "" to null, so the query ignores them
+            String filterNo = (patientNo != null && !patientNo.trim().isEmpty()) ? patientNo.trim() : null;
+            String filterNic = (nic != null && !nic.trim().isEmpty()) ? nic.trim() : null;
+            String filterMobile = (mobile != null && !mobile.trim().isEmpty()) ? mobile.trim() : null;
+            String filterName = (name != null && !name.trim().isEmpty()) ? name.trim() : null;
 
-            // Multi-Tenant Filter
-            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
+            return patientDetailsRepo.searchPatientsAdvanced(
+                    filterNo,
+                    filterNic,
+                    filterMobile,
+                    filterName,
+                    TenantContext.getCurrentTenant(),
+                    pageable
+            );
 
-//            predicates.add(cb.isTrue(root.get("isActive")));
-
-            if (StringUtils.hasText(search)) {
-                String searchLower = search.toLowerCase().trim();
-                List<Predicate> searchPredicates = new ArrayList<>();
-
-                try {
-                    Long searchId = Long.parseLong(search);
-                    searchPredicates.add(cb.equal(root.get("id"), searchId));
-                } catch (NumberFormatException ignored) {
-
-                }
-
-                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
-
-                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
-
-                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
-
-                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-
-        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
-
-        return patients.map(this::convertToPatientListDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException(
+                    "Error fetching patient list",
+                    "SERVER_ERROR",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
-    private PatientListDTO convertToPatientListDTO(Patient patient) {
-
-        return new PatientListDTO(
-                patient.getId(),
-                patient.getPatientNo(),
-                patient.getFirstName(),
-                patient.getLastName(),
-                patient.getMobileNo(),
-                patient.getNic(),
-                patient.getGender(),
-                patient.getAge(), // Your helper method in Patient entity
-                patient.getIsActive()
-        );
-    }
+//    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
+//        Specification<Patient> spec = (root, query, cb) -> {
+//            List<Predicate> predicates = new ArrayList<>();
+//
+//            // Multi-Tenant Filter
+//            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
+//
+////            predicates.add(cb.isTrue(root.get("isActive")));
+//
+//            if (StringUtils.hasText(search)) {
+//                String searchLower = search.toLowerCase().trim();
+//                List<Predicate> searchPredicates = new ArrayList<>();
+//
+//                try {
+//                    Long searchId = Long.parseLong(search);
+//                    searchPredicates.add(cb.equal(root.get("id"), searchId));
+//                } catch (NumberFormatException ignored) {
+//
+//                }
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
+//
+//                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
+//            }
+//
+//            return cb.and(predicates.toArray(new Predicate[0]));
+//        };
+//
+//
+//        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
+//
+//        return patients.map(this::convertToPatientListDTO);
+//    }
+//
+//    private PatientListDTO convertToPatientListDTO(Patient patient) {
+//
+//        return new PatientListDTO(
+//                patient.getId(),
+//                patient.getPatientNo(),
+//                patient.getFirstName(),
+//                patient.getLastName(),
+//                patient.getMobileNo(),
+//                patient.getNic(),
+//                patient.getGender(),
+//                patient.getAge(), // Your helper method in Patient entity
+//                patient.getIsActive()
+//        );
+//    }
 
     @Override
     @Transactional

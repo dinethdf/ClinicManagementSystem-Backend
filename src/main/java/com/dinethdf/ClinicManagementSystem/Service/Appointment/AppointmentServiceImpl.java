@@ -145,14 +145,17 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public Page<AppointmentAdminListDTO> getFilteredAppointments(Long patientId, Long scheduleId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
 
-        LocalDate end = (endDate != null) ? endDate : LocalDate.now().plusMonths(2);
-        LocalDate start = (startDate != null) ? startDate : LocalDate.now().minusMonths(1);
 
-        if (start.isAfter(end)) {
+        // LocalDate end = (endDate != null) ? endDate : LocalDate.now().plusMonths(2);
+        // LocalDate start = (startDate != null) ? startDate : LocalDate.now().minusMonths(1);
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new ValidationException("Start date cannot be after end date", "INVALID_DATE_RANGE", HttpStatus.BAD_REQUEST);
         }
 
-        return appointmentRepo.findFilteredAppointments(patientId, scheduleId, start, end, TenantContext.getCurrentTenant(), pageable);
+        return appointmentRepo.findFilteredAppointments(
+                patientId, scheduleId, startDate, endDate, TenantContext.getCurrentTenant(), pageable
+        );
     }
 
     @Override

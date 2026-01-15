@@ -126,7 +126,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
-        AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+        AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
+        AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
     ORDER BY a.id DESC
 """,
             countQuery = """
@@ -137,7 +138,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
-        AND (ds.scheduleDate BETWEEN :startDate AND :endDate)
+        AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
+        AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
 """)
     Page<AppointmentAdminListDTO> findFilteredAppointments(
             @Param("patientId") Long patientId,
