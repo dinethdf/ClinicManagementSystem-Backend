@@ -2,9 +2,12 @@ package com.dinethdf.ClinicManagementSystem.Repo.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +21,35 @@ import java.util.Optional;
 public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
 
     long countByGuardian(Patient guardian);
+
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO(
+        p.id,
+        p.patientNo,
+        p.firstName,
+        p.lastName,
+        p.mobileNo,
+        p.nic,
+        p.city,
+        p.dob,
+        p.isActive
+    )
+    FROM Patient p
+    WHERE p.clinicId = :clinicId
+    AND (:search IS NULL OR :search = '' OR
+        (
+            LOWER(p.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.nic) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(p.mobileNo) LIKE LOWER(CONCAT('%', :search, '%'))
+        )
+    )
+""")
+    Page<PatientListDTO> searchPatients(
+            @Param("search") String search,
+            @Param("clinicId") Integer clinicId,
+            Pageable pageable
+    );
 
     @Query("""
     SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO(

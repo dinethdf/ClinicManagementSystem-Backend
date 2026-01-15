@@ -134,58 +134,81 @@ public class PatientServiceImpl implements PatientService {
         return patient;
     }
 
-    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
-        Specification<Patient> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+    @Transactional(readOnly = true)
+    @Override
+    public Page<PatientListDTO> getAllPatientsPaginated(String search, Pageable pageable) {
+        try {
+            // Validation: If search is just whitespace, treat as null
+            String searchQuery = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
 
-            // Multi-Tenant Filter
-            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
+            return patientDetailsRepo.searchPatients(
+                    searchQuery,
+                    TenantContext.getCurrentTenant(),
+                    pageable
+            );
 
-//            predicates.add(cb.isTrue(root.get("isActive")));
-
-            if (StringUtils.hasText(search)) {
-                String searchLower = search.toLowerCase().trim();
-                List<Predicate> searchPredicates = new ArrayList<>();
-
-                try {
-                    Long searchId = Long.parseLong(search);
-                    searchPredicates.add(cb.equal(root.get("id"), searchId));
-                } catch (NumberFormatException ignored) {
-
-                }
-
-                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
-
-                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
-
-                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
-
-                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-
-        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
-
-        return patients.map(this::convertToPatientListDTO);
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the error properly in real apps
+            throw new ValidationException(
+                    "Error fetching patient list",
+                    "SERVER_ERROR",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
-    private PatientListDTO convertToPatientListDTO(Patient patient) {
-
-        return new PatientListDTO(
-                patient.getId(),
-                patient.getPatientNo(),
-                patient.getFirstName(),
-                patient.getLastName(),
-                patient.getMobileNo(),
-                patient.getNic(),
-                patient.getGender(),
-                patient.getAge(), // Your helper method in Patient entity
-                patient.getIsActive()
-        );
-    }
+//    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
+//        Specification<Patient> spec = (root, query, cb) -> {
+//            List<Predicate> predicates = new ArrayList<>();
+//
+//            // Multi-Tenant Filter
+//            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
+//
+////            predicates.add(cb.isTrue(root.get("isActive")));
+//
+//            if (StringUtils.hasText(search)) {
+//                String searchLower = search.toLowerCase().trim();
+//                List<Predicate> searchPredicates = new ArrayList<>();
+//
+//                try {
+//                    Long searchId = Long.parseLong(search);
+//                    searchPredicates.add(cb.equal(root.get("id"), searchId));
+//                } catch (NumberFormatException ignored) {
+//
+//                }
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
+//
+//                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
+//
+//                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
+//            }
+//
+//            return cb.and(predicates.toArray(new Predicate[0]));
+//        };
+//
+//
+//        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
+//
+//        return patients.map(this::convertToPatientListDTO);
+//    }
+//
+//    private PatientListDTO convertToPatientListDTO(Patient patient) {
+//
+//        return new PatientListDTO(
+//                patient.getId(),
+//                patient.getPatientNo(),
+//                patient.getFirstName(),
+//                patient.getLastName(),
+//                patient.getMobileNo(),
+//                patient.getNic(),
+//                patient.getGender(),
+//                patient.getAge(), // Your helper method in Patient entity
+//                patient.getIsActive()
+//        );
+//    }
 
     @Override
     @Transactional
