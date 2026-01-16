@@ -1,7 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Patient;
 
 import com.dinethdf.ClinicManagementSystem.Model.CommonUserDetails;
-import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,10 +15,6 @@ import java.time.Period;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Patient extends CommonUserDetails {
-
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumn(name = "patient_auth_id")
-    private PatientAuth patientAuth;
 
     @Column(name = "patientNo", nullable = true, unique = true, length = 100)
     private String patientNo;
@@ -48,16 +43,31 @@ public class Patient extends CommonUserDetails {
     @Column(name = "emergencyContactEmail")
     private String emergencyContactEmail;
 
-
-    @Column(name = "bloodGroup", length = 10)
+    @Column(name = "bloodGroup", nullable = true, length = 10)
     private String bloodGroup;
 
     @ManyToOne
     @JoinColumn(name = "guardian_id", referencedColumnName = "id")
     private Patient guardian;
 
-    @Column(name = "relationship_to_guardian")
+    @Column(name = "relationshipToGuardian")
     private String relationshipToGuardian;
+
+    @Column(name = "height", nullable = true)
+    private Double height; // stored in cm
+
+    @Column(name = "weight", nullable = true)
+    private Double weight; // stored in kg
+
+    @CreationTimestamp
+    @Column(name = "registrationDate", nullable = false, updatable = false)
+    private LocalDateTime registrationDate;
+
+    @Column(name = "isActive", nullable = false)
+    private Boolean isActive = false;
+
+    @Column(name = "insurance_id")
+    private Integer insuranceId;
 
     // --- Helper methods ---
     public int getAge() {
@@ -75,13 +85,12 @@ public class Patient extends CommonUserDetails {
         return getAge() < 18;
     }
 
-    @CreationTimestamp
-    @Column(name = "registrationDate", nullable = false, updatable = false)
-    private LocalDateTime registrationDate;
-
-    @Column(name = "isActive", nullable = false)
-    private Boolean isActive = false;
-
-    @Column(name = "insurance_id")
-    private Integer insuranceId;
+    // ✅ FIX: Automatically convert empty strings to NULL before saving
+    @PrePersist
+    @PreUpdate
+    private void sanitizeData() {
+        if (this.bloodGroup != null && this.bloodGroup.trim().isEmpty()) {
+            this.bloodGroup = null;
+        }
+    }
 }

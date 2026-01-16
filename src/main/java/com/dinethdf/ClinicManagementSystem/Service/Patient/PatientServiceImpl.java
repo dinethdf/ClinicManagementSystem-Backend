@@ -55,7 +55,7 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
         }
 
-        patient.setPatientAuth(null);
+//        patient.setPatientAuth(null);
 
         return ApiResponse.success(
                 patient,
@@ -73,7 +73,7 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND");
         }
 
-        patient.setPatientAuth(null);
+//        patient.setPatientAuth(null);
 
         return ApiResponse.success(
                 patient,
@@ -237,7 +237,7 @@ public class PatientServiceImpl implements PatientService {
                 patient.setCity(null);
                 patient.setDistrict(null);
                 patient.setEmail(null);
-                patient.setMobileNo(null);
+                patient.setMobileNo(patient.getGuardian().getMobileNo()); // need add mobile No for the filter thigns
                 patient.setLandNo(null);
             }
 //            patient.setRegistrationDate(LocalDateTime.now());
