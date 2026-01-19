@@ -16,7 +16,7 @@ public class SmsService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public boolean sendPaymentSms(String recipientPhone, String messageText) {
+    public boolean sendDetailsSms(String recipientPhone, String messageText) {
         try {
             String url = "https://app.text.lk/api/http/sms/send";
 
