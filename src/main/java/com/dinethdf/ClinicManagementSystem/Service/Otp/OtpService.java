@@ -68,7 +68,7 @@ public class OtpService {
         if (smsEnabled) {
             if (entity.getDailySmsCount() < 2) {
                 String message = "CureGuard Verification Code: " + otp;
-                boolean success = smsService.sendPaymentSms(mobile, message);
+                boolean success = smsService.sendDetailsSms(mobile, message);
 
                 if (success) {
                     entity.setDailySmsCount(entity.getDailySmsCount() + 1);
