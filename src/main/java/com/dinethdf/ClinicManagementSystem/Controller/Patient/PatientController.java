@@ -157,6 +157,17 @@ public class PatientController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PostMapping("/create-login/{patientId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<String>> createLogin(@PathVariable Long patientId) {
+
+        patientServiceImpl.createPatientLogin(patientId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Login created successfully. Credentials sent to patient's email.",
+                "SUCCESS"
+        ));
+    }
 
 //    @PreAuthorize("hasAnyAuthority('PATIENT')")
 //    @PostMapping("details/self")

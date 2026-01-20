@@ -83,8 +83,8 @@ public class PatientAuth {
         this.detailsId = id;
     }
 
-    public void setTempCredential(Boolean tempCredential) {
-        isTempCredential = tempCredential;
+    public void setIsTempCredential(Boolean tempCredential) {
+        this.isTempCredential = tempCredential;
     }
     @Override
     public String toString() {

@@ -113,7 +113,7 @@ CREATE TABLE otpVerification (
     id INT AUTO_INCREMENT NOT NULL,
     clinic_id INT NOT NULL, -- <--- NEW: Tenant Link
 
-    mobileNo VARCHAR(20) NOT NULL,
+    mobileNo VARCHAR(40) NOT NULL,
     email VARCHAR(100) DEFAULT NULL,
     otpCode VARCHAR(10) NOT NULL,
     expiresAt DATETIME NOT NULL,
@@ -169,8 +169,11 @@ CREATE TABLE patient (
     mobileNo VARCHAR(20) DEFAULT NULL,
     landNo VARCHAR(20),
 
+    height DECIMAL(5,2) DEFAULT NULL, -- Added
+    weight DECIMAL(5,2) DEFAULT NULL, -- Added
+
     guardian_id INT DEFAULT NULL,
-    relationship_to_guardian VARCHAR(50),
+    relationshipToGuardian VARCHAR(50),
 
     emergencyContactName VARCHAR(100),
     emergencyContactRelationship VARCHAR(50),

@@ -6,9 +6,13 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserRole;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
+import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.PatientRepo;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import com.dinethdf.ClinicManagementSystem.util.PatientValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,8 +38,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private MessageSourceUtil messageSourceUtil;
 
-//    @Autowired
-//    PatientAuthService patientAuthService;
+    @Autowired private PatientRepo patientAuthRepo;
+
+    @Autowired private EmailService emailService;
 
     @Autowired
     PatientValidator patientValidator;
@@ -314,6 +320,55 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException(messageSourceUtil.getMessage("patient.register.error"),  "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+
+    @Transactional
+    public void createPatientLogin(Long patientId) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        Patient patient = patientDetailsRepo.findById(patientId).orElseThrow(
+                () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+        // 2. Validate Email
+        if (patient.getEmail() == null || patient.getEmail().trim().isEmpty()) {
+            throw new ValidationException("Patient does not have an email address. Please update patient profile first.", "EMAIL_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+
+        // 3. Check if Login already exists
+        if (patientAuthRepo.findByEmailAndClinicId(patient.getEmail(), clinicId) != null) {
+            throw new ValidationException("Login account already exists for this patient.", "ACCOUNT_EXISTS", HttpStatus.BAD_REQUEST);
+        }
+
+        // 4. Generate 5-Digit Temp Password
+        String tempPassword = String.valueOf((int) (Math.random() * 90000) + 10000); // 10000 to 99999
+
+        // 5. Create Patient Auth Entity
+        PatientAuth newAuth = new PatientAuth();
+        newAuth.setClinicId(clinicId);
+        newAuth.setEmail(patient.getEmail());
+        newAuth.setPassword(encoder.encode(tempPassword)); // Hash it
+        newAuth.setEnable(true); // Active by default
+        newAuth.setIsTempCredential(true);
+
+        UserRole patientRole = new UserRole();
+        patientRole.setId(4);
+        newAuth.setRole(patientRole);
+        newAuth.setDetailsId(patient.getId());
+
+        patientAuthRepo.save(newAuth);
+
+//        patient.set
+
+        // 6. Send Email
+        String subject = "Welcome to CureGuard - Your Login Details";
+        String htmlContent = "<h3>Welcome " + patient.getFirstName() + "!</h3>" +
+                "<p>Your patient portal account has been created.</p>" +
+                "<p><b>Username:</b> " + patient.getEmail() + "</p>" +
+                "<p><b>Temporary Password:</b> <span style='font-size: 16px; font-weight: bold; color: blue;'>" + tempPassword + "</span></p>" +
+                "<p>Please log in and change your password immediately.</p>";
+
+        emailService.sendHtmlEmail(patient.getEmail(), subject, htmlContent);
     }
 
     @Override
