@@ -7,4 +7,6 @@ import java.util.Optional;
 public interface OtpRepo extends JpaRepository<OtpVerification, Long> {
     // Scoped to Clinic
     Optional<OtpVerification> findByMobileNoAndClinicId(String mobileNo, Integer clinicId);
+
+    Optional<OtpVerification> findByEmailAndClinicId(String email, Integer clinicId);
 }
