@@ -226,10 +226,13 @@ public class DoctorServiceImpl implements DoctorService {
         doctor.setExperienceYears(requestDto.getExperienceYears());
         doctor.setEmail(requestDto.getEmail());
 
-
-//        if(doctor.getUserAuth() != null) {
-//          doctor.getUserAuth().setEmail(requestDto.getEmail()); // This one Need Auth Update
-//        }
+        // 2. Update Linked UserAuth Email (Uncommented and fixed)
+        if (doctor.getUserAuth() != null) {
+            // Check if the new email is different from the old auth email
+            if (!doctor.getUserAuth().getEmail().equals(requestDto.getEmail())) {
+                doctor.getUserAuth().setEmail(requestDto.getEmail());
+            }
+        }
 
         if(requestDto.getSpecializationId() != null) {
             Specialization spec = specializationRepo.findById(requestDto.getSpecializationId())

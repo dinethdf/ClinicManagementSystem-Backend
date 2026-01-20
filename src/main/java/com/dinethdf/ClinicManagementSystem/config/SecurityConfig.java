@@ -62,9 +62,10 @@ public class SecurityConfig {
 //                      .requestMatchers("api/patient/get-details/staff/**").permitAll()
                          .requestMatchers("/api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF", "DOCTOR")
 
-                         .requestMatchers("/api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("/api/auth/staff/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("/api/auth/patient/**").hasAnyAuthority("PATIENT")
                          .requestMatchers("/api/staff/**").hasAnyAuthority("ADMIN")
-
+                         .requestMatchers("/api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("/api/schedules/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                          .requestMatchers("/api/lab/types/**").hasAnyAuthority("ADMIN", "USER")
                          .requestMatchers("/api/lab/requests/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR", "PATIENT")

@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "otpVerification",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"clinic_id", "mobileNo"}) // Unique per Clinic
+                @UniqueConstraint(columnNames = {"clinic_id", "mobileNo", "email"}) // Unique per Clinic
         }
 )
 public class OtpVerification {

@@ -53,17 +53,17 @@ public class DoctorController {
         ));
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<Doctor>>> getAllDoctors() {
-        List<Doctor> doctors = doctorServiceImpl.getAllDoctors();
-
-        ApiResponse<List<Doctor>> response = ApiResponse.success(
-                doctors,
-                "Successfully retrieved all doctors"
-        );
-        return ResponseEntity.ok(response);
-    }
+//    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+//    @GetMapping
+//    public ResponseEntity<ApiResponse<List<Doctor>>> getAllDoctors() {
+//        List<Doctor> doctors = doctorServiceImpl.getAllDoctors();
+//
+//        ApiResponse<List<Doctor>> response = ApiResponse.success(
+//                doctors,
+//                "Successfully retrieved all doctors"
+//        );
+//        return ResponseEntity.ok(response);
+//    }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @GetMapping("get-details/staff/{id}")
