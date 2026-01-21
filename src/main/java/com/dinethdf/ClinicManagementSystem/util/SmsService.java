@@ -18,22 +18,27 @@ public class SmsService {
 
     public boolean sendDetailsSms(String recipientPhone, String messageText) {
         try {
-            String url = "https://app.text.lk/api/http/sms/send";
+            // 1. Define URL with {placeholders} for the parameters
+            // This keeps the URL clean and tells RestTemplate where to put the data
+            String url = "https://app.text.lk/api/http/sms/send?api_token={api_token}&recipient={recipient}&sender_id={sender_id}&type={type}&message={message}";
 
-            Map<String, String> payload = new HashMap<>();
-            payload.put("api_token", apiToken);
-            payload.put("recipient", recipientPhone);
-            payload.put("sender_id", "CureGuard");
-            payload.put("type", "plain");
-            payload.put("message", messageText);
+            // 2. Put details into a Map (Just like your 2nd example)
+            Map<String, String> params = new HashMap<>();
+            params.put("api_token", apiToken);
+            params.put("recipient", recipientPhone);
+            params.put("sender_id", "CureGuard");
+            params.put("type", "plain");
+            params.put("message", messageText); // RestTemplate will handle spaces/encoding automatically
 
-            ResponseEntity<String> response = restTemplate.postForEntity(url, payload, String.class);
-            System.out.println(response);
+            // 3. Use GET method (The one that works)
+            // Passing 'params' as the 3rd argument automatically fills the {placeholders}
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class, params);
+
+            System.out.println("SMS Response: " + response.getBody());
             return response.getStatusCode().is2xxSuccessful();
-//            return false;
 
         } catch (Exception e) {
-            System.err.println("CureGuard API failed: " + e.getMessage());
+            System.err.println("CureGuard SMS Failed: " + e.getMessage());
             return false;
         }
     }
