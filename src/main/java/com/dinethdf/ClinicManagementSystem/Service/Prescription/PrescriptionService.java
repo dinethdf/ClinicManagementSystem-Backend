@@ -9,4 +9,5 @@ public interface PrescriptionService {
     ApiResponse<PrescriptionResponseDTO> getPrescriptionByAppointment(Long appointmentId);
     ApiResponse<PrescriptionResponseDTO> getPrescriptionById(Long id);
     ApiResponse<PrescriptionResponseDTO> updatePrescription(Long id, PrescriptionRequestDTO request, String updatedBy);
+    ApiResponse<PrescriptionResponseDTO> getPrescriptionForPatient(Long appointmentId, Long patientId);
 }

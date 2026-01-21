@@ -195,4 +195,31 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         return dto;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<PrescriptionResponseDTO> getPrescriptionForPatient(Long appointmentId, Long patientId) {
+
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Fetch the Appointment first to validate ownership
+        Appointment appointment = appointmentRepo.findById(appointmentId)
+                .orElseThrow(() -> new ValidationException("Appointment not found", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // 2. SECURITY: Check Tenant
+        if (!Objects.equals(appointment.getClinicId(), clinicId)) {
+            throw new ValidationException("Appointment not found", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+
+        // 3. SECURITY: Check if this appointment actually belongs to the logged-in Patient
+        if (!Objects.equals(appointment.getPatient().getId(), patientId)) {
+            throw new ValidationException("Access denied. This appointment does not belong to you.", "ACCESS_DENIED", HttpStatus.FORBIDDEN);
+        }
+
+        // 4. Fetch the Prescription
+        Prescription prescription = prescriptionRepo.findByAppointmentIdAndClinicId(appointmentId, clinicId)
+                .orElseThrow(() -> new ValidationException("No prescription issued for this appointment yet.", "PRESCRIPTION_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        return ApiResponse.success(mapToResponseDTO(prescription), "Prescription retrieved successfully");
+    }
 }
