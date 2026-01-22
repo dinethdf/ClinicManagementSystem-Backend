@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/queue")
-@CrossOrigin(origins = "*") // Allow requests from Next.js
 public class QueueController {
 
     @Autowired

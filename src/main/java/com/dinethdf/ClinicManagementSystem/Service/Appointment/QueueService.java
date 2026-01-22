@@ -102,7 +102,12 @@ public class QueueService {
                 .child("status").setValueAsync("COMPLETED");
     }
 
-    public void cancelAppointment(Long clinicId, Long scheduleId, int queueNo) {
+    public void cancelAppointment(Long clinicId, Long scheduleId, Integer queueNo) {
+        if (queueNo == null || queueNo <= 0) {
+            System.err.println("Cannot cancel Firebase appointment: Queue Number is missing.");
+            return;
+        }
+
         DatabaseReference ref = FirebaseDatabase.getInstance()
                 .getReference("clinics/" + clinicId + "/schedules/" + scheduleId + "/appointments/" + queueNo);
 

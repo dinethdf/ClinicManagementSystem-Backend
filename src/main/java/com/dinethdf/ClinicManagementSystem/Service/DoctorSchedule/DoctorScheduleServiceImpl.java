@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.Model.Doctor.Doctor;
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Appointment.QueueService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorScheduleMapper;
@@ -35,6 +36,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     private final DoctorRepo doctorRepo;
     private final DoctorScheduleMapper mapper;
     private final MessageSourceUtil messageSourceUtil;
+
+    // 1. Inject the QueueService
+    private final QueueService queueService;
 
     @Override
     @Transactional(readOnly = true)
@@ -113,6 +117,34 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .build();
 
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(newSchedule);
+
+        // 3. Initialize Firebase Queue (Async / Fire-and-Forget)
+        try {
+            // Formatting data for the service call
+            String fullDoctorName = savedSchedule.getDoctor().getFirstName() + " " + savedSchedule.getDoctor().getLastName();
+            String timeRange = savedSchedule.getStartTime() + " - " + savedSchedule.getEndTime();
+
+
+            String specializationName = String.valueOf(savedSchedule.getDoctor().getSpecialization().getName());
+
+            queueService.initializeSchedule(
+                    Long.valueOf(savedSchedule.getClinicId()),
+                    "Cure Guard",
+                    "045*******",
+                    savedSchedule.getId(),
+                    fullDoctorName,
+                    specializationName,
+                    savedSchedule.getScheduleDate().toString(),
+                    timeRange
+            );
+
+            System.out.println("Firebase Schedule Initialized for ID: {}" + savedSchedule.getId());
+
+        } catch (Exception e) {
+            // Log error but allow normal flow to continue
+            System.out.println("Failed to initialize Firebase Schedule: {}" + e.getMessage());
+        }
+
         return mapper.toResponseDTO(savedSchedule);
     }
 
