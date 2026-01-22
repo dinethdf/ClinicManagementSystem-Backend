@@ -93,4 +93,50 @@ public class SessionSummaryService {
             throw new JRException("Database connection error", e);
         }
     }
+
+    public ByteArrayOutputStream generateDoctorWiseSummaryReport(Integer clinicId, Long doctorId, String startDateStr, String endDateStr, String lang) throws JRException, IOException {
+
+        final String reportPath = "/reports/SessionReport/DoctorWiseSummaryReport.jrxml";
+
+        InputStream reportStream = getClass().getResourceAsStream(reportPath);
+        if (reportStream == null) {
+            throw new FileNotFoundException("Report file not found in resources: " + reportPath);
+        }
+        Map<String, Object> parameters = new HashMap<>();
+
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            if (startDateStr != null && !startDateStr.equals("0")) {
+                parameters.put("p_startDate", dateFormat.parse(startDateStr));
+            }
+            if (endDateStr != null && !endDateStr.equals("0")) {
+                parameters.put("p_endDate", dateFormat.parse(endDateStr));
+            }
+        } catch (Exception e) {
+            throw new JRException("Invalid Date Format. Expected yyyy-MM-dd", e);
+        }
+
+        parameters.put("p_clinicId", clinicId);
+        parameters.put("p_doctor_id", null);
+
+                parameters.putIfAbsent("mainTitle", "Doctor Session Summary");
+        parameters.putIfAbsent("companyName", "Cure Guard Clinic");
+
+        // 6. Generate Report
+        try (Connection connection = dataSource.getConnection()) {
+
+            JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, connection);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
+
+            return outputStream;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new JRException("Database connection error", e);
+        }
+    }
 }

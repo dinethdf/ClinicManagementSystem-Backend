@@ -102,5 +102,34 @@ public class AdminReportController {
         }
 
 
+    @GetMapping("/v1.0/reports/doctor-wise-summary")
+    public ResponseEntity<byte[]> getDoctorWiseSummaryReport(
+            @RequestParam(name = "clinicId") Integer clinicId,
+            @RequestParam(name = "doctorId", required = false) Long doctorId,
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            @RequestParam(name = "lang", defaultValue = "en") String lang
+    ) {
+        try {
+            // Call the service
+            ByteArrayOutputStream outputStream = sessionSummaryService.generateDoctorWiseSummaryReport(clinicId, doctorId, startDate, endDate, lang);
+
+            // Prepare Response
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+
+            // Filename for the browser
+            String filename = "Doctor_Wise_Summary_" + startDate + "_to_" + endDate + ".pdf";
+            headers.add("Content-Disposition", "inline; filename=" + filename);
+
+            return new ResponseEntity<>(outputStream.toByteArray(), headers, HttpStatus.OK);
+
+        } catch (JRException | IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
 }
