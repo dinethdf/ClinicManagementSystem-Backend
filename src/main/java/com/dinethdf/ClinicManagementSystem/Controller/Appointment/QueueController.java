@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/queue")
-@CrossOrigin(origins = "*") // Allow requests from Next.js
 public class QueueController {
 
     @Autowired
@@ -75,6 +74,14 @@ public class QueueController {
         return ResponseEntity.ok("Token #" + tokenNo + " marked as COMPLETED");
     }
 
+    @PostMapping("/wait-again-patient")
+    public ResponseEntity<String> againWaitPatient(@RequestParam Long clinicId,
+                                                @RequestParam Long scheduleId,
+                                                @RequestParam int tokenNo) {
+        queueService.cancelAppointment(clinicId, scheduleId, tokenNo);
+        return ResponseEntity.ok("Token #" + tokenNo + " marked as Wait again");
+    }
+
     @PostMapping("/cancel-patient")
     public ResponseEntity<String> cancelPatient(@RequestParam Long clinicId,
                                                 @RequestParam Long scheduleId,
@@ -82,4 +89,5 @@ public class QueueController {
         queueService.cancelAppointment(clinicId, scheduleId, tokenNo);
         return ResponseEntity.ok("Token #" + tokenNo + " marked as CANCELLED");
     }
+
 }
