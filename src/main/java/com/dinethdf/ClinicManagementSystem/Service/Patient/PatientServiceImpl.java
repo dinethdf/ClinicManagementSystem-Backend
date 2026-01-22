@@ -699,7 +699,6 @@ public class PatientServiceImpl implements PatientService {
 
     private void handleDataIntegrityViolation(String rootCauseMessage) {
         if (rootCauseMessage == null) {
-            // Throw a generic error if the message is null for some reason
             throw new ValidationException(
                     messageSourceUtil.getMessage("database.error.generic"),
                     "DATABASE_ERROR",
@@ -709,11 +708,14 @@ public class PatientServiceImpl implements PatientService {
         }
 
         String lowerCaseMessage = rootCauseMessage.toLowerCase();
-        System.out.println(lowerCaseMessage); // For debugging
+        System.out.println("DB Error: " + lowerCaseMessage); // Debugging
 
         // 1. Check for Duplicate Entry errors
         if (lowerCaseMessage.contains("duplicate entry")) {
-            if (lowerCaseMessage.contains("'nic'") || lowerCaseMessage.contains(".nic'")) {
+
+            // FIX: Remove the single quotes from the check.
+            // Just check if the message contains the column/constraint name string.
+            if (lowerCaseMessage.contains("nic")) {
                 throw new ValidationException(
                         messageSourceUtil.getMessage("patient.nic.exists.error"),
                         "NIC_DUPLICATE",
@@ -721,6 +723,7 @@ public class PatientServiceImpl implements PatientService {
                         HttpStatus.BAD_REQUEST
                 );
             }
+
             if (lowerCaseMessage.contains("email")) {
                 throw new ValidationException(
                         messageSourceUtil.getMessage("patient.email.exists.error"),
@@ -729,7 +732,8 @@ public class PatientServiceImpl implements PatientService {
                         HttpStatus.BAD_REQUEST
                 );
             }
-            if (lowerCaseMessage.contains("mobileno")) {
+
+            if (lowerCaseMessage.contains("mobileno") || lowerCaseMessage.contains("mobile")) {
                 throw new ValidationException(
                         messageSourceUtil.getMessage("patient.mobileNo.exists.error"),
                         "MOBILENO_DUPLICATE",
@@ -737,7 +741,8 @@ public class PatientServiceImpl implements PatientService {
                         HttpStatus.BAD_REQUEST
                 );
             }
-            // Generic duplicate error if a specific field isn't matched
+
+            // Generic duplicate error
             throw new ValidationException(
                     messageSourceUtil.getMessage("patient.register.error"),
                     "DUPLICATE_ENTRY",
@@ -747,16 +752,16 @@ public class PatientServiceImpl implements PatientService {
         }
 
         // 2. Check for Not-Null Constraint errors
-        if (lowerCaseMessage.contains("cannot be null")) {
+        if (lowerCaseMessage.contains("cannot be null") || lowerCaseMessage.contains("doesn't have a default value")) {
             throw new ValidationException(
-                    messageSourceUtil.getMessage("validation.field.notnull"), // e.g., "A required field was left empty."
+                    messageSourceUtil.getMessage("validation.field.notnull"),
                     "NOT_NULL_VIOLATION",
                     null,
                     HttpStatus.BAD_REQUEST
             );
         }
 
-        // 3. Fallback for any other DataIntegrityViolationException
+        // 3. Fallback
         throw new ValidationException(
                 messageSourceUtil.getMessage("database.error.generic"),
                 "DATABASE_INTEGRITY_ERROR",
