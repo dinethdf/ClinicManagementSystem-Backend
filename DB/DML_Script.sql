@@ -71,10 +71,10 @@ VALUES
 
 -- 7. Schedules (Linked to Clinic 1)
 INSERT INTO doctorSchedule (id, clinic_id, doctor_id, scheduleDate, startTime, endTime, doctorFee, clinicFee, maxPatientCount, isActive, createdDate, createdBy) VALUES
-(1, 1, 1, '2025-12-10', '09:00:00', '12:00:00', 3500.00, 1500.00, 35, 1, NOW(), 'kamal.perera'),
-(2, 1, 1, '2025-12-12', '14:00:00', '17:00:00', 3500.00, 1500.00, 12, 1, NOW(), 'kamal.perera'),
-(11, 1, 2, '2025-12-10', '10:00:00', '12:00:00', 2500.00, 1500.00, 10, 1, NOW(), 'saman.fernando'),
-(21, 1, 3, '2025-12-11', '08:30:00', '10:00:00', 3000.00, 1500.00, 8, 1, NOW(), 'nimali.jayasinghe');
+(1, 1, 1, '2026-01-21', '09:00:00', '12:00:00', 3500.00, 1500.00, 35, 1, NOW(), 'kamal.perera'),
+(2, 1, 1, '2026-01-21', '14:00:00', '17:00:00', 3500.00, 1500.00, 12, 1, NOW(), 'kamal.perera'),
+(11, 1, 2, '2026-01-21', '10:00:00', '12:00:00', 2500.00, 1500.00, 10, 1, NOW(), 'saman.fernando'),
+(21, 1, 3, '2026-01-21', '08:30:00', '10:00:00', 3000.00, 1500.00, 8, 1, NOW(), 'nimali.jayasinghe');
 
 
 -- 8. Global Items
@@ -83,7 +83,8 @@ INSERT INTO item_types (typeName, description) VALUES
 ('LAB_TEST', 'Laboratory Test Request'),
 ('PHARMACY', 'Pharmacy Sale or Prescription'),
 ('DOCTOR_DISCOUNT', 'Discount given by the doctor'),
-('CLINIC_DISCOUNT', 'Discount or promotion from the clinic');
+('CLINIC_DISCOUNT', 'Discount or promotion from the clinic'),
+('OTHER_DISCOUNT', 'Discount or promotion from outside Buisness');
 
 
 -- 9. Transactional Data for Clinic 1 (Schedule 2)

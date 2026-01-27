@@ -1,0 +1,124 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_GetDoctorWiseSummaryReport$$
+
+CREATE PROCEDURE sp_GetDoctorWiseSummaryReport(
+    IN p_clinic_id INT,
+    IN p_doctor_id INT,
+    IN p_startDate DATE,
+    IN p_endDate DATE
+)
+BEGIN
+    SELECT
+        -- 1. Doctor Details
+        d.id AS DoctorID,
+        CONCAT(d.firstName, ' ', d.lastName) AS DoctorName,
+        spec.name AS Specialization,
+        d.slmcNumber AS SLMCNumber,
+
+        -- 2. Schedule Summary
+        COUNT(DISTINCT ds.id) AS TotalSchedules,
+        MIN(ds.scheduleDate) AS FirstScheduleDate,
+        MAX(ds.scheduleDate) AS LastScheduleDate,
+
+        -- 3. Appointment Counts
+        -- (Using COUNT() here is safe now because the duplicates are removed by the Subquery below)
+        COUNT(appt.id) AS TotalAppointments,
+        SUM(CASE WHEN appt.status = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedAppointments,
+        SUM(CASE WHEN appt.status = 'BOOKED' THEN 1 ELSE 0 END) AS BookedAppointments,
+        SUM(CASE WHEN appt.status = 'NOSHOW' THEN 1 ELSE 0 END) AS NoShowAppointments,
+
+        -- 4. Doctor Financials
+        COALESCE(SUM(ds.doctorFee), 0) AS TotalBaseDoctorFee,
+
+        -- Only subtract DOCTOR_DISCOUNT
+        COALESCE(SUM(ItemAgg.DocDiscount), 0) AS TotalDoctorDiscount,
+
+        (COALESCE(SUM(ds.doctorFee), 0) + COALESCE(SUM(ItemAgg.DocDiscount), 0)) AS NetDoctorPay,
+
+        -- 5. Clinic Financials
+        COALESCE(SUM(ds.clinicFee), 0) AS TotalBaseClinicFee,
+
+        -- Only subtract CLINIC_DISCOUNT
+        COALESCE(SUM(ItemAgg.ClinicDiscount), 0) AS TotalClinicDiscount,
+
+        (COALESCE(SUM(ds.clinicFee), 0) + COALESCE(SUM(ItemAgg.ClinicDiscount), 0)) AS NetClinicProfit,
+
+        -- 6. Total Revenue (Doctor Net + Clinic Net)
+        -- Note: This IGNORES 'OTHER_DISCOUNT' entirely, as requested.
+        (
+            COALESCE(SUM(ds.doctorFee + ds.clinicFee), 0) +
+            COALESCE(SUM(ItemAgg.TotalTrackedDiscount), 0)
+        ) AS TotalRevenue,
+
+        -- 7. Averages
+        COALESCE(AVG(ds.doctorFee), 0) AS AvgDoctorFee,
+        COALESCE(AVG(ds.clinicFee), 0) AS AvgClinicFee
+
+    FROM
+        doctor d
+
+    -- Join Specialization
+    JOIN specialization spec ON d.specialization_id = spec.id
+
+    -- Join Doctor Schedules
+    JOIN doctorSchedule ds ON d.id = ds.doctor_id
+        AND ds.clinic_id = p_clinic_id
+        AND ds.scheduleDate BETWEEN p_startDate AND p_endDate
+
+    -- Join Appointments
+    JOIN appointments appt ON ds.id = appt.doctor_schedule_id
+        AND appt.clinic_id = p_clinic_id
+        AND appt.status != 'CANCELLED'
+
+    -- Join Invoices
+    LEFT JOIN invoices inv ON appt.invoice_id = inv.id
+        AND inv.clinic_id = p_clinic_id
+
+    -- [[ THE FIX ]] -----------------------------------------------------------
+    -- Subquery to pre-calculate discounts per invoice.
+    -- This prevents the "3 vs 4" duplicate row error.
+    LEFT JOIN (
+        SELECT
+            ii.invoice_id,
+
+            -- Specific logic for Doctor Side
+            SUM(CASE WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount ELSE 0 END) AS DocDiscount,
+
+            -- Specific logic for Clinic Side
+            SUM(CASE WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount ELSE 0 END) AS ClinicDiscount,
+
+            -- Total for Revenue Calculation (Excludes OTHER_DISCOUNT)
+            SUM(CASE
+                WHEN it.typeName IN ('DOCTOR_DISCOUNT', 'CLINIC_DISCOUNT') THEN ii.amount
+                ELSE 0 -- <--- 'OTHER_DISCOUNT' is ignored here
+            END) AS TotalTrackedDiscount
+
+        FROM invoice_items ii
+        JOIN item_types it ON ii.item_type_id = it.id
+        WHERE ii.clinic_id = p_clinic_id
+        GROUP BY ii.invoice_id
+    ) AS ItemAgg ON inv.id = ItemAgg.invoice_id
+    -- -------------------------------------------------------------------------
+
+    WHERE
+        d.clinic_id = p_clinic_id
+        AND (p_doctor_id IS NULL OR d.id = p_doctor_id)
+
+    GROUP BY
+        d.id, d.firstName, d.lastName, spec.name, d.slmcNumber
+
+    ORDER BY
+        TotalAppointments DESC, d.firstName ASC;
+END$$
+
+DELIMITER ;
+
+-- 1. Get summary for ALL doctors in the clinic
+CALL sp_GetDoctorWiseSummaryReport(1, NULL, '2025-01-01', '2026-12-31');
+
+-- 2. Get summary for a SPECIFIC doctor (e.g., doctor_id = 5)
+CALL sp_GetDoctorWiseSummaryReport(1, 10, '2024-01-01', '2027-01-31');
+
+-- 3. Get summary for wider date range
+CALL sp_GetDoctorWiseSummaryReport(1, NULL, '2025-01-01', '2025-12-31');
