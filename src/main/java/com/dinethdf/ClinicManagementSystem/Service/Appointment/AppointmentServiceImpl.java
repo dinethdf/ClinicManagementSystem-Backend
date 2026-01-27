@@ -106,34 +106,45 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new ValidationException("Appointment is CANCELLED.", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
         }
 
+        // 1. Fetch Raw Flat Data
         List<InvoiceAppointmentFlatDTO> rawData = appointmentRepo.findRawInvoicesByAppointmentId(appointmentId, TenantContext.getCurrentTenant());
 
         if (rawData.isEmpty()) {
             throw new ValidationException("No invoices generated for this appointment yet.", "NO_INVOICES", HttpStatus.NOT_FOUND);
         }
 
+        // 2. Group by Invoice ID (One Invoice -> Many Items)
         Map<Long, List<InvoiceAppointmentFlatDTO>> groupedByInvoice = rawData.stream()
                 .collect(Collectors.groupingBy(InvoiceAppointmentFlatDTO::getInvoiceId));
 
         List<AppointmentInvoiceViewDTO> resultList = new ArrayList<>();
 
+        // 3. Map to View DTO
         for (Map.Entry<Long, List<InvoiceAppointmentFlatDTO>> entry : groupedByInvoice.entrySet()) {
             List<InvoiceAppointmentFlatDTO> invoiceRows = entry.getValue();
 
-            if(invoiceRows.isEmpty()) continue;
+            if (invoiceRows.isEmpty()) continue;
 
+            // Use the first row to populate common headers
             InvoiceAppointmentFlatDTO header = invoiceRows.get(0);
 
             AppointmentInvoiceViewDTO dto = new AppointmentInvoiceViewDTO();
+
+            // --- Invoice Header ---
             dto.setInvoiceId(header.getInvoiceId());
-            if (header.getInvoiceDate() != null) {
-                dto.setDateIssued(header.getInvoiceDate().toLocalDate());
-            }
+            dto.setDateIssued(header.getInvoiceDate()); // Matches LocalDateTime in your updated DTO
+            dto.setDatePaidDate(header.getPaidDate());  // NEW: Matches LocalDateTime
             dto.setStatus(header.getInvoiceStatus());
             dto.setSubtotal(header.getSubtotal());
             dto.setTotalDiscount(header.getTotalDiscount());
             dto.setFinalAmount(header.getFinalAmount());
 
+            // --- NEW: Payment Details ---
+            dto.setPaymentMethod(header.getPaymentMethod());
+            dto.setAmountPaid(header.getAmountPaid());
+            dto.setTransactionId(header.getTransactionId());
+
+            // --- Patient Info ---
             dto.setPatientNo(header.getPatientNo());
             dto.setPatientName(header.getPatientFirstName() + " " + header.getPatientLastName());
             dto.setPatientAddress((header.getPatientAddress() != null ? header.getPatientAddress() : "") +
@@ -141,18 +152,29 @@ public class AppointmentServiceImpl implements AppointmentService {
             dto.setPatientDob(header.getPatientDob());
             dto.setPatientContactNo(header.getPatientMobile());
 
+
+
+            // --- Appointment Info ---
             dto.setAppointmentId(header.getApptId());
             dto.setAppointmentNumber(header.getApptNumber());
             dto.setAppointmentNote(header.getApptNote());
-            dto.setDoctorName("Dr. " + header.getDoctorFirstName() + " " + header.getDoctorLastName());
+            dto.setAppointmentDate(header.getScheduleDate());
+            dto.setAppointmentTime(header.getScheduleStartTime());
+            dto.setQueuePosition(header.getQueuePosition());
+            dto.setScheduleId(header.getScheduleId());
+
+            if (header.getDoctorFirstName() != null) {
+                dto.setDoctorName("Dr. " + header.getDoctorFirstName() + " " + header.getDoctorLastName());
+            }
             dto.setDoctorSpecialization(header.getDoctorSpec());
 
+            // --- Map Items ---
             List<InvoiceItemViewDTO> items = invoiceRows.stream().map(row -> {
                 InvoiceItemViewDTO item = new InvoiceItemViewDTO();
                 item.setDescription(row.getItemDescription());
                 item.setTypeName(row.getItemType());
                 item.setUnitPrice(row.getItemAmount());
-                item.setQuantity(1);
+                item.setQuantity(1); // Assuming 1 for now unless you have a qty column
                 item.setTotalAmount(row.getItemAmount());
                 return item;
             }).collect(Collectors.toList());

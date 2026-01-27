@@ -85,6 +85,8 @@ public class SecurityConfig {
                          .requestMatchers("/api/report/admin/**").hasAnyAuthority("ADMIN", "USER")
 
                          .requestMatchers("/api/queue/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+
+                         .requestMatchers("/api/clinic/info/**").authenticated()
                  )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->
