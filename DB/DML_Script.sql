@@ -4,9 +4,13 @@
 USE clinicmsystem;
 
 -- 1. Create the Default Tenant (Clinic)
-INSERT INTO clinics (id, name, subdomain, status, max_doctors, max_patients, createdDate)
-VALUES (1, 'City Hospital', 'city', 'ACTIVE', 10, 50000, NOW()),
-(2, 'SenaraHospital', 'cenara', 'ACTIVE', 10, 100000, NOW());
+INSERT INTO clinics ( name, subdomain, address, city, district, mobile_no, land_no, email, website,
+logo_url, status, subscription_plan, max_doctors, max_patients, expiry_date, createdDate )
+VALUES
+( 'City Care Hospital', 'citycare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk',
+'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() ),
+( 'ABCD Hospital', 'abcdCare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk',
+'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() );
 
 -- 2. Master Roles
 INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');
@@ -71,10 +75,10 @@ VALUES
 
 -- 7. Schedules (Linked to Clinic 1)
 INSERT INTO doctorSchedule (id, clinic_id, doctor_id, scheduleDate, startTime, endTime, doctorFee, clinicFee, maxPatientCount, isActive, createdDate, createdBy) VALUES
-(1, 1, 1, '2026-01-21', '09:00:00', '12:00:00', 3500.00, 1500.00, 35, 1, NOW(), 'kamal.perera'),
-(2, 1, 1, '2026-01-21', '14:00:00', '17:00:00', 3500.00, 1500.00, 12, 1, NOW(), 'kamal.perera'),
-(11, 1, 2, '2026-01-21', '10:00:00', '12:00:00', 2500.00, 1500.00, 10, 1, NOW(), 'saman.fernando'),
-(21, 1, 3, '2026-01-21', '08:30:00', '10:00:00', 3000.00, 1500.00, 8, 1, NOW(), 'nimali.jayasinghe');
+(1, 1, 1, '2026-01-24', '18:00:00', '20:00:00', 3500.00, 1500.00, 35, 1, NOW(), 'kamal.perera'),
+(2, 1, 1, '2026-01-24', '14:00:00', '17:00:00', 3500.00, 1500.00, 12, 1, NOW(), 'kamal.perera'),
+(11, 1, 2, '2026-01-24', '10:00:00', '12:00:00', 2500.00, 1500.00, 10, 1, NOW(), 'saman.fernando'),
+(21, 1, 3, '2026-01-24', '08:30:00', '10:00:00', 3000.00, 1500.00, 8, 1, NOW(), 'nimali.jayasinghe');
 
 
 -- 8. Global Items
@@ -242,3 +246,70 @@ VALUES
 UPDATE `doctorSchedule`
 SET `registeredPatientCount` = '3', `lastQueueNumber` = '3'
 WHERE `clinic_id` = 2 AND `doctor_id` = 7;
+
+
+INSERT INTO lab_test_types (
+    clinic_id,
+    name,
+    code,
+    description,
+    test_fee,
+    clinic_fee,
+    isActive,
+    isApproved,
+    createdDate,
+    createdBy,
+    updatedDate,
+    updatedBy,
+    approvedDate,
+    approvedBy
+)
+VALUES
+(
+    1,
+    'Full Blood Count',
+    'FBC',
+    'Complete blood count test',
+    1500.00,
+    300.00,
+    1,
+    1,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NOW(),
+    'admin'
+),
+(
+    1,
+    'Lipid Profile',
+    'LP',
+    'Measures cholesterol and triglycerides',
+    3500.00,
+    500.00,
+    1,
+    0,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NULL,
+    NULL
+),
+(
+    2,
+    'Fasting Blood Sugar',
+    'FBS',
+    'Blood sugar level after fasting',
+    1200.00,
+    250.00,
+    1,
+    1,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NOW(),
+    'doctor01'
+);

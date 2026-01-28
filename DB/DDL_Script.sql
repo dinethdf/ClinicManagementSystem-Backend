@@ -8,19 +8,36 @@ USE clinicmsystem;
 -- ==================================================================================
 -- MASTER TENANT TABLE (NEW)
 -- ==================================================================================
+DROP TABLE IF EXISTS clinics;
+
 CREATE TABLE clinics (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    subdomain VARCHAR(50) UNIQUE NOT NULL, -- e.g., 'cityhospital'
 
+    -- Basic Identity
+    name VARCHAR(100) NOT NULL,
+    subdomain VARCHAR(50) UNIQUE NOT NULL, -- used for tenant identification (e.g., 'citycare')
+
+    -- Contact & Location Details (NEW)
+    address VARCHAR(255),
+    city VARCHAR(50),
+    district VARCHAR(50),
+    mobile_no VARCHAR(20),
+    land_no VARCHAR(20),
+    email VARCHAR(100),
+    website VARCHAR(100),
+
+    -- Branding
+    logo_url VARCHAR(255),
+
+    -- System Status & Configs
     status ENUM('ACTIVE', 'SUSPENDED', 'EXPIRED') DEFAULT 'ACTIVE',
     subscription_plan VARCHAR(50) DEFAULT 'BASIC',
 
-    -- Configs
     max_doctors INT DEFAULT 5,
     max_patients INT DEFAULT 10000,
     expiry_date DATE,
 
+    -- Auditing
     createdDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedDate DATETIME DEFAULT NULL
 ) ENGINE=InnoDB;
