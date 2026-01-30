@@ -3,7 +3,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_BookAppointment$$
 
 CREATE PROCEDURE sp_BookAppointment(
-    IN p_clinic_id INT,           -- NEW: Tenant Discriminator
+    IN p_clinic_id INT,
     IN p_createdBy VARCHAR(50),
     IN p_doctor_schedule_id INT,
     IN p_patient_id INT,
@@ -79,7 +79,7 @@ BEGIN
         WHERE clinic_id = p_clinic_id
           AND doctor_schedule_id = p_doctor_schedule_id
           AND patient_id = p_patient_id
-          AND status IN ('BOOKED', 'PENDING_PAYMENT','ONGOING','COMPLETED');
+          AND status IN ('BOOKED', 'PENDING_PAYMENT', 'ONGOING', 'COMPLETED');
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
@@ -87,72 +87,45 @@ BEGIN
         ELSE
             -- == 7. ALL CHECKS PASSED - CREATE BOOKING ==
             SET v_newQueuePosition = v_lastQueueNumber + 1;
-
-            -- a. Insert the new appointment
-            INSERT INTO appointments (
-                clinic_id, -- NEW
-                doctor_schedule_id,
-                patient_id,
-                queuePosition,
-                note,
-                status,
-                createdDate,
-                createdBy
-            ) VALUES (
-                p_clinic_id, -- NEW
-                p_doctor_schedule_id,
-                p_patient_id,
-                v_newQueuePosition,
-                p_note,
-                'PENDING_PAYMENT',
-                v_now,
-                p_createdBy
-            );
-
-            SET v_newAppointmentId = LAST_INSERT_ID();
-
-            -- b. Update the schedule's patient count
-            UPDATE doctorSchedule
-            SET registeredPatientCount = v_currentBookedCount + 1,
-                lastQueueNumber = v_newQueuePosition
-            WHERE id = p_doctor_schedule_id
-              AND clinic_id = p_clinic_id; -- Safety check
-
-            -- == 8. AUTOMATIC INVOICE CREATION ==
-
-            -- Calculate the total fee here
             SET v_totalFee = v_doctorFee + v_clinicFee;
 
+            -- Get appointment item type ID
             SELECT id INTO v_appointmentItemTypeId
             FROM item_types
             WHERE typeName = 'APPOINTMENT' LIMIT 1;
 
-            -- d. Create the master invoice (Removed appointment_id)
+            -- a. Create the master invoice with NEW FIELDS
             INSERT INTO invoices (
-                clinic_id, -- NEW
+                clinic_id,
                 patient_id,
                 status,
                 subtotalAmount,
                 totalDiscount,
                 finalAmount,
+                amountPaid,              -- NEW: Initialize to 0
+                balanceRemaining,         -- NEW: Initialize to full amount
+                paymentDueDate,           -- NEW: Set due date (optional)
                 createdDate,
                 createdBy
             ) VALUES (
-                p_clinic_id, -- NEW
+                p_clinic_id,
                 p_patient_id,
                 'UNPAID',
                 v_totalFee,
                 0.00,
                 v_totalFee,
+                0.00,                     -- NEW: No payment yet
+                v_totalFee,               -- NEW: Full balance remaining
+                DATE_ADD(CURDATE(), INTERVAL 7 DAY), -- NEW: 7 days to pay
                 v_now,
                 p_createdBy
             );
 
             SET o_newInvoiceId = LAST_INSERT_ID();
 
-            -- e. Create the invoice line item (Removed item_id)
+            -- b. Create the invoice line item
             INSERT INTO invoice_items (
-                clinic_id, -- NEW (Optional but recommended for consistency)
+                clinic_id,
                 invoice_id,
                 item_type_id,
                 description,
@@ -160,7 +133,7 @@ BEGIN
                 createdDate,
                 createdBy
             ) VALUES (
-                p_clinic_id, -- NEW
+                p_clinic_id,
                 o_newInvoiceId,
                 v_appointmentItemTypeId,
                 'Doctor Consultation',
@@ -169,13 +142,39 @@ BEGIN
                 p_createdBy
             );
 
-            -- f. CRITICAL UPDATE: Link the Appointment to the Invoice
-            UPDATE appointments
-            SET invoice_id = o_newInvoiceId
-            WHERE id = v_newAppointmentId
+            -- c. Insert the new appointment
+            INSERT INTO appointments (
+                clinic_id,
+                doctor_schedule_id,
+                patient_id,
+                queuePosition,
+                note,
+                status,
+                invoice_id,              -- Link invoice immediately
+                createdDate,
+                createdBy
+            ) VALUES (
+                p_clinic_id,
+                p_doctor_schedule_id,
+                p_patient_id,
+                v_newQueuePosition,
+                p_note,
+                'PENDING_PAYMENT',       -- Stays as is
+                o_newInvoiceId,
+                v_now,
+                p_createdBy
+            );
+
+            SET v_newAppointmentId = LAST_INSERT_ID();
+
+            -- d. Update the schedule's patient count
+            UPDATE doctorSchedule
+            SET registeredPatientCount = v_currentBookedCount + 1,
+                lastQueueNumber = v_newQueuePosition
+            WHERE id = p_doctor_schedule_id
               AND clinic_id = p_clinic_id;
 
-            -- == 9. SUCCESS! ==
+            -- == 8. SUCCESS! ==
             SET o_queuePosition = v_newQueuePosition;
             SET o_newAppointmentId = v_newAppointmentId;
             SET o_statusMessage = 'BOOKED_SUCCESS';
