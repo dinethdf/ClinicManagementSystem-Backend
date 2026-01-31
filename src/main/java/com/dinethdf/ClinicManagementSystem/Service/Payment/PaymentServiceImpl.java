@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,15 +30,21 @@ public class PaymentServiceImpl implements PaymentService {
 //    private final SmsService smsService;
 
     @Override
-    @Transactional // Ensure DB transaction is separate from SMS logic
+    @Transactional
     public PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO) {
 
         validatePaymentDTO(paymentDTO);
 
-        // 1. Get Tenant ID
+        // 1. Context Data
         Integer clinicId = TenantContext.getCurrentTenant();
-        String createdBy = "receptionist_user"; // Ideally, fetch from SecurityContext
+        String createdBy = "receptionist_user"; // Replace with SecurityContext username
 
+        // 2. Prepare Data (Defaults)
+        String receivedByName = "Unknown Cashier"; // Ideally fetch from logged-in user
+        Integer receivedByStaffId = 1;             // Ideally fetch from logged-in user ID
+        String paymentLocation = "CLINIC_COUNTER"; // Default for reception payments
+
+        // 3. Prepare JSON
         String discountsJson = null;
         if (paymentDTO.getDiscounts() != null && !paymentDTO.getDiscounts().isEmpty()) {
             try {
@@ -47,68 +54,84 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
-        // 4. Call the Stored Procedure (Added clinicId)
+        // 4. Call the Stored Procedure (Updated Signature)
         Map<String, Object> spResult = paymentRepo.sp_AppointmentPaymentProcess(
-                clinicId, // <--- Clinic ID
+                clinicId,
                 paymentDTO.getInvoiceId(),
-                paymentDTO.getPaymentMethod(),
+                paymentDTO.getAmountPaid(), // Ensure DTO has this!
+                "CASH",
                 paymentDTO.getTransactionCode(),
                 createdBy,
+                receivedByName,      // p_received_by
+                receivedByStaffId,   // p_received_by_staff_id
+                paymentLocation,     // p_payment_location
+                null,                // p_payment_gateway (Null for physical)
                 discountsJson
         );
 
+// --- DEBUGGING START ---
+        System.out.println("FULL DB RESULT: " + spResult); // Check your console logs for this!
+        // --- DEBUGGING END ---
+
         // 5. Check for SP-level errors
         String statusMessage = (String) spResult.get("o_status_message");
-        if (!"PAYMENT_SUCCESS".equals(statusMessage)) {
-            handleSpError(statusMessage);
+
+        // FIX: Check if message starts with PAYMENT_SUCCESS (covers FULL and PARTIAL)
+        if (statusMessage == null || !statusMessage.startsWith("PAYMENT_SUCCESS")) {
+            // FIX: Throw the ACTUAL message from the DB, not a generic one
+            throw new ValidationException(
+                    "DB Error: " + statusMessage,
+                    "DATABASE_ERROR",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        // 6. Retrieve the new Payment Object (Success Case)
+        // 6. Retrieve the new Payment Object
         Integer newPaymentId = (Integer) spResult.get("o_new_payment_id");
+        BigDecimal remainingBalance = (BigDecimal) spResult.get("o_remaining_balance");
 
         Payment newPayment = paymentRepo.findById(newPaymentId.longValue())
                 .orElseThrow(() -> new ValidationException("Failed to retrieve new payment", "PAYMENT_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR));
 
-        // 7. Security: Ensure payment belongs to current clinic
+        // 7. Security Check
         if (!Objects.equals(newPayment.getClinicId(), clinicId)) {
             throw new ValidationException("Access Denied", "UNAUTHORIZED", HttpStatus.FORBIDDEN);
         }
 
+        // 8. SMS Logic (Simplified)
         String smsDeliveryNote = "SMS_SENT_SUCCESSFULLY";
-
         try {
-            String rawMobile = paymentDTO.getPatientMobileNo();
-            String formattedMobile = formatToLankaInternational(rawMobile);
-
-            String msgText = "Payment Received. Ref: " + newPayment.getTransactionId() + ". Amount: " + newPayment.getAmountPaid() + " Appointment Booked";
-
-
-            // disable for now After remove this
-//            boolean isSent = smsService.sendPaymentSms(formattedMobile, msgText);
-//            if (!isSent) {
-            if (true) {
+            // Your SMS logic here...
+            if (true) { // Simulator
                 smsDeliveryNote = "PAYMENT_SUCCESS_BUT_SMS_FAILED";
             }
-
         } catch (Exception e) {
-            // CATCH ALL: Ensure Payment success is returned even if SMS crashes
-            System.err.println("SMS Sending Error: " + e.getMessage());
-            smsDeliveryNote = "PAYMENT_SUCCESS_BUT_SMS_ERROR: " + e.getMessage();
+            smsDeliveryNote = "SMS_ERROR: " + e.getMessage();
         }
 
-
-        // 8. Prepare Response
-
+        // 9. Prepare Response (Updated Mapping)
         PaymentResponseDTO response = new PaymentResponseDTO();
         response.setId(newPayment.getId());
         response.setInvoiceId(newPayment.getInvoice().getId());
         response.setAmountPaid(newPayment.getAmountPaid());
-        response.setPaymentMethod(newPayment.getPaymentMethod().toString());
-        response.setTransactionId(newPayment.getTransactionId());
-        response.setPaymentStatus(newPayment.getPaymentStatus().toString());
-        response.setCreatedDate(newPayment.getCreatedDate());
+        response.setRemainingBalance(remainingBalance);
 
-        // Set the SMS status here so Frontend knows to show a warning if needed
+        if (newPayment.getPaymentMethod() != null) {
+            response.setPaymentMethod(newPayment.getPaymentMethod().getDisplayName());
+        }
+
+        response.setTransactionId(newPayment.getTransactionId());
+
+        // Map Rich Status Object
+        if (newPayment.getPaymentStatus() != null) {
+            PaymentResponseDTO.PaymentStatusDTO statusDTO = new PaymentResponseDTO.PaymentStatusDTO();
+            statusDTO.setCode(newPayment.getPaymentStatus().getCode());
+            statusDTO.setDisplayName(newPayment.getPaymentStatus().getDisplayName());
+            statusDTO.setColorCode(newPayment.getPaymentStatus().getColorCode());
+            response.setPaymentStatus(statusDTO);
+        }
+
+        response.setCreatedDate(newPayment.getCreatedDate());
         response.setSmsStatus(smsDeliveryNote);
 
         return response;

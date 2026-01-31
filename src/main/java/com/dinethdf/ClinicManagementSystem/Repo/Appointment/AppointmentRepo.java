@@ -37,14 +37,21 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     SELECT
         i.id AS invoiceId,
         i.createdDate AS invoiceDate,
-        i.status AS invoiceStatus,
+        
+        -- NEW: Select rich status details
+        isl.code AS invoiceStatusCode,
+        isl.displayName AS invoiceStatusDisplay,
+        isl.colorCode AS invoiceStatusColor,
+
         i.subtotalAmount AS subtotal,
         i.totalDiscount AS totalDiscount,
         i.finalAmount AS finalAmount,
+        
         pm.latestDate AS paidDate,
         pm.latestMethod AS paymentMethod,
         COALESCE(pm.totalPaid, 0) AS amountPaid,
         pm.latestTxnId AS transactionId,
+        
         p.patientNo AS patientNo,
         p.firstName AS patientFirstName,
         p.lastName AS patientLastName,
@@ -52,37 +59,51 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         p.city AS patientCity,
         p.mobileNo AS patientMobile,
         p.dob AS patientDob,
+        
         a.id AS apptId,
         a.queuePosition AS queuePosition,
+        -- a.appointmentNumber AS apptNumber, -- Ensure this column exists in DB
         a.note AS apptNote,
+        
         ds.id AS scheduleId,
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS scheduleStartTime,
         d.firstName AS doctorFirstName,
         d.lastName AS doctorLastName,
         s.name AS doctorSpec,
+        
         ii.description AS itemDescription,
         it.typeName AS itemType,
         ii.amount AS itemAmount
+
     FROM appointments a
     JOIN invoices i ON a.invoice_id = i.id
+    
+    -- FIXED: Join the status lookup table to get color/display
+    LEFT JOIN invoice_status_lookup isl ON i.statusId = isl.id
+    
     JOIN patient p ON i.patient_id = p.id
+    
     LEFT JOIN (
         SELECT
-            invoice_id,
-            SUM(amountPaid) as totalPaid,
-            MAX(paymentTimestamp) as latestDate,
-            SUBSTRING_INDEX(GROUP_CONCAT(paymentMethod ORDER BY paymentTimestamp DESC), ',', 1) as latestMethod,
-            SUBSTRING_INDEX(GROUP_CONCAT(transactionId ORDER BY paymentTimestamp DESC), ',', 1) as latestTxnId
-        FROM payments
-        WHERE paymentStatus = 'COMPLETED'
-        GROUP BY invoice_id
+            p.invoice_id,
+            SUM(p.amountPaid) as totalPaid,
+            MAX(p.paymentTimestamp) as latestDate,
+            SUBSTRING_INDEX(GROUP_CONCAT(pml.displayName ORDER BY p.paymentTimestamp DESC), ',', 1) as latestMethod,
+            SUBSTRING_INDEX(GROUP_CONCAT(p.transactionId ORDER BY p.paymentTimestamp DESC), ',', 1) as latestTxnId
+        FROM payments p
+        LEFT JOIN payment_method_lookup pml ON p.paymentMethodId = pml.id
+        LEFT JOIN payment_status_lookup psl ON p.paymentStatusId = psl.id
+        WHERE psl.code = 'COMPLETED'
+        GROUP BY p.invoice_id
     ) pm ON i.id = pm.invoice_id
+    
     LEFT JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     LEFT JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
     LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
     LEFT JOIN item_types it ON ii.item_type_id = it.id
+    
     WHERE a.id = :apptId
       AND a.clinic_id = :clinicId
     ORDER BY i.id, ii.id

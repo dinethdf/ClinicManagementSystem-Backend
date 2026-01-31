@@ -1,4 +1,3 @@
-// Repo/Invoice/InvoiceFlatDTO.java
 package com.dinethdf.ClinicManagementSystem.DTO.Appointment;
 
 import java.math.BigDecimal;
@@ -12,7 +11,12 @@ public interface InvoiceAppointmentFlatDTO {
     // Invoice & Patient (Repeats on every row)
     Long getInvoiceId();
     LocalDateTime getInvoiceDate();
-    String getInvoiceStatus();
+
+    // --- NEW: Rich Status Fields ---
+    String getInvoiceStatusCode();       // e.g., 'PAID'
+    String getInvoiceStatusDisplay();    // e.g., 'Paid'
+    String getInvoiceStatusColor();      // e.g., '#28A745'
+
     BigDecimal getSubtotal();
     BigDecimal getTotalDiscount();
     BigDecimal getFinalAmount();

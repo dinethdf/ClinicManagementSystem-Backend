@@ -132,9 +132,14 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             // --- Invoice Header ---
             dto.setInvoiceId(header.getInvoiceId());
-            dto.setDateIssued(header.getInvoiceDate()); // Matches LocalDateTime in your updated DTO
-            dto.setDatePaidDate(header.getPaidDate());  // NEW: Matches LocalDateTime
-            dto.setStatus(header.getInvoiceStatus());
+            dto.setDateIssued(header.getInvoiceDate());
+            dto.setDatePaidDate(header.getPaidDate());
+            // --- NEW: Map Status Object ---
+            dto.setStatus(new AppointmentInvoiceViewDTO.StatusDTO(
+                    header.getInvoiceStatusCode(),
+                    header.getInvoiceStatusDisplay(),
+                    header.getInvoiceStatusColor()
+            ));
             dto.setSubtotal(header.getSubtotal());
             dto.setTotalDiscount(header.getTotalDiscount());
             dto.setFinalAmount(header.getFinalAmount());

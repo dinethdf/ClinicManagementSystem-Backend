@@ -8,10 +8,23 @@ import java.time.LocalDateTime;
 public class PaymentResponseDTO {
     private Long id;
     private Long invoiceId;
+
     private BigDecimal amountPaid;
-    private String paymentMethod;
+    private BigDecimal remainingBalance; // NEW: To show if they owe more
+
+    private String paymentMethod;   // Display Name (e.g. "Cash")
     private String transactionId;
-    private String paymentStatus;
+
+    // Changed to Object for frontend badges
+    private PaymentStatusDTO paymentStatus;
+
     private LocalDateTime createdDate;
     private String smsStatus;
+
+    @Data
+    public static class PaymentStatusDTO {
+        private String code;
+        private String displayName;
+        private String colorCode;
+    }
 }
