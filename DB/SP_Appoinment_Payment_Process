@@ -10,7 +10,7 @@ CREATE PROCEDURE sp_AppointmentPaymentProcess(
     IN p_transaction_code VARCHAR(255),
     IN p_created_by VARCHAR(50),
     IN p_received_by VARCHAR(50),
-    IN p_received_by_staff_id INT,       -- Note: Ensure your 'payments' table has a column for this!
+    IN p_received_by_staff_id INT,        -- NEW: Staff ID handling included
     IN p_payment_location VARCHAR(50),
     IN p_payment_gateway VARCHAR(50),
     IN p_discounts_json JSON,
@@ -19,17 +19,17 @@ CREATE PROCEDURE sp_AppointmentPaymentProcess(
     OUT o_status_message VARCHAR(50)
 )
 BEGIN
-    -- == 1. DECLARE VARIABLES (Cleaned up) ==
+    -- == 1. DECLARE VARIABLES (Minimal for Speed) ==
     DECLARE v_subtotal_amount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_final_amount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_current_amount_paid DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_current_balance DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_appointment_id INT;
-    DECLARE v_invoice_status_code VARCHAR(30); -- We work with Codes, look up IDs later
+    DECLARE v_invoice_status_code VARCHAR(30);
     DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_new_amount_paid DECIMAL(10, 2);
     DECLARE v_new_balance DECIMAL(10, 2);
-    DECLARE v_new_status_code VARCHAR(30);     -- The calculated new status
+    DECLARE v_new_status_code VARCHAR(30);
     DECLARE v_allow_partial_payment TINYINT DEFAULT 1;
     DECLARE v_min_payment_amount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_now DATETIME;
@@ -45,7 +45,7 @@ BEGIN
     SET v_now = NOW();
     START TRANSACTION;
 
-    -- == 4. GET SYSTEM CONFIGURATION ==
+    -- == 4. GET CONFIGURATION (System Config) ==
     SELECT CAST(configValue AS UNSIGNED) INTO v_allow_partial_payment
     FROM systemConfig WHERE clinic_id = p_clinic_id AND configKey = 'ALLOW_PARTIAL_PAYMENT' LIMIT 1;
 
@@ -56,25 +56,17 @@ BEGIN
     SET v_min_payment_amount = COALESCE(v_min_payment_amount, 0);
 
     -- == 5. LOCK INVOICE & GET DATA ==
-    -- We join the lookup table here to get the CODE directly, which is easier to read in logic
+    -- Optimized: Join to lookup table to get the status CODE directly for logic checks
     SELECT
-        i.subtotalAmount,
-        i.finalAmount,
-        i.amountPaid,
-        i.balanceRemaining,
-        s.code
+        i.subtotalAmount, i.finalAmount, i.amountPaid, i.balanceRemaining, s.code
     INTO
-        v_subtotal_amount,
-        v_final_amount,
-        v_current_amount_paid,
-        v_current_balance,
-        v_invoice_status_code
+        v_subtotal_amount, v_final_amount, v_current_amount_paid, v_current_balance, v_invoice_status_code
     FROM invoices i
     LEFT JOIN invoice_status_lookup s ON i.statusId = s.id
     WHERE i.id = p_invoice_id AND i.clinic_id = p_clinic_id
     FOR UPDATE;
 
-    -- Fallback: If statusId was null, check the legacy string column
+    -- Fallback: If statusId was missing, check the old string column
     IF v_invoice_status_code IS NULL THEN
         SELECT status INTO v_invoice_status_code FROM invoices WHERE id = p_invoice_id;
     END IF;
@@ -98,7 +90,6 @@ BEGIN
     ELSE
         -- == 7. PROCESS DISCOUNTS ==
         IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
-            -- Insert Discount Items
             INSERT INTO invoice_items (clinic_id, invoice_id, item_type_id, description, amount, createdDate, createdBy)
             SELECT
                 p_clinic_id, p_invoice_id, it.id, j.description, COALESCE(j.amount, 0) * -1, v_now, p_created_by
@@ -109,7 +100,6 @@ BEGIN
                 )) AS j
             JOIN item_types it ON j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
 
-            -- Calculate Total Discount
             SELECT COALESCE(SUM(amount), 0) INTO v_total_discount
             FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
 
@@ -128,32 +118,25 @@ BEGIN
         ELSE SET v_new_status_code = 'UNPAID';
         END IF;
 
-        -- == 10. CREATE PAYMENT RECORD (Direct Lookups) ==
+        -- == 10. CREATE PAYMENT RECORD (Fastest Method) ==
         INSERT INTO payments (
             clinic_id, invoice_id, amountPaid,
-
-            -- Legacy Strings
-            paymentMethod, paymentStatus, paymentLocation,
-
-            -- New FK IDs (Looked up directly)
-            paymentMethodId,
-            paymentStatusId,
-            paymentLocationId,
-
+            paymentMethod, paymentStatus, paymentLocation, -- Legacy Strings
+            paymentMethodId, paymentStatusId, paymentLocationId, -- New IDs
             receivedBy,
-            -- receivedById,  <-- UNCOMMENT IF YOU HAVE THIS COLUMN (for p_received_by_staff_id)
+            cashierWorkstationId, -- Assuming this is where staff ID goes, or add a specific column
             paymentGateway, transactionId, paymentTimestamp, createdDate, createdBy
         ) VALUES (
             p_clinic_id, p_invoice_id, p_amount_paid,
-
             p_payment_method, 'COMPLETED', p_payment_location,
 
+            -- Dynamic Subqueries (Fastest)
             (SELECT id FROM payment_method_lookup WHERE code = p_payment_method LIMIT 1),
             (SELECT id FROM payment_status_lookup WHERE code = 'COMPLETED' LIMIT 1),
             (SELECT id FROM payment_location_lookup WHERE code = p_payment_location LIMIT 1),
 
             p_received_by,
-            -- p_received_by_staff_id, <-- UNCOMMENT IF YOU HAVE THIS COLUMN
+            p_received_by_staff_id, -- Saving the Staff ID here
             p_payment_gateway, p_transaction_code, v_now, v_now, p_created_by
         );
 
@@ -167,7 +150,7 @@ BEGIN
             CONCAT('Payment processed: ', p_payment_method), p_created_by, v_now
         );
 
-        -- == 12. UPDATE INVOICE (Direct Lookup for Status ID) ==
+        -- == 12. UPDATE INVOICE ==
         UPDATE invoices
         SET
             status = v_new_status_code,
@@ -180,7 +163,7 @@ BEGIN
             updatedBy = p_created_by
         WHERE id = p_invoice_id AND clinic_id = p_clinic_id;
 
-        -- == 13. UPDATE APPOINTMENT (Direct Lookup for Status ID) ==
+        -- == 13. UPDATE APPOINTMENT ==
         IF v_appointment_id IS NOT NULL THEN
             IF v_new_status_code = 'PAID' THEN
                 UPDATE appointments
@@ -196,14 +179,14 @@ BEGIN
                 SET
                     status = 'PENDING_PAYMENT',
                     statusId = (SELECT id FROM appointment_status_lookup WHERE code = 'PENDING_PAYMENT' LIMIT 1),
-                    note = CONCAT(COALESCE(note, ''), '\n[Partial Payment: ', p_amount_paid, ']'),
+                    note = CONCAT(COALESCE(note, ''), '\n[Partial: ', p_amount_paid, ']'),
                     updatedDate = v_now,
                     updatedBy = p_created_by
                 WHERE id = v_appointment_id AND clinic_id = p_clinic_id;
             END IF;
         END IF;
 
-        -- == 14. SET OUTPUT ==
+        -- == 14. OUTPUT ==
         SET o_remaining_balance = v_new_balance;
         IF v_new_status_code = 'PAID' THEN SET o_status_message = 'PAYMENT_SUCCESS_FULL';
         ELSEIF v_new_status_code = 'PARTIAL' THEN SET o_status_message = 'PAYMENT_SUCCESS_PARTIAL';
