@@ -27,6 +27,11 @@ BEGIN
     DECLARE v_newAppointmentId INT;
     DECLARE v_appointmentItemTypeId INT;
     DECLARE v_now DATETIME;
+    DECLARE v_payment_due_days INT DEFAULT 7;
+
+    -- Lookup IDs
+    DECLARE v_invoice_status_unpaid_id TINYINT UNSIGNED;
+    DECLARE v_appointment_status_pending_id TINYINT UNSIGNED;
 
     -- == 2. ERROR HANDLING ==
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -39,7 +44,28 @@ BEGIN
     SET v_now = NOW();
     START TRANSACTION;
 
-    -- == 4. LOCK SCHEDULE & GET CURRENT DATA ==
+    -- == 4. GET LOOKUP IDs ==
+    -- Invoice Status: UNPAID
+    SELECT id INTO v_invoice_status_unpaid_id
+    FROM invoice_status_lookup
+    WHERE code = 'UNPAID' LIMIT 1;
+
+    -- Appointment Status: PENDING_PAYMENT
+    SELECT id INTO v_appointment_status_pending_id
+    FROM appointment_status_lookup
+    WHERE code = 'PENDING_PAYMENT' LIMIT 1;
+
+    -- Get payment due days from system config
+    SELECT
+        CAST(configValue AS UNSIGNED) INTO v_payment_due_days
+    FROM systemConfig
+    WHERE clinic_id = p_clinic_id
+      AND configKey = 'PAYMENT_DUE_DAYS'
+    LIMIT 1;
+
+    SET v_payment_due_days = COALESCE(v_payment_due_days, 7);
+
+    -- == 5. LOCK SCHEDULE & GET CURRENT DATA ==
     SELECT
         maxPatientCount,
         registeredPatientCount,
@@ -61,7 +87,7 @@ BEGIN
         AND clinic_id = p_clinic_id
     FOR UPDATE;
 
-    -- == 5. VALIDATE BUSINESS RULES ==
+    -- == 6. VALIDATE BUSINESS RULES ==
     IF v_maxPatientCount IS NULL THEN
         SET o_statusMessage = 'ERROR_INVALID_SCHEDULE';
         ROLLBACK;
@@ -72,7 +98,7 @@ BEGIN
         SET o_statusMessage = 'ERROR_SCHEDULE_FULL';
         ROLLBACK;
     ELSE
-        -- == 6. CHECK FOR DUPLICATE BOOKING (Scoped to Clinic) ==
+        -- == 7. CHECK FOR DUPLICATE BOOKING (Scoped to Clinic) ==
         SELECT COUNT(*)
         INTO v_patientBookingCount
         FROM appointments
@@ -85,7 +111,7 @@ BEGIN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
             ROLLBACK;
         ELSE
-            -- == 7. ALL CHECKS PASSED - CREATE BOOKING ==
+            -- == 8. ALL CHECKS PASSED - CREATE BOOKING ==
             SET v_newQueuePosition = v_lastQueueNumber + 1;
             SET v_totalFee = v_doctorFee + v_clinicFee;
 
@@ -94,36 +120,38 @@ BEGIN
             FROM item_types
             WHERE typeName = 'APPOINTMENT' LIMIT 1;
 
-            -- a. Create the master invoice with NEW FIELDS
+            -- == 9. CREATE THE MASTER INVOICE ==
             INSERT INTO invoices (
                 clinic_id,
                 patient_id,
-                status,
+                status,                     -- Old ENUM (temporary)
+                statusId,                   -- NEW: Lookup ID
                 subtotalAmount,
                 totalDiscount,
                 finalAmount,
-                amountPaid,              -- NEW: Initialize to 0
-                balanceRemaining,         -- NEW: Initialize to full amount
-                paymentDueDate,           -- NEW: Set due date (optional)
+                amountPaid,
+                balanceRemaining,
+                paymentDueDate,
                 createdDate,
                 createdBy
             ) VALUES (
                 p_clinic_id,
                 p_patient_id,
-                'UNPAID',
+                'UNPAID',                   -- Backward compatible
+                v_invoice_status_unpaid_id, -- NEW
                 v_totalFee,
                 0.00,
                 v_totalFee,
-                0.00,                     -- NEW: No payment yet
-                v_totalFee,               -- NEW: Full balance remaining
-                DATE_ADD(CURDATE(), INTERVAL 7 DAY), -- NEW: 7 days to pay
+                0.00,                       -- No payment yet
+                v_totalFee,                 -- Full balance remaining
+                DATE_ADD(CURDATE(), INTERVAL v_payment_due_days DAY),
                 v_now,
                 p_createdBy
             );
 
             SET o_newInvoiceId = LAST_INSERT_ID();
 
-            -- b. Create the invoice line item
+            -- == 10. CREATE THE INVOICE LINE ITEM ==
             INSERT INTO invoice_items (
                 clinic_id,
                 invoice_id,
@@ -142,15 +170,16 @@ BEGIN
                 p_createdBy
             );
 
-            -- c. Insert the new appointment
+            -- == 11. CREATE THE APPOINTMENT ==
             INSERT INTO appointments (
                 clinic_id,
                 doctor_schedule_id,
                 patient_id,
                 queuePosition,
                 note,
-                status,
-                invoice_id,              -- Link invoice immediately
+                status,                             -- Old ENUM (temporary)
+                statusId,                           -- NEW: Lookup ID
+                invoice_id,
                 createdDate,
                 createdBy
             ) VALUES (
@@ -159,7 +188,8 @@ BEGIN
                 p_patient_id,
                 v_newQueuePosition,
                 p_note,
-                'PENDING_PAYMENT',       -- Stays as is
+                'PENDING_PAYMENT',                  -- Backward compatible
+                v_appointment_status_pending_id,    -- NEW
                 o_newInvoiceId,
                 v_now,
                 p_createdBy
@@ -167,14 +197,14 @@ BEGIN
 
             SET v_newAppointmentId = LAST_INSERT_ID();
 
-            -- d. Update the schedule's patient count
+            -- == 12. UPDATE THE SCHEDULE'S PATIENT COUNT ==
             UPDATE doctorSchedule
             SET registeredPatientCount = v_currentBookedCount + 1,
                 lastQueueNumber = v_newQueuePosition
             WHERE id = p_doctor_schedule_id
               AND clinic_id = p_clinic_id;
 
-            -- == 8. SUCCESS! ==
+            -- == 13. SUCCESS! ==
             SET o_queuePosition = v_newQueuePosition;
             SET o_newAppointmentId = v_newAppointmentId;
             SET o_statusMessage = 'BOOKED_SUCCESS';
