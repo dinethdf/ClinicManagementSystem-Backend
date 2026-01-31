@@ -87,29 +87,18 @@ proc_label: BEGIN
 
     -- == 6. LOCK INVOICE & GET DATA (FIXED: Get Existing Discount) ==
     SELECT
-        i.subtotalAmount,
-        i.finalAmount,
-        i.amountPaid,
-        i.balanceRemaining,
-        COALESCE(i.totalDiscount, 0),  -- Capture existing discount
         s.code
+        i.subtotalAmount, i.finalAmount, i.amountPaid, i.balanceRemaining,
+        COALESCE(i.totalDiscount, 0), s.code
     INTO
-        v_subtotal_amount,
-        v_final_amount,
-        v_current_amount_paid,
-        v_current_balance,
-        v_existing_discount,           -- Store it here
-        v_invoice_status_code
+        v_subtotal_amount, v_final_amount, v_current_amount_paid, v_current_balance,
+        v_existing_discount, v_invoice_status_code
     FROM invoices i
     LEFT JOIN invoice_status_lookup s ON i.statusId = s.id
     WHERE i.id = p_invoice_id AND i.clinic_id = p_clinic_id
     FOR UPDATE;
 
-    -- Fallback for legacy data (Status String is removed, relying on ID or Code from Lookup)
-    -- If lookup failed, try getting code directly if status column exists (Handling transition safely)
-    IF v_invoice_status_code IS NULL THEN
-         SET v_invoice_status_code = 'UNPAID'; -- Default safe fallback if lookup fails
-    END IF;
+    IF v_invoice_status_code IS NULL THEN SET v_invoice_status_code = 'UNPAID'; END IF;
 
     SELECT id INTO v_appointment_id FROM appointments
     WHERE invoice_id = p_invoice_id AND clinic_id = p_clinic_id LIMIT 1;
@@ -206,7 +195,7 @@ proc_label: BEGIN
         updatedBy = p_created_by
     WHERE id = p_invoice_id AND clinic_id = p_clinic_id;
 
-    -- == 14. UPDATE APPOINTMENT ==
+    -- == 14. UPDATE APPOINTMENT (UPDATED FOR 'PARTIAL') ==
     IF v_appointment_id IS NOT NULL THEN
         IF v_new_status_code = 'PAID' THEN
             UPDATE appointments
@@ -214,10 +203,12 @@ proc_label: BEGIN
                 statusId = (SELECT id FROM appointment_status_lookup WHERE code = 'BOOKED' LIMIT 1),
                 updatedDate = v_now, updatedBy = p_created_by
             WHERE id = v_appointment_id AND clinic_id = p_clinic_id;
+
         ELSEIF v_new_status_code = 'PARTIAL' THEN
+            -- [CHANGE]: Now uses 'PARTIAL' lookup instead of 'PENDING_PAYMENT'
             UPDATE appointments
             SET
-                statusId = (SELECT id FROM appointment_status_lookup WHERE code = 'PENDING_PAYMENT' LIMIT 1),
+                statusId = (SELECT id FROM appointment_status_lookup WHERE code = 'PARTIAL' LIMIT 1),
                 note = CONCAT(COALESCE(note, ''), '\n[Partial: ', p_amount_paid, ']'),
                 updatedDate = v_now, updatedBy = p_created_by
             WHERE id = v_appointment_id AND clinic_id = p_clinic_id;
