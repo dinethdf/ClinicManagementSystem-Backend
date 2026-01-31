@@ -16,7 +16,7 @@ CREATE PROCEDURE sp_AppointmentPaymentProcess(
     IN p_discounts_json JSON,
     OUT o_new_payment_id INT,
     OUT o_remaining_balance DECIMAL(10,2),
-    OUT o_status_message VARCHAR(255)  -- Extended length for safety
+    OUT o_status_message VARCHAR(255)
 )
 proc_label: BEGIN
 
@@ -28,10 +28,10 @@ proc_label: BEGIN
     DECLARE v_appointment_id INT;
     DECLARE v_invoice_status_code VARCHAR(30);
 
-    -- DISCOUNT VARIABLES (FIXED)
-    DECLARE v_existing_discount DECIMAL(10, 2) DEFAULT 0; -- Stores previous discounts
-    DECLARE v_new_discount_part DECIMAL(10, 2) DEFAULT 0; -- Stores discount from THIS request
-    DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;    -- Stores Sum (Existing + New)
+    -- Discount Variables
+    DECLARE v_existing_discount DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_new_discount_part DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
 
     DECLARE v_new_amount_paid DECIMAL(10, 2);
     DECLARE v_new_balance DECIMAL(10, 2);
@@ -85,7 +85,7 @@ proc_label: BEGIN
     SET v_allow_partial_payment = COALESCE(v_allow_partial_payment, 1);
     SET v_min_payment_amount = COALESCE(v_min_payment_amount, 0);
 
-    -- == 6. LOCK INVOICE & GET DATA (FIXED: Get Existing Discount) ==
+    -- == 6. LOCK INVOICE & GET DATA ==
     SELECT
         i.subtotalAmount, i.finalAmount, i.amountPaid, i.balanceRemaining,
         COALESCE(i.totalDiscount, 0), s.code
@@ -103,7 +103,7 @@ proc_label: BEGIN
     WHERE invoice_id = p_invoice_id AND clinic_id = p_clinic_id LIMIT 1;
 
     -- == 7. BUSINESS LOGIC CHECKS ==
-    IF v_subtotal_amount IS NULL THEN -- Using subtotal as proxy for "Invoice Found"
+    IF v_subtotal_amount IS NULL THEN
         SET o_status_message = 'ERROR_INVALID_INVOICE';
         ROLLBACK; LEAVE proc_label;
     ELSEIF v_invoice_status_code IN ('PAID', 'CANCELLED') THEN
@@ -117,13 +117,10 @@ proc_label: BEGIN
         ROLLBACK; LEAVE proc_label;
     END IF;
 
-    -- == 8. PROCESS DISCOUNTS (FIXED: Cumulative Logic) ==
-
-    -- Start with existing discount
+    -- == 8. PROCESS DISCOUNTS (Cumulative) ==
     SET v_total_discount = v_existing_discount;
 
     IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
-        -- Insert items for THIS request
         INSERT INTO invoice_items (clinic_id, invoice_id, item_type_id, description, amount, createdDate, createdBy)
         SELECT
             p_clinic_id, p_invoice_id, it.id, j.description, COALESCE(j.amount, 0) * -1, v_now, p_created_by
@@ -134,15 +131,12 @@ proc_label: BEGIN
             )) AS j
         JOIN item_types it ON j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
 
-        -- Calculate ONLY the new discount amount from this request
         SELECT COALESCE(SUM(amount), 0) INTO v_new_discount_part
         FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
 
-        -- ADD new discount to existing discount
         SET v_total_discount = v_existing_discount + v_new_discount_part;
     END IF;
 
-    -- Recalculate Final Amount based on TOTAL discount
     SET v_final_amount = v_subtotal_amount - v_total_discount;
 
     -- == 9. CALCULATE BALANCE ==
@@ -165,9 +159,9 @@ proc_label: BEGIN
         paymentGateway, transactionId, paymentTimestamp, createdDate, createdBy
     ) VALUES (
         p_clinic_id, p_invoice_id, p_amount_paid,
-        v_method_id, -- Validated ID
+        v_method_id,
         (SELECT id FROM payment_status_lookup WHERE code = 'COMPLETED' LIMIT 1),
-        v_location_id, -- Validated ID
+        v_location_id,
         p_received_by, p_received_by_staff_id,
         p_payment_gateway, p_transaction_code, v_now, v_now, p_created_by
     );
@@ -186,7 +180,7 @@ proc_label: BEGIN
     UPDATE invoices
     SET
         statusId = (SELECT id FROM invoice_status_lookup WHERE code = v_new_status_code LIMIT 1),
-        totalDiscount = v_total_discount, -- Updates with Sum (Old + New)
+        totalDiscount = v_total_discount,
         finalAmount = v_final_amount,
         amountPaid = v_new_amount_paid,
         balanceRemaining = v_new_balance,
