@@ -87,7 +87,6 @@ proc_label: BEGIN
 
     -- == 6. LOCK INVOICE & GET DATA (FIXED: Get Existing Discount) ==
     SELECT
-        s.code
         i.subtotalAmount, i.finalAmount, i.amountPaid, i.balanceRemaining,
         COALESCE(i.totalDiscount, 0), s.code
     INTO
