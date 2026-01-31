@@ -59,7 +59,7 @@ public class PaymentServiceImpl implements PaymentService {
                 clinicId,
                 paymentDTO.getInvoiceId(),
                 paymentDTO.getAmountPaid(), // Ensure DTO has this!
-                "CASH",
+                paymentDTO.getPaymentMethod(),
                 paymentDTO.getTransactionCode(),
                 createdBy,
                 receivedByName,      // p_received_by

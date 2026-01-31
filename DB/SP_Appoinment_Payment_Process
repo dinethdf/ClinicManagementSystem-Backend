@@ -154,13 +154,11 @@ proc_label: BEGIN
     -- == 11. INSERT PAYMENT ==
     INSERT INTO payments (
         clinic_id, invoice_id, amountPaid,
-        paymentMethod, paymentStatus, paymentLocation,
         paymentMethodId, paymentStatusId, paymentLocationId,
         receivedBy, cashierWorkstationId,
         paymentGateway, transactionId, paymentTimestamp, createdDate, createdBy
     ) VALUES (
         p_clinic_id, p_invoice_id, p_amount_paid,
-        p_payment_method, 'COMPLETED', p_payment_location,
         v_method_id, -- Validated ID
         (SELECT id FROM payment_status_lookup WHERE code = 'COMPLETED' LIMIT 1),
         v_location_id, -- Validated ID
