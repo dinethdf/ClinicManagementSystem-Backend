@@ -28,9 +28,7 @@ proc_label: BEGIN
     DECLARE v_appointment_id INT;
     DECLARE v_invoice_status_code VARCHAR(30);
 
-    -- Discount Variables
-    DECLARE v_existing_discount DECIMAL(10, 2) DEFAULT 0;
-    DECLARE v_new_discount_part DECIMAL(10, 2) DEFAULT 0;
+    -- DISCOUNT VARIABLES
     DECLARE v_total_discount DECIMAL(10, 2) DEFAULT 0;
 
     DECLARE v_new_amount_paid DECIMAL(10, 2);
@@ -40,7 +38,7 @@ proc_label: BEGIN
     DECLARE v_min_payment_amount DECIMAL(10, 2) DEFAULT 0;
     DECLARE v_now DATETIME;
 
-    -- Variables to hold IDs
+    -- Lookup IDs
     DECLARE v_method_id INT;
     DECLARE v_location_id INT;
 
@@ -69,7 +67,7 @@ proc_label: BEGIN
     SET v_now = NOW();
     START TRANSACTION;
 
-    -- == 5. GET CONFIGURATION ==
+    -- == 5. CONFIGURATION ==
     SELECT
         CASE
             WHEN configValue = 'true' THEN 1
@@ -87,11 +85,17 @@ proc_label: BEGIN
 
     -- == 6. LOCK INVOICE & GET DATA ==
     SELECT
-        i.subtotalAmount, i.finalAmount, i.amountPaid, i.balanceRemaining,
-        COALESCE(i.totalDiscount, 0), s.code
+        i.subtotalAmount,
+        i.finalAmount,
+        i.amountPaid,
+        i.balanceRemaining,
+        s.code
     INTO
-        v_subtotal_amount, v_final_amount, v_current_amount_paid, v_current_balance,
-        v_existing_discount, v_invoice_status_code
+        v_subtotal_amount,
+        v_final_amount,
+        v_current_amount_paid,
+        v_current_balance,
+        v_invoice_status_code
     FROM invoices i
     LEFT JOIN invoice_status_lookup s ON i.statusId = s.id
     WHERE i.id = p_invoice_id AND i.clinic_id = p_clinic_id
@@ -102,7 +106,7 @@ proc_label: BEGIN
     SELECT id INTO v_appointment_id FROM appointments
     WHERE invoice_id = p_invoice_id AND clinic_id = p_clinic_id LIMIT 1;
 
-    -- == 7. BUSINESS LOGIC CHECKS ==
+    -- == 7. BUSINESS CHECKS ==
     IF v_subtotal_amount IS NULL THEN
         SET o_status_message = 'ERROR_INVALID_INVOICE';
         ROLLBACK; LEAVE proc_label;
@@ -117,10 +121,18 @@ proc_label: BEGIN
         ROLLBACK; LEAVE proc_label;
     END IF;
 
-    -- == 8. PROCESS DISCOUNTS (Cumulative) ==
-    SET v_total_discount = v_existing_discount;
+    -- == 8. PROCESS DISCOUNTS (REPLACEMENT LOGIC) ==
 
+    -- Step A: Delete ALL existing discounts for this invoice (Reset)
+    -- We assume any item with a negative amount is a discount
+    DELETE FROM invoice_items
+    WHERE invoice_id = p_invoice_id
+      AND clinic_id = p_clinic_id
+      AND amount < 0;
+
+    -- Step B: Insert NEW discounts (if any provided)
     IF p_discounts_json IS NOT NULL AND JSON_LENGTH(p_discounts_json) > 0 THEN
+
         INSERT INTO invoice_items (clinic_id, invoice_id, item_type_id, description, amount, createdDate, createdBy)
         SELECT
             p_clinic_id, p_invoice_id, it.id, j.description, COALESCE(j.amount, 0) * -1, v_now, p_created_by
@@ -131,12 +143,16 @@ proc_label: BEGIN
             )) AS j
         JOIN item_types it ON j.discountType COLLATE utf8mb4_unicode_ci = it.typeName;
 
-        SELECT COALESCE(SUM(amount), 0) INTO v_new_discount_part
+        -- Step C: Calculate Total Discount from the JSON input
+        SELECT COALESCE(SUM(amount), 0) INTO v_total_discount
         FROM JSON_TABLE(p_discounts_json, '$[*]' COLUMNS (amount DECIMAL(10, 2) PATH '$.amount')) AS j;
 
-        SET v_total_discount = v_existing_discount + v_new_discount_part;
+    ELSE
+        -- If JSON is empty or null, Total Discount is 0 (since we deleted the old ones)
+        SET v_total_discount = 0;
     END IF;
 
+    -- Recalculate Final Amount based on NEW Total Discount
     SET v_final_amount = v_subtotal_amount - v_total_discount;
 
     -- == 9. CALCULATE BALANCE ==
@@ -180,15 +196,15 @@ proc_label: BEGIN
     UPDATE invoices
     SET
         statusId = (SELECT id FROM invoice_status_lookup WHERE code = v_new_status_code LIMIT 1),
-        totalDiscount = v_total_discount,
-        finalAmount = v_final_amount,
+        totalDiscount = v_total_discount,   -- Updates with NEW Total from JSON
+        finalAmount = v_final_amount,       -- Recalculated
         amountPaid = v_new_amount_paid,
         balanceRemaining = v_new_balance,
         updatedDate = v_now,
         updatedBy = p_created_by
     WHERE id = p_invoice_id AND clinic_id = p_clinic_id;
 
-    -- == 14. UPDATE APPOINTMENT (UPDATED FOR 'PARTIAL') ==
+    -- == 14. UPDATE APPOINTMENT ==
     IF v_appointment_id IS NOT NULL THEN
         IF v_new_status_code = 'PAID' THEN
             UPDATE appointments
@@ -198,7 +214,6 @@ proc_label: BEGIN
             WHERE id = v_appointment_id AND clinic_id = p_clinic_id;
 
         ELSEIF v_new_status_code = 'PARTIAL' THEN
-            -- [CHANGE]: Now uses 'PARTIAL' lookup instead of 'PENDING_PAYMENT'
             UPDATE appointments
             SET
                 statusId = (SELECT id FROM appointment_status_lookup WHERE code = 'PARTIAL' LIMIT 1),
