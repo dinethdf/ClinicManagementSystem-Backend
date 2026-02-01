@@ -9,7 +9,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "doctorSchedule")
+@Table(name = "doctorschedule", indexes = {
+        @Index(name = "idx_schedule_lookup", columnList = "clinic_id, doctor_id, scheduleDate"),
+        @Index(name = "idx_schedule_date", columnList = "clinic_id, scheduleDate")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +24,10 @@ public class DoctorSchedule extends AuditWrapper {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Doctor reference (foreign key)
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId;
+
+    // Doctor reference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
@@ -47,45 +53,30 @@ public class DoctorSchedule extends AuditWrapper {
     @Column(name = "registeredPatientCount", nullable = false)
     private Integer registeredPatientCount = 0;
 
-    @Column(name = "clinic_id", nullable = false)
-    private Integer clinicId = 0;
+    // --- NEW: Queue Management ---
+    @Column(name = "lastQueueNumber", nullable = false)
+    private Integer lastQueueNumber = 0;
 
-//    @Column(name = "isActive", nullable = false)
-//    private Boolean isActive = true;
+    // --- NEW: Status Relationships (Replacing Enum) ---
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "statusId", nullable = true)
+    private ScheduleStatusLookup status;
 
-    // --- New Columns ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payoutStatusId", nullable = true)
+    private PayoutStatusLookup payoutStatus;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private ScheduleStatus status = ScheduleStatus.ACTIVE;
+    // --- NEW: Flags (Replacing Enums/Missing fields) ---
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "bookingStatus", nullable = false)
-    private BookingStatus bookingStatus = BookingStatus.OPEN;
+    @Column(name = "isBookingOpen", nullable = false)
+    private Boolean isBookingOpen = true;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payoutStatus", nullable = false)
-    private PayoutStatus payoutStatus = PayoutStatus.NOT_PAID;
+    @Column(name = "isActive")
+    private Boolean isActive = true;
 
-    public enum ScheduleStatus {
-        ACTIVE,
-        COMPLETED,
-        CANCELLED
-    }
+    @Column(name = "isApproved", nullable = false)
+    private Boolean isApproved = false;
 
-    public enum BookingStatus {
-        OPEN,
-        CLOSED
-    }
-
-    public enum PayoutStatus {
-        NOT_PAID,
-        PENDING,
-        PAID
-    }
-
+    // Note: removed inner Enums as they are now Lookup Tables
 }
-
-
-

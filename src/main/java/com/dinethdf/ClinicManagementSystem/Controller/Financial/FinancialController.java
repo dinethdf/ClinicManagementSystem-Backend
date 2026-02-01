@@ -25,7 +25,7 @@ public class FinancialController {
     @GetMapping("/schedule/{scheduleId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<List<ScheduleFinancialDTO>> getScheduleFinancials(
-            @PathVariable Integer scheduleId
+            @PathVariable Long scheduleId
     ) {
         List<ScheduleFinancialDTO> financials = financialService.getFinancialsForSchedule(scheduleId);
         return ResponseEntity.ok(financials);
@@ -34,7 +34,7 @@ public class FinancialController {
     @GetMapping("/schedule/{scheduleId}/by-doctor")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR')")
     public ResponseEntity<List<ScheduleFinancialDTO>> getScheduleFinancialsByDoctor(
-            @PathVariable Integer scheduleId,
+            @PathVariable Long scheduleId,
             Authentication authentication
     ) {
         if (authentication.getPrincipal() instanceof String) {

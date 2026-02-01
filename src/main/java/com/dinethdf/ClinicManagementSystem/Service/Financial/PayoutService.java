@@ -12,12 +12,12 @@ import java.util.List;
 public interface PayoutService {
 
     // --- DOCTOR PAYOUTS ---
-    DoctorPayoutResultDTO generateDoctorBill(Integer scheduleId, String createdBy);
+    DoctorPayoutResultDTO generateDoctorBill(Long scheduleId, String createdBy);
 
     FinancialSummaryDTO getFinancialSummary(LocalDate startDate, LocalDate endDate);
 
     // Update this line
-    Page<PendingBillView> getPendingDoctorBills(Integer doctorId, int page, int size) ;
+    Page<PendingBillView> getPendingDoctorBills(Long doctorId, int page, int size) ;
 
     Page<PayoutView> searchPayouts(Long doctorId, DoctorSchedulePayment.PayoutStatus status,
                                    LocalDate startDate, LocalDate endDate, int page, int size);

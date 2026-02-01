@@ -1,12 +1,11 @@
 package com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule;
 
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.ScheduleStatus;
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.BookingStatus;
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.PayoutStatus;
 
 @Data
 public class DoctorScheduleResponseDTO {
@@ -14,16 +13,35 @@ public class DoctorScheduleResponseDTO {
     private Long doctorId;
     private String doctorName;
     private String specialization;
+
     private LocalDate scheduleDate;
     private LocalTime startTime;
     private LocalTime endTime;
+
     private BigDecimal doctorFee;
     private BigDecimal clinicFee;
+
     private Integer maxPatientCount;
     private Integer registeredPatientCount;
 
-    // New fields
-    private ScheduleStatus status;
-    private BookingStatus bookingStatus;
-    private PayoutStatus payoutStatus;
+    // --- UPDATED FIELDS ---
+
+    // 1. Replaced 'ScheduleStatus' Enum with Rich Object
+    private StatusDTO status;
+
+    // 2. Replaced 'BookingStatus' Enum with Boolean
+    private Boolean isBookingOpen;
+
+    // 3. Replaced 'PayoutStatus' Enum with Rich Object
+    private StatusDTO payoutStatus;
+
+    // --- Helper Class for Statuses (Code + Color) ---
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class StatusDTO {
+        private String code;        // e.g., "ACTIVE"
+        private String displayName; // e.g., "Active Schedule"
+        private String colorCode;   // e.g., "#28a745"
+    }
 }

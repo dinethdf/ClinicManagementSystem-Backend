@@ -27,7 +27,7 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
         SELECT s FROM DoctorSchedule s
         WHERE s.clinicId = :clinicId
           AND s.doctor.id = :doctorId
-          AND s.status = 'ACTIVE'
+          AND s.status.code = 'ACTIVE'
         ORDER BY s.scheduleDate DESC, s.startTime DESC
     """)
     Page<DoctorSchedule> findActiveByDoctorId(@Param("doctorId") Long doctorId,
@@ -35,11 +35,13 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
                                               Pageable pageable);
 
     // Find all ACTIVE schedules (Scoped to Clinic)
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.status = 'ACTIVE'")
+    // UPDATED: s.status.code
+    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.status.code = 'ACTIVE'")
     List<DoctorSchedule> findAllActive(@Param("clinicId") Integer clinicId);
 
     // Find ACTIVE schedules for a doctor on or after a certain date
-    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.doctor.id = :doctorId AND s.status = 'ACTIVE' AND s.scheduleDate >= :date")
+    // UPDATED: s.status.code
+    @Query("SELECT s FROM DoctorSchedule s WHERE s.clinicId = :clinicId AND s.doctor.id = :doctorId AND s.status.code = 'ACTIVE' AND s.scheduleDate >= :date")
     List<DoctorSchedule> findActiveByDoctorIdAndScheduleDateAfter(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date,
@@ -50,8 +52,8 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     @Query("SELECT s FROM DoctorSchedule s " +
             "WHERE s.clinicId = :clinicId " +
             "AND s.doctor.id = :doctorId " +
-            "AND s.status = 'ACTIVE' " +
-            "AND s.bookingStatus = 'OPEN' " +
+            "AND s.status.code = 'ACTIVE' " +
+            "AND s.isBookingOpen = true " +
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) )")
     List<DoctorSchedule> findUpcomingSchedulesByDoctorId(
             @Param("doctorId") Long doctorId,
@@ -62,8 +64,8 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
 
     // Paginated list of all schedules with optional filters
     @Query("SELECT s FROM DoctorSchedule s " +
-            "JOIN FETCH s.doctor d " +          // <--- Changed to JOIN FETCH
-            "JOIN FETCH d.specialization sp " + // <--- Changed to JOIN FETCH
+            "JOIN FETCH s.doctor d " +
+            "JOIN FETCH d.specialization sp " +
             "WHERE s.clinicId = :clinicId " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
@@ -80,12 +82,13 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     );
 
     // Paginated upcoming schedules with filters
+    // UPDATED: s.status.code AND s.isBookingOpen = true
     @Query("SELECT s FROM DoctorSchedule s " +
             "JOIN s.doctor d " +
             "JOIN d.specialization sp " +
             "WHERE s.clinicId = :clinicId " +
-            "AND s.status = 'ACTIVE' " +
-            "AND s.bookingStatus = 'OPEN' " +
+            "AND s.status.code = 'ACTIVE' " +
+            "AND s.isBookingOpen = true " +
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
             "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
@@ -101,10 +104,11 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     );
 
     // Overlapping schedule check for create
+    // UPDATED: s.status.code
     @Query("SELECT s FROM DoctorSchedule s " +
             "WHERE s.clinicId = :clinicId " +
             "AND s.doctor.id = :doctorId " +
-            "AND s.status = 'ACTIVE' " +
+            "AND s.status.code = 'ACTIVE' " +
             "AND s.startTime < :endTime " +
             "AND s.endTime > :startTime " +
             "AND s.scheduleDate = :scheduleDate")
@@ -117,12 +121,13 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
     );
 
     // Overlapping schedule check for update (returns the actual conflicting schedules)
+    // UPDATED: s.status.code
     @Query("SELECT s FROM DoctorSchedule s " +
             "WHERE s.clinicId = :clinicId " +
             "AND s.doctor.id = :doctorId " +
-            "AND s.status = 'ACTIVE' " +
+            "AND s.status.code = 'ACTIVE' " +
             "AND s.scheduleDate = :scheduleDate " +
-            "AND s.id != :scheduleIdToExclude " + // Crucial: Ignore the schedule we are currently editing
+            "AND s.id != :scheduleIdToExclude " +
             "AND s.startTime < :endTime " +
             "AND s.endTime > :startTime")
     List<DoctorSchedule> findOverlappingSchedulesForUpdate(

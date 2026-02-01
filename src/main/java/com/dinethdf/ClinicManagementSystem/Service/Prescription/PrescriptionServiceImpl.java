@@ -5,10 +5,12 @@ import com.dinethdf.ClinicManagementSystem.DTO.Prescription.PrescriptionItemDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Prescription.PrescriptionRequestDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Prescription.PrescriptionResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
+import com.dinethdf.ClinicManagementSystem.Model.Appointment.AppointmentStatusLookup;
 import com.dinethdf.ClinicManagementSystem.Model.Prescription.Prescription;
 import com.dinethdf.ClinicManagementSystem.Model.Prescription.PrescriptionItem;
 import com.dinethdf.ClinicManagementSystem.Model.Prescription.PrescriptionStatus;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentStatusLookupRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Prescription.PrescriptionRepo;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -19,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     private final PrescriptionRepo prescriptionRepo;
     private final AppointmentRepo appointmentRepo;
     private final MessageSourceUtil messageSourceUtil;
+    private final AppointmentStatusLookupRepo statusLookupRepo;
 
     @Override
     public ApiResponse<PrescriptionResponseDTO> createPrescription(PrescriptionRequestDTO request, String createdBy) {
@@ -84,9 +86,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         Prescription saved = prescriptionRepo.save(prescription);
 
-        // 5. Auto-Complete Appointment
-        if (appointment.getStatus() != Appointment.AppointmentStatus.COMPLETED) {
-            appointment.setStatus(Appointment.AppointmentStatus.COMPLETED);
+// 5. Auto-Complete Appointment (UPDATED LOGIC)
+        // Check if current status is NOT "COMPLETED"
+        if (appointment.getStatus() == null || !appointment.getStatus().getCode().equals("COMPLETED")) {
+
+            // Fetch the "COMPLETED" status entity from DB
+            AppointmentStatusLookup completedStatus = statusLookupRepo.findByCode("COMPLETED")
+                    .orElseThrow(() -> new ValidationException("System Configuration Error: Status 'COMPLETED' not found.", "CONFIG_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
+
+            appointment.setStatus(completedStatus); // Assign the Entity, not an Enum
             appointmentRepo.save(appointment);
         }
 

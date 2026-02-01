@@ -16,7 +16,6 @@ import com.dinethdf.ClinicManagementSystem.Repo.Lab.LabTestTypeRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Lab.PatientLabRequestRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Patient.PatientDetailsRepo;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
-import com.dinethdf.ClinicManagementSystem.Service.Lab.PatientLabRequestService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;

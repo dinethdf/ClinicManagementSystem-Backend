@@ -18,7 +18,7 @@ public class FinancialService {
     private final FinancialRepo financialRepo;
 
     @Transactional(readOnly = true)
-    public List<ScheduleFinancialDTO> getFinancialsForSchedule(Integer scheduleId) {
+    public List<ScheduleFinancialDTO> getFinancialsForSchedule(Long scheduleId) {
 
         // Pass Tenant ID to Repository
         List<ScheduleFinancialProjection> rawData = financialRepo.getScheduleFinancials(
