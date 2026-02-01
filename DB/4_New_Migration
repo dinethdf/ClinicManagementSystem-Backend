@@ -997,12 +997,7 @@ SET @sql = IF(@idx_exists = 0,
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Doctor Schedule indexes
-SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND INDEX_NAME = 'idx_payout_tracking');
-SET @sql = IF(@idx_exists = 0,
-    'ALTER TABLE doctorSchedule ADD INDEX idx_payout_tracking (clinic_id, status, payoutStatus)',
-    'SELECT ''Index idx_payout_tracking already exists''');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 
 SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
     WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND INDEX_NAME = 'idx_schedule_date');
@@ -1016,13 +1011,6 @@ SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
 SET @sql = IF(@idx_exists = 0,
     'ALTER TABLE doctorSchedule ADD INDEX idx_schedule_status_lookup (clinic_id, statusId)',
     'SELECT ''Index idx_schedule_status_lookup already exists''');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND INDEX_NAME = 'idx_payout_status_lookup');
-SET @sql = IF(@idx_exists = 0,
-    'ALTER TABLE doctorSchedule ADD INDEX idx_payout_status_lookup (clinic_id, payoutStatusId)',
-    'SELECT ''Index idx_payout_status_lookup already exists''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ==================================================================================
@@ -1508,8 +1496,7 @@ UNION ALL
 SELECT 'payment_method_lookup', COUNT(*) FROM payment_method_lookup;
 
 -- 1. Appointments Table
-ALTER TABLE appointments
-DROP COLUMN status;
+
 
 -- 2. Doctor Schedule Table
 -- ALTER TABLE doctorSchedule
@@ -1518,9 +1505,14 @@ DROP COLUMN status;
 -- DROP COLUMN bookingStatus;
 
 -- 3. Invoices Table
+
+*/
+
 ALTER TABLE invoices
 DROP COLUMN status;
-*/
+
+ALTER TABLE appointments
+DROP COLUMN status;
 -- 4. Payments Table (Fix: Drop constraint first)
 ALTER TABLE payments
 DROP CHECK chk_payment_amount; -- Must run this line first!
@@ -1529,6 +1521,11 @@ ALTER TABLE payments
 DROP COLUMN paymentMethod,
 DROP COLUMN paymentStatus,
 DROP COLUMN paymentLocation;
+
+ALTER TABLE doctorSchedule
+DROP COLUMN status,
+DROP COLUMN payoutStatus,
+DROP COLUMN bookingStatus;
 
 -- ==================================================================================
 -- END OF MIGRATION
