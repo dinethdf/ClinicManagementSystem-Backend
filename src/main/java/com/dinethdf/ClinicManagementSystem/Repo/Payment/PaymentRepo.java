@@ -25,4 +25,15 @@ public interface PaymentRepo extends JpaRepository<Payment, Long> {
             @Param("p_payment_gateway") String gateway,          // NEW
             @Param("p_discounts_json") String discountsJson
     );
+
+    @Procedure(name = "Payment.sp_ProcessRefund")
+    Map<String, Object> sp_ProcessRefund(
+            @Param("p_clinic_id") Integer clinicId,
+            @Param("p_invoice_id") Long invoiceId,
+            @Param("p_refund_amount") BigDecimal refundAmount,
+            @Param("p_refund_category") String refundCategory,
+            @Param("p_reason") String reason,
+            @Param("p_authorized_by") String authorizedBy,
+            @Param("p_created_by") String createdBy
+    );
 }

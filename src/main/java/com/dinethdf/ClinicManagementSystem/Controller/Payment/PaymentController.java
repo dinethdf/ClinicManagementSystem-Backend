@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Payment;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Payment.RefundRequestDTO;
 import com.dinethdf.ClinicManagementSystem.Service.Payment.PaymentService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,28 @@ public class PaymentController {
 
         PaymentResponseDTO paymentResponse = paymentService.processInvoicePayment(paymentDTO);
 
+        // 2. Wrap Response using your ApiResponse class
         ApiResponse<PaymentResponseDTO> response = ApiResponse.success(
                 paymentResponse,
-                messageSourceUtil.getMessage("payment.success")
+                messageSourceUtil.getMessage("payment.success") // Ensure this key exists in messages.properties
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("/appointment/refund")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR')") // Refunds are usually restricted
+    public ResponseEntity<ApiResponse<Void>> processRefund(
+            @RequestBody RefundRequestDTO refundDTO) {
+
+        // 1. Call Service (Returns void if successful, throws exception if failed)
+        paymentService.processRefund(refundDTO);
+
+        // 2. Wrap Response (Data is null for void operations)
+        ApiResponse<Void> response = ApiResponse.success(
+                null,
+                "Refund processed successfully" // You can also use messageSourceUtil here
         );
 
         return ResponseEntity.ok(response);

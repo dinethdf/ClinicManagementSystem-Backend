@@ -195,8 +195,12 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         a.id AS id,
         a.queuePosition AS queuePosition,
         a.note AS note,
-        a.status AS status,
         
+        -- NEW: Status from Lookup Table
+        asl.code AS status,
+        asl.displayName AS statusDisplayName,
+        asl.colorCode AS statusColor,
+
         -- Schedule Details
         ds.id AS scheduleId,
         ds.scheduleDate AS scheduleDate,
@@ -220,7 +224,11 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         -- Invoice Details
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
-        i.status AS invoiceStatus,
+        
+        -- NEW: Invoice Status from Lookup Table
+        isl.code AS invoiceStatus,
+        isl.displayName AS invoiceStatusDisplayName,
+        isl.colorCode AS invoiceStatusColor,
 
         -- System Columns
         a.createdDate, a.createdBy,
@@ -228,11 +236,17 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         a.approvedDate, a.approvedBy
 
     FROM appointments a
+    -- JOIN 1: Appointment Status
+    LEFT JOIN appointment_status_lookup asl ON a.statusId = asl.id
+    
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
     JOIN patient p ON a.patient_id = p.id
+    
     LEFT JOIN invoices i ON a.invoice_id = i.id
+    -- JOIN 2: Invoice Status
+    LEFT JOIN invoice_status_lookup isl ON i.statusId = isl.id
 
     WHERE a.id = :appointmentId
       AND a.clinic_id = :clinicId

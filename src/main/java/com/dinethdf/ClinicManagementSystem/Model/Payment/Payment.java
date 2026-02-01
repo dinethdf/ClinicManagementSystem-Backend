@@ -35,6 +35,28 @@ import java.time.LocalDateTime;
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class)
         }
 )
+
+// Add this inside the @NamedStoredProcedureQuery parameters list in Payment.java
+// (Keep the existing sp_AppointmentPaymentProcess definition too!)
+
+@NamedStoredProcedureQuery(
+        name = "Payment.sp_ProcessRefund",
+        procedureName = "sp_ProcessRefund",
+        parameters = {
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_clinic_id", type = Integer.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_invoice_id", type = Long.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_amount", type = BigDecimal.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_category", type = String.class), // <--- Added
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_reason", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_authorized_by", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_created_by", type = String.class),
+
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_refund_id", type = Integer.class),
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class)
+        }
+)
+// ... public class Payment ...
+
 public class Payment {
 
     @Id
