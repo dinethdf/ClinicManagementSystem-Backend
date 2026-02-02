@@ -140,26 +140,7 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
             @Param("patientNo") String patientNo,
             @Param("clinicId") Integer clinicId);
 
-    @Query("""
-    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO(
-        p.id, p.patientNo, p.firstName, p.lastName, p.nic,
-        p.address, p.dob,
-        new com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO(
-            g.id, g.patientNo, g.firstName, g.lastName, g.nic,
-            g.address, g.city, g.district, g.email, g.mobileNo, g.landNo
-        ),
-        p.city, p.district, p.email, p.mobileNo, p.landNo, p.profileImg
-        )
-        FROM Patient p
-        LEFT JOIN p.guardian g
-        WHERE p.clinicId = :clinicId
-          AND p.nic = :nic
-          AND p.isActive = true
-    """)
-    List<PatientResponseDTO> findPatientDataByNic( // <--- Return List explicitly
-                                                   @Param("nic") String nic,
-                                                   @Param("clinicId") Integer clinicId
-    );
+
 
     @Query("SELECT p.id FROM Patient p WHERE p.clinicId = :clinicId AND p.nic = :nic AND p.isActive = true")
     Optional<Long> findIdByNic(@Param("nic") String nic, @Param("clinicId") Integer clinicId);
@@ -191,5 +172,49 @@ public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpe
             @Param("clinicId") Integer clinicId
     );
 
+
+    @Query("""
+    SELECT new com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO(
+        p.id,
+        p.patientNo,
+        p.firstName,
+        p.lastName,
+        p.nic,
+        p.address,
+        p.dob,
+        new com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO(
+            g.id,
+            g.patientNo,
+            g.firstName,
+            g.lastName,
+            g.nic,
+            g.address,
+            g.city,
+            g.district,
+            g.email,
+            g.mobileNo,
+            g.landNo
+        ),
+        p.city,
+        p.district,
+        p.email,
+        p.mobileNo,
+        p.landNo,
+        p.profileImg
+    )
+    FROM Patient p
+    LEFT JOIN p.guardian g
+    WHERE p.clinicId = :clinicId
+      AND p.isActive = true
+      AND (
+          p.nic = :searchValue
+          OR
+          p.mobileNo = :searchValue
+      )
+    """)
+    List<PatientResponseDTO> findByNicOrMobile(
+            @Param("searchValue") String searchValue,
+            @Param("clinicId") Integer clinicId
+    );
 
 }

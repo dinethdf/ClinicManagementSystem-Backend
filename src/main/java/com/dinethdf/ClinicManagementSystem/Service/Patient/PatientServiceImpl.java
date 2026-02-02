@@ -623,22 +623,16 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public PatientResponseDTO findPatientDetailsByNic(String nic) {
-        if (nic == null || nic.trim().length() < 10) {
-            return null;
+    public List<PatientResponseDTO> checkPatientExistence(String searchValue) {
+
+        if (searchValue == null || searchValue.trim().isEmpty()) {
+            throw new ValidationException("Search value is required", "MISSING_INPUT");
         }
 
-        List<PatientResponseDTO> matches = patientDetailsRepo.findPatientDataByNic(nic, TenantContext.getCurrentTenant());
-
-        if (matches.isEmpty()) {
-            return null;
-        }
-
-        if (matches.size() > 1) {
-            System.out.println("WARNING: Duplicate patients found for NIC: " + nic);
-        }
-
-        return matches.getFirst();
+        return patientDetailsRepo.findByNicOrMobile(
+                searchValue.trim(),
+                TenantContext.getCurrentTenant()
+        );
     }
 
     private String generatePatientNo(Long id) {

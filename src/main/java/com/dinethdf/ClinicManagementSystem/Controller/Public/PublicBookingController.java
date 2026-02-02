@@ -23,35 +23,18 @@ public class PublicBookingController {
     private PublicBookingService publicBookingService;
 
     @GetMapping("/check-patient")
-    public ResponseEntity<ApiResponse<PatientResponseDTO>> checkPatient(
-            @RequestParam(required = false) String nic,
-            @RequestParam(required = false) String mobileNo,
+    public ResponseEntity<ApiResponse<List<PatientResponseDTO>>> checkPatient(
+            @RequestParam(required = true) String query, // The single value (NIC or Mobile)
             @RequestParam(required = true) String clinicId
     ) {
         try {
             TenantContext.setCurrentTenant(Integer.valueOf(clinicId));
-            PatientResponseDTO foundPatient = null;
-            if (nic != null && !nic.trim().isEmpty()) {
-                foundPatient = patientService.findPatientDetailsByNic(nic);
-            }
+        
+            List<PatientResponseDTO> patients = patientService.checkPatientExistence(query);
 
-            else if (mobileNo != null && !mobileNo.trim().isEmpty()) {
-                List<PatientResponseDTO> results = patientService.findPatientBySearching(null, null, null, mobileNo);
-                if (!results.isEmpty()) {
-                    foundPatient = results.get(0); // Take the first match
-                }
-            }
-
-            // 4. Return Result
-            if (foundPatient != null) {
-                return ResponseEntity.ok(ApiResponse.success(foundPatient, "Patient Found"));
-            }
-
-            // If we reach here, no patient was found -> Return success with NULL data
-            return ResponseEntity.ok(ApiResponse.success(null, "Patient not found"));
+            return ResponseEntity.ok(ApiResponse.success(patients, "Search Complete"));
 
         } finally {
-            // 5. Always clear tenant to prevent data leaks in thread pool
             TenantContext.clear();
         }
     }
