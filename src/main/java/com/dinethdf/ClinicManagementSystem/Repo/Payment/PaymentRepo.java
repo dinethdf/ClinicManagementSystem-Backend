@@ -1,11 +1,14 @@
 package com.dinethdf.ClinicManagementSystem.Repo.Payment;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentHistoryProjection;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -35,5 +38,30 @@ public interface PaymentRepo extends JpaRepository<Payment, Long> {
             @Param("p_reason") String reason,
             @Param("p_authorized_by") String authorizedBy,
             @Param("p_created_by") String createdBy
+    );
+
+    @Query(nativeQuery = true, value = """
+        SELECT
+            p.id AS paymentId,
+            p.paymentTimestamp AS paymentDate,
+            p.amountPaid AS amount,
+            p.transactionId AS transactionRef,
+            p.receivedBy AS receivedBy,
+            pml.displayName AS method,
+            pll.displayName AS location,
+            psl.code AS statusCode,
+            psl.displayName AS statusDisplay,
+            psl.colorCode AS statusColor
+        FROM payments p
+        LEFT JOIN payment_method_lookup pml ON p.paymentMethodId = pml.id
+        LEFT JOIN payment_location_lookup pll ON p.paymentLocationId = pll.id
+        LEFT JOIN payment_status_lookup psl ON p.paymentStatusId = psl.id
+        WHERE p.invoice_id = :invoiceId
+          AND p.clinic_id = :clinicId
+        ORDER BY p.paymentTimestamp DESC
+    """)
+    List<PaymentHistoryProjection> findHistoryByInvoiceId(
+            @Param("invoiceId") Long invoiceId,
+            @Param("clinicId") Integer clinicId
     );
 }

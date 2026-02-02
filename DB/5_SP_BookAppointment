@@ -101,11 +101,12 @@ BEGIN
         -- == 7. CHECK FOR DUPLICATE BOOKING (Scoped to Clinic) ==
         SELECT COUNT(*)
         INTO v_patientBookingCount
-        FROM appointments
-        WHERE clinic_id = p_clinic_id
-          AND doctor_schedule_id = p_doctor_schedule_id
-          AND patient_id = p_patient_id
-          AND status IN ('BOOKED', 'PENDING_PAYMENT', 'ONGOING', 'COMPLETED');
+        FROM appointments a
+        JOIN appointment_status_lookup asl ON a.statusId = asl.id
+        WHERE a.clinic_id = p_clinic_id
+          AND a.doctor_schedule_id = p_doctor_schedule_id
+          AND a.patient_id = p_patient_id
+          AND asl.code IN ('BOOKED', 'PENDING_PAYMENT', 'ONGOING', 'COMPLETED');
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';
@@ -121,11 +122,11 @@ BEGIN
             WHERE typeName = 'APPOINTMENT' LIMIT 1;
 
             -- == 9. CREATE THE MASTER INVOICE ==
+            -- REMOVED: `status` column
             INSERT INTO invoices (
                 clinic_id,
                 patient_id,
-                status,                     -- Old ENUM (temporary)
-                statusId,                   -- NEW: Lookup ID
+                statusId,                   -- NEW: Only Lookup ID
                 subtotalAmount,
                 totalDiscount,
                 finalAmount,
@@ -137,7 +138,6 @@ BEGIN
             ) VALUES (
                 p_clinic_id,
                 p_patient_id,
-                'UNPAID',                   -- Backward compatible
                 v_invoice_status_unpaid_id, -- NEW
                 v_totalFee,
                 0.00,
@@ -171,14 +171,14 @@ BEGIN
             );
 
             -- == 11. CREATE THE APPOINTMENT ==
+            -- REMOVED: `status` column
             INSERT INTO appointments (
                 clinic_id,
                 doctor_schedule_id,
                 patient_id,
                 queuePosition,
                 note,
-                status,                             -- Old ENUM (temporary)
-                statusId,                           -- NEW: Lookup ID
+                statusId,                    -- NEW: Only Lookup ID
                 invoice_id,
                 createdDate,
                 createdBy
@@ -188,8 +188,7 @@ BEGIN
                 p_patient_id,
                 v_newQueuePosition,
                 p_note,
-                'PENDING_PAYMENT',                  -- Backward compatible
-                v_appointment_status_pending_id,    -- NEW
+                v_appointment_status_pending_id, -- NEW
                 o_newInvoiceId,
                 v_now,
                 p_createdBy

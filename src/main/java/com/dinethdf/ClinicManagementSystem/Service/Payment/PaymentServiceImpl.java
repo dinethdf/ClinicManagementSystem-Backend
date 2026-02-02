@@ -1,8 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.Payment;
 
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.RefundRequestDTO; // <--- Ensure you create this DTO
+import com.dinethdf.ClinicManagementSystem.DTO.Payment.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Payment.PaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
@@ -17,8 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -153,9 +153,39 @@ public class PaymentServiceImpl implements PaymentService {
 
         // ... existing error handling ...
     }
-    // =================================================================================
-    // 3. HELPER METHODS
-    // =================================================================================
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<InvoicePaymentDetailDTO> getPaymentHistory(Long invoiceId) {
+
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Fetch Data
+        List<PaymentHistoryProjection> rawData = paymentRepo.findHistoryByInvoiceId(invoiceId, clinicId);
+
+        // 2. Map to DTO
+        return rawData.stream().map(row -> {
+            InvoicePaymentDetailDTO dto = new InvoicePaymentDetailDTO();
+
+            dto.setPaymentId(row.getPaymentId());
+            dto.setPaymentDate(row.getPaymentDate());
+            dto.setAmount(row.getAmount());
+            dto.setTransactionRef(row.getTransactionRef());
+            dto.setReceivedBy(row.getReceivedBy());
+            dto.setMethod(row.getMethod());
+            dto.setLocation(row.getLocation());
+
+            // Map Status
+            dto.setStatus(new InvoicePaymentDetailDTO.PaymentStatusDTO(
+                    row.getStatusCode(),
+                    row.getStatusDisplay(),
+                    row.getStatusColor()
+            ));
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
     private void validateRefundRequest(RefundRequestDTO dto) {
         if (dto.getInvoiceId() == null) {
             throw new ValidationException("Invoice ID is required", "INVALID_INPUT", HttpStatus.BAD_REQUEST);

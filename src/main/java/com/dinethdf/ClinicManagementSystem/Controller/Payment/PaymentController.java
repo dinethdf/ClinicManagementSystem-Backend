@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Payment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDetailDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.RefundRequestDTO;
 import com.dinethdf.ClinicManagementSystem.Service.Payment.PaymentService;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -51,5 +54,19 @@ public class PaymentController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    // GET /api/payments/history/{invoiceId}
+    @GetMapping("/history/{invoiceId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<InvoicePaymentDetailDTO>>> getPaymentHistory(
+            @PathVariable Long invoiceId) {
+
+        List<InvoicePaymentDetailDTO> history = paymentService.getPaymentHistory(invoiceId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                history,
+                "Payment history retrieved successfully"
+        ));
     }
 }
