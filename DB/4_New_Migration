@@ -200,18 +200,7 @@ INSERT IGNORE INTO staff_status_lookup (id, code, displayName, colorCode, sortOr
 -- -----------------------------------------------
 -- A.11 Booking Status Lookup
 -- -----------------------------------------------
-CREATE TABLE IF NOT EXISTS booking_status_lookup (
-    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(30) UNIQUE NOT NULL,
-    displayName VARCHAR(50) NOT NULL,
-    colorCode VARCHAR(20) NULL,
-    sortOrder INT DEFAULT 0,
-    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
 
-INSERT IGNORE INTO booking_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
-(1, 'OPEN', 'Open', '#28A745', 1),
-(2, 'CLOSED', 'Closed', '#DC3545', 2);
 
 -- -----------------------------------------------
 -- A.12 Prescription Status Lookup
@@ -628,12 +617,6 @@ SET @sql = IF(@col_exists = 0,
     'SELECT ''Column payoutStatusId already exists''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND COLUMN_NAME = 'bookingStatusId');
-SET @sql = IF(@col_exists = 0,
-    'ALTER TABLE doctorSchedule ADD COLUMN bookingStatusId TINYINT UNSIGNED NULL AFTER bookingStatus',
-    'SELECT ''Column bookingStatusId already exists''');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Invoices
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
@@ -764,11 +747,6 @@ INNER JOIN payout_status_lookup s ON ds.payoutStatus = s.code
 SET ds.payoutStatusId = s.id
 WHERE ds.payoutStatusId IS NULL;
 
--- Doctor Schedule - bookingStatus
-UPDATE doctorSchedule ds
-INNER JOIN booking_status_lookup s ON ds.bookingStatus = s.code
-SET ds.bookingStatusId = s.id
-WHERE ds.bookingStatusId IS NULL;
 
 -- Invoices
 UPDATE invoices i
@@ -1044,14 +1022,7 @@ SET @sql = IF(@fk_exists = 0,
     'SELECT ''FK already exists''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Doctor Schedule - booking status
-SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
-    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule'
-    AND CONSTRAINT_NAME = 'fk_schedule_booking_status');
-SET @sql = IF(@fk_exists = 0,
-    'ALTER TABLE doctorSchedule ADD CONSTRAINT fk_schedule_booking_status FOREIGN KEY (bookingStatusId) REFERENCES booking_status_lookup(id)',
-    'SELECT ''FK already exists''');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 
 -- Invoices
 SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
@@ -1495,14 +1466,6 @@ SELECT 'invoice_status_lookup', COUNT(*) FROM invoice_status_lookup
 UNION ALL
 SELECT 'payment_method_lookup', COUNT(*) FROM payment_method_lookup;
 
--- 1. Appointments Table
-
-
--- 2. Doctor Schedule Table
--- ALTER TABLE doctorSchedule
--- DROP COLUMN status,
--- DROP COLUMN payoutStatus,
--- DROP COLUMN bookingStatus;
 
 -- 3. Invoices Table
 
@@ -1524,8 +1487,7 @@ DROP COLUMN paymentLocation;
 
 ALTER TABLE doctorSchedule
 DROP COLUMN status,
-DROP COLUMN payoutStatus,
-DROP COLUMN bookingStatus;
+DROP COLUMN payoutStatus;
 
 -- ==================================================================================
 -- END OF MIGRATION
