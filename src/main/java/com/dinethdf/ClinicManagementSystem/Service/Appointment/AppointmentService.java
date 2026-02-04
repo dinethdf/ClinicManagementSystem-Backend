@@ -25,8 +25,8 @@ public interface AppointmentService {
 
     List<PatientAppointmentDTO> getAppointmentsByPatient(Long patientId);
 
-
-    Page<AppointmentAdminListDTO> getFilteredAppointments(Long patientId, Long scheduleId, LocalDate startDate, LocalDate endDate, Pageable pageable);
+    Page<AppointmentAdminListDTO> getFilteredAppointments(
+            Long patientId, Long doctorId, Long scheduleId, LocalDate startDate, LocalDate endDate, Pageable pageable);
 
     AppointmentFullDetailsDTO getAppointmentDetails(Long appointmentId);
 

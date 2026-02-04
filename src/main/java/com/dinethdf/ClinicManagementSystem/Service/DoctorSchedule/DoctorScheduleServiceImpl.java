@@ -162,20 +162,23 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     public Page<DoctorScheduleResponseDTO> getAllSchedulesList(
-            String doctorName,
-            String specialization,
-            LocalDate searchDate,
+            Long doctorId,
+            Integer specializationId,
+            LocalDate startDate, // New
+            LocalDate endDate,   // New
             Pageable pageable) {
 
-        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
         LocalDate today = LocalDate.now();
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new ValidationException("Start date cannot be after end date", "INVALID_DATE_RANGE");
+        }
 
         Page<DoctorSchedule> schedulePage = doctorScheduleRepo.findAllSchedules(
                 today,
-                now,
-                doctorName,
-                specialization,
-                searchDate,
+                doctorId,
+                specializationId,
+                startDate,
+                endDate,
                 TenantContext.getCurrentTenant(),
                 pageable
         );

@@ -401,6 +401,8 @@ public class PatientServiceImpl implements PatientService {
             existingPatient.setGender(patientFromRequest.getGender());
             existingPatient.setMaritalStatus(patientFromRequest.getMaritalStatus());
             existingPatient.setBloodGroup(patientFromRequest.getBloodGroup());
+            existingPatient.setHeight(patientFromRequest.getHeight());
+            existingPatient.setWeight(patientFromRequest.getWeight());
 
             if (!existingPatient.isDependent()){
                 // Contact & Address

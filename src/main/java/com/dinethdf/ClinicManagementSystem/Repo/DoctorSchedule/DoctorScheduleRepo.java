@@ -62,21 +62,22 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("clinicId") Integer clinicId
     );
 
-    // Paginated list of all schedules with optional filters
+    // Paginated list with ID filters + Date Range
     @Query("SELECT s FROM DoctorSchedule s " +
             "JOIN FETCH s.doctor d " +
             "JOIN FETCH d.specialization sp " +
             "WHERE s.clinicId = :clinicId " +
-            "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
-            "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
-            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate) " +
+            "AND (:doctorId IS NULL OR d.id = :doctorId) " +
+            "AND (:specializationId IS NULL OR sp.id = :specializationId) " +
+            "AND (:startDate IS NULL OR s.scheduleDate >= :startDate) " +
+            "AND (:endDate IS NULL OR s.scheduleDate <= :endDate) " +
             "ORDER BY CASE WHEN s.scheduleDate = :today THEN 1 WHEN s.scheduleDate > :today THEN 2 ELSE 3 END ASC, s.scheduleDate ASC, s.startTime ASC")
     Page<DoctorSchedule> findAllSchedules(
             @Param("today") LocalDate today,
-            @Param("now") LocalTime now,
-            @Param("doctorName") String doctorName,
-            @Param("specialization") String specialization,
-            @Param("searchDate") LocalDate searchDate,
+            @Param("doctorId") Long doctorId,
+            @Param("specializationId") Integer specializationId,
+            @Param("startDate") LocalDate startDate, // New
+            @Param("endDate") LocalDate endDate,     // New
             @Param("clinicId") Integer clinicId,
             Pageable pageable
     );

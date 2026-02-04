@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -56,21 +57,21 @@ public class AppointmentController {
     }
 
     @GetMapping("/list")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')") // Adjust roles as needed
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<Page<AppointmentAdminListDTO>>> getAllAppointments(
             @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false) Long doctorId,
             @RequestParam(required = false) Long scheduleId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<AppointmentAdminListDTO> result = appointmentService.getFilteredAppointments(
-                patientId, scheduleId, startDate, endDate, pageable
+                patientId, doctorId, scheduleId, startDate, endDate, pageable
         );
-
         return ResponseEntity.ok(ApiResponse.success(result, messageSourceUtil.getMessage("appointment.list.success")));
     }
 

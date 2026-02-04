@@ -138,12 +138,16 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("patientId") Long patientId,
             @Param("clinicId") Integer clinicId);
 
-    // CHANGED: Added Join to appointment_status_lookup
     @Query(nativeQuery = true, value = """
     SELECT
         a.id AS id,
         a.queuePosition AS queuePosition,
-        asl.code AS status, -- Get Code
+        
+        -- Full Status Details
+        asl.code AS status,
+        asl.displayName AS statusDisplayName,
+        asl.colorCode AS statusColor,
+
         a.note AS note,
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS startTime,
@@ -153,13 +157,14 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         CONCAT(p.firstName, ' ', p.lastName) AS patientName,
         p.mobileNo AS patientMobile
     FROM appointments a
-    JOIN appointment_status_lookup asl ON a.statusId = asl.id -- JOIN
+    JOIN appointment_status_lookup asl ON a.statusId = asl.id
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     JOIN patient p ON a.patient_id = p.id
     WHERE
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:doctorId IS NULL OR d.id = :doctorId)    -- NEW: Doctor Filter
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
         AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
@@ -169,15 +174,18 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     SELECT COUNT(a.id)
     FROM appointments a
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    JOIN doctor d ON ds.doctor_id = d.id
     WHERE
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:doctorId IS NULL OR d.id = :doctorId)    -- NEW: Doctor Filter
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
         AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
 """)
     Page<AppointmentAdminListDTO> findFilteredAppointments(
             @Param("patientId") Long patientId,
+            @Param("doctorId") Long doctorId,       // NEW
             @Param("scheduleId") Long scheduleId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
@@ -368,10 +376,11 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     );
 
     @Procedure(name = "Appointment.cancel")
-    String sp_CancelAppointment(
+    Map<String, Object> sp_CancelAppointment(
             @Param("p_clinic_id") Integer clinicId,
             @Param("p_appointment_id") Integer appointmentId,
             @Param("p_cancel_reason") String cancelReason,
-            @Param("p_cancelled_by") String cancelledBy
+            @Param("p_cancelled_by") String cancelledBy,
+            @Param("p_refund_method") String refundMethod // <--- NEW
     );
 }
