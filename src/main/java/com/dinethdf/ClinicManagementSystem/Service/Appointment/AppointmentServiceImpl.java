@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -268,12 +269,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public String cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy) {
+    public AppointmentCancelResponseDTO cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy) {
 
-        // Default to "ORIGINAL_METHOD" if DTO doesn't have it
         String refundMethod = (cancelDTO.getRefundMethod() != null) ? cancelDTO.getRefundMethod() : "ORIGINAL_METHOD";
 
-        // 1. Execute SQL Cancellation (Returns a Map now)
+        // 1. Call DB
         Map<String, Object> result = appointmentRepo.sp_CancelAppointment(
                 TenantContext.getCurrentTenant(),
                 appointmentId.intValue(),
@@ -282,51 +282,33 @@ public class AppointmentServiceImpl implements AppointmentService {
                 refundMethod
         );
 
-        String statusMessage = (String) result.get("o_status_message");
-        // BigDecimal refundAmount = (BigDecimal) result.get("o_refund_amount"); // Optional: Use if needed
+        // 2. Extract Outputs
+        String message = (String) result.get("o_status_message");
+        BigDecimal refundAmount = (BigDecimal) result.get("o_refund_amount");
+        Boolean isSuccess = (Boolean) result.get("o_is_success");
 
-        // 2. Handle Logic based on SQL Return Strings
-        switch (statusMessage) {
-            case "CANCEL_SUCCESS_NO_PAYMENT":
-            case "REFUND_SUCCESS_SINGLE":
-            case "REFUND_SUCCESS_MULTIPLE":
-            case "CANCEL_SUCCESS_MANUAL_REFUND_REQUIRED":
-                // --- FIREBASE SYNC START ---
-                try {
-                    Appointment appt = appointmentRepo.findById(appointmentId).orElse(null);
-                    if (appt != null) {
-                        queueService.cancelAppointment(
-                                Long.valueOf(TenantContext.getCurrentTenant()),
-                                appt.getDoctorSchedule().getId(),
-                                appt.getQueuePosition()
-                        );
-                    }
-                } catch (Exception e) {
-                    System.err.println("Failed to update Firebase cancellation: " + e.getMessage());
+        // 3. Handle Firebase Sync (Only if Success)
+        if (Boolean.TRUE.equals(isSuccess)) {
+            try {
+                Appointment appt = appointmentRepo.findById(appointmentId).orElse(null);
+                if (appt != null) {
+                    queueService.cancelAppointment(
+                            Long.valueOf(TenantContext.getCurrentTenant()),
+                            appt.getDoctorSchedule().getId(),
+                            appt.getQueuePosition()
+                    );
                 }
-                // --- FIREBASE SYNC END ---
-
-                // Return user-friendly message based on specific SQL status
-                if ("CANCEL_SUCCESS_NO_PAYMENT".equals(statusMessage)) {
-                    return "Appointment Cancelled (No Payment Found).";
-                } else if ("CANCEL_SUCCESS_MANUAL_REFUND_REQUIRED".equals(statusMessage)) {
-                    return "Appointment Cancelled. Please Process Refund Manually.";
-                } else {
-                    return "Appointment Cancelled & Refund Processed Successfully.";
-                }
-
-            case "ERROR_NOT_FOUND":
-                throw new ValidationException("Appointment not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
-
-            case "ERROR_ALREADY_CANCELLED":
-                throw new ValidationException("Appointment is already cancelled", "ALREADY_CANCELLED", HttpStatus.BAD_REQUEST);
-
-            case "ERROR_CANNOT_CANCEL_COMPLETED":
-                throw new ValidationException("Cannot cancel a completed appointment", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
-
-            default:
-                throw new ValidationException("Database Error: " + statusMessage, "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (Exception e) {
+                System.err.println("Firebase Sync Failed: " + e.getMessage());
+            }
         }
+
+        // 4. Return DTO
+        return new AppointmentCancelResponseDTO(
+                Boolean.TRUE.equals(isSuccess),
+                message,
+                refundAmount != null ? refundAmount : BigDecimal.ZERO
+        );
     }
 
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {

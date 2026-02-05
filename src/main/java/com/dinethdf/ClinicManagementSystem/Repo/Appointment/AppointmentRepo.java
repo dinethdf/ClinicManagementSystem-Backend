@@ -218,6 +218,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         s.name AS specialization,
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
+        i.amountPaid AS amountPaid,
+        i.balanceRemaining AS balanceRemaining,
         isl.code AS invoiceStatus,
         isl.displayName AS invoiceStatusDisplayName,
         isl.colorCode AS invoiceStatusColor,
@@ -270,6 +272,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
+        i.amountPaid AS amountPaid,
+        i.balanceRemaining AS balanceRemaining,
         
         -- MAPPED INVOICE STATUS
         isl.code AS invoiceStatus,
@@ -381,6 +385,6 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("p_appointment_id") Integer appointmentId,
             @Param("p_cancel_reason") String cancelReason,
             @Param("p_cancelled_by") String cancelledBy,
-            @Param("p_refund_method") String refundMethod // <--- NEW
+            @Param("p_refund_method") String refundMethod
     );
 }

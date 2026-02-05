@@ -38,6 +38,8 @@ public interface AppointmentFullDetailsDTO {
     // --- UPDATED INVOICE INFO ---
     BigDecimal getInvoiceTotalDiscount();
     BigDecimal getInvoiceFinalAmount();
+    BigDecimal getAmountPaid();
+    BigDecimal getBalanceRemaining();
 
     String getInvoiceStatus();            // Returns Code (e.g., "PAID")
     String getInvoiceStatusDisplayName(); // Returns Name (e.g., "Paid")

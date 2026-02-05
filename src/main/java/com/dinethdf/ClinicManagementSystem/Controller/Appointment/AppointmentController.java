@@ -126,19 +126,19 @@ public class AppointmentController {
 
     @PostMapping("/cancel/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResponse<String>> cancelAppointment(
+    public ResponseEntity<ApiResponse<AppointmentCancelResponseDTO>> cancelAppointment(
             @PathVariable Long id,
             @RequestBody AppointmentCancelDTO cancelDTO,
             Principal principal) {
 
-        String resultMessage = appointmentService.cancelAppointment(id, cancelDTO, principal.getName());
+        AppointmentCancelResponseDTO result = appointmentService.cancelAppointment(id, cancelDTO, principal.getName());
 
-        ApiResponse<String> response = ApiResponse.success(
-                null, // No data payload for cancellation
-                resultMessage // The service returns the specific message (Refund vs Cancel)s
-        );
-
-        return ResponseEntity.ok(response);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
+        } else {
+            // Return 400 Bad Request if the SP returned failure (e.g., already cancelled)
+            return ResponseEntity.badRequest().body(ApiResponse.error(result.getMessage()));
+        }
     }
 
 }
