@@ -5,11 +5,14 @@ import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDetailDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.RefundRequestDTO;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientPrincipal;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.Payment.PaymentService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,9 +28,13 @@ public class PaymentController {
     @PostMapping("/appointment/pay")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> processPayment(
-            @RequestBody InvoicePaymentDTO paymentDTO) {
+            @RequestBody InvoicePaymentDTO paymentDTO,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        PaymentResponseDTO paymentResponse = paymentService.processInvoicePayment(paymentDTO);
+        // 1. Get the ID from the authenticated token
+        Long staffId = userPrincipal.getUserDetailsId();
+
+        PaymentResponseDTO paymentResponse = paymentService.processInvoicePayment(paymentDTO, staffId);
 
         // 2. Wrap Response using your ApiResponse class
         ApiResponse<PaymentResponseDTO> response = ApiResponse.success(

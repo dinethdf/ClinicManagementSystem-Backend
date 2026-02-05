@@ -385,6 +385,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("p_appointment_id") Integer appointmentId,
             @Param("p_cancel_reason") String cancelReason,
             @Param("p_cancelled_by") String cancelledBy,
+            @Param("p_received_by_staff_id") Long staffId,
+            @Param("p_cashier_workstation_id") Integer workstationId,
             @Param("p_refund_method") String refundMethod
     );
 }

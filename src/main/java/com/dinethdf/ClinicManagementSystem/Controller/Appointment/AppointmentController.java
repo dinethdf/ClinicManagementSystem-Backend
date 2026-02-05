@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.Controller.Appointment;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -129,9 +131,11 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<AppointmentCancelResponseDTO>> cancelAppointment(
             @PathVariable Long id,
             @RequestBody AppointmentCancelDTO cancelDTO,
-            Principal principal) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        AppointmentCancelResponseDTO result = appointmentService.cancelAppointment(id, cancelDTO, principal.getName());
+        // 1. Get the ID from the authenticated token
+        Long staffId = userPrincipal.getUserDetailsId();
+        AppointmentCancelResponseDTO result = appointmentService.cancelAppointment(id, cancelDTO, staffId);
 
         if (result.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));

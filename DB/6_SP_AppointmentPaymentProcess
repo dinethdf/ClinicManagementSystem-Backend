@@ -171,14 +171,14 @@ proc_label: BEGIN
     INSERT INTO payments (
         clinic_id, invoice_id, amountPaid,
         paymentMethodId, paymentStatusId, paymentLocationId,
-        receivedBy, cashierWorkstationId,
+        receivedBy, receivedByStaffId, cashierWorkstationId,
         paymentGateway, transactionId, paymentTimestamp, createdDate, createdBy
     ) VALUES (
         p_clinic_id, p_invoice_id, p_amount_paid,
         v_method_id,
         (SELECT id FROM payment_status_lookup WHERE code = 'COMPLETED' LIMIT 1),
         v_location_id,
-        p_received_by, p_received_by_staff_id,
+        p_received_by, p_received_by_staff_id, p_received_by_staff_id,
         p_payment_gateway, p_transaction_code, v_now, v_now, p_created_by
     );
 

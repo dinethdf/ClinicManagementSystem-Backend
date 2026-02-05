@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface PaymentService {
-    PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO);
+    PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO, Long userId);
 
 
     void processRefund(RefundRequestDTO refundDTO);

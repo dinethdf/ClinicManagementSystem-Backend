@@ -1,11 +1,13 @@
 package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.*;
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleAnalyticsDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.AppointmentInvoiceViewDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Invoice.InvoiceItemViewDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.AppointmentMapper;
@@ -32,6 +34,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepo appointmentRepo;
     private final AppointmentMapper appointmentMapper;
     private final MessageSourceUtil messageSourceUtil;
+    private final ClinicStaffService clinicStaffService;
 
     private final QueueService queueService;
 
@@ -269,16 +272,19 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentCancelResponseDTO cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy) {
+    public AppointmentCancelResponseDTO cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, Long staffId) {
+
+        ClinicStaffResponseDto staff = clinicStaffService.getStaffById(staffId);
 
         String refundMethod = (cancelDTO.getRefundMethod() != null) ? cancelDTO.getRefundMethod() : "ORIGINAL_METHOD";
 
-        // 1. Call DB
         Map<String, Object> result = appointmentRepo.sp_CancelAppointment(
                 TenantContext.getCurrentTenant(),
                 appointmentId.intValue(),
                 cancelDTO.getReason(),
-                cancelledBy,
+                staff.getFirstName() + staff.getLastName(),
+                staff.getId(),
+                null,
                 refundMethod
         );
 

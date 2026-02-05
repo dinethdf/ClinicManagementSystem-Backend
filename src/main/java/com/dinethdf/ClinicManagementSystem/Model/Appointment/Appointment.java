@@ -34,10 +34,12 @@ import java.math.BigDecimal;
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_appointment_id", type = Integer.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cancel_reason", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cancelled_by", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_received_by_staff_id", type = Long.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cashier_workstation_id", type = Integer.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_method", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_refund_amount", type = BigDecimal.class),
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class),
-                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_is_success", type = Boolean.class) // <--- NEW
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_is_success", type = Boolean.class)
         }
 )
 

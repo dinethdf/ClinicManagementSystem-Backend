@@ -1,9 +1,11 @@
 package com.dinethdf.ClinicManagementSystem.Service.Payment;
 
+import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
 import com.dinethdf.ClinicManagementSystem.DTO.Payment.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Payment.PaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
+import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -28,28 +30,29 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepo invoiceRepo;
     private final ObjectMapper objectMapper;
     private final MessageSourceUtil messageSourceUtil;
+    private final ClinicStaffService clinicStaffService;
 //    private final SmsService smsService;
 
     @Override
     @Transactional
-    public PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO) {
+    public PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO, Long userId) {
+
+        ClinicStaffResponseDto staff = clinicStaffService.getStaffById(userId);
 
         validatePaymentDTO(paymentDTO);
 
-        // 1. Context Data
         Integer clinicId = TenantContext.getCurrentTenant();
-        String createdBy = "receptionist_user"; // TODO: Fetch from SecurityContext
 
-        // 2. Prepare Data (Defaults)
-        String receivedByName = "Unknown Cashier"; // TODO: Fetch from Logged-in User
-        Integer receivedByStaffId = 1;             // TODO: Fetch from Logged-in User ID
+        String createdBy = staff.getFirstName() + " " + staff.getLastName();
 
-        // Use DTO location if provided, else default
+        String receivedByName = staff.getFirstName() + " " + staff.getLastName();
+
+        Integer receivedByStaffId = staff.getId().intValue();
+
         String paymentLocation = (paymentDTO.getPaymentLocation() != null)
                 ? paymentDTO.getPaymentLocation()
                 : "CLINIC_COUNTER";
 
-        // 3. Prepare JSON for Discounts
         String discountsJson = null;
         if (paymentDTO.getDiscounts() != null && !paymentDTO.getDiscounts().isEmpty()) {
             try {

@@ -32,5 +32,5 @@ public interface AppointmentService {
 
     AppointmentCheckDTO checkPatientAppointment(Long scheduleId, Long patientId);
 
-    AppointmentCancelResponseDTO cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, String cancelledBy);
+    AppointmentCancelResponseDTO cancelAppointment(Long appointmentId, AppointmentCancelDTO cancelDTO, Long staffId);
 }
