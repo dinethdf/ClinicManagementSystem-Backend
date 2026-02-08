@@ -15,7 +15,7 @@ public interface FinancialRepo extends JpaRepository<Appointment, Long> {
     // Updated to pass clinicId for Multi-Tenancy
     @Query(value = "CALL GetScheduleFinancials(:clinicId, :scheduleId)", nativeQuery = true)
     List<ScheduleFinancialProjection> getScheduleFinancials(
-            @Param("scheduleId") Integer scheduleId,
+            @Param("scheduleId") Long scheduleId,
             @Param("clinicId") Integer clinicId
     );
 }

@@ -1,0 +1,1496 @@
+-- ==================================================================================
+-- COMPREHENSIVE CLINIC SYSTEM MIGRATION - MySQL 8 Compatible
+-- Version: 2.0 - Combined (Fixed for MySQL 8)
+-- Date: 2026-01-31
+-- Description:
+--   1. Payment System Enhancement (Partial payments, online payments, cashier tracking)
+--   2. ENUM Normalization (Convert status ENUMs to lookup tables)
+-- Note: Removed all IF NOT EXISTS syntax for MySQL 8 compatibility
+-- ==================================================================================
+
+USE clinicmsystem;
+
+-- ==================================================================================
+-- PART A: CREATE STATUS LOOKUP TABLES
+-- ==================================================================================
+
+-- -----------------------------------------------
+-- A.1 Appointment Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS appointment_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    description VARCHAR(255) NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO appointment_status_lookup (id, code, displayName, description, colorCode, sortOrder) VALUES
+(1, 'PENDING_PAYMENT', 'Pending Payment', 'Appointment booked but payment not completed', '#FFA500', 1),
+(2, 'PARTIAL', 'Partial', 'Appointment booked but payment Partial', '#FFA500', 2),
+(3, 'BOOKED', 'Booked', 'Appointment confirmed and paid', '#28A745', 3),
+(4, 'ONGOING', 'Ongoing', 'Patient currently with doctor', '#007BFF', 4),
+(5, 'COMPLETED', 'Completed', 'Appointment finished', '#6C757D', 5),
+(6, 'CANCELLED', 'Cancelled', 'Appointment cancelled', '#DC3545', 6),
+(7, 'NOSHOW', 'No Show', 'Patient did not attend', '#FFC107', 7);
+
+-- -----------------------------------------------
+-- A.2 Schedule Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS schedule_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO schedule_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'ACTIVE', 'Active', '#28A745', 1),
+(2, 'COMPLETED', 'Completed', '#6C757D', 2),
+(3, 'CANCELLED', 'Cancelled', '#DC3545', 3);
+
+-- -----------------------------------------------
+-- A.3 Payout Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payout_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payout_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'NOT_PAID', 'Not Paid', '#DC3545', 1),
+(2, 'PENDING', 'Pending', '#FFA500', 2),
+(3, 'PAID', 'Paid', '#28A745', 3);
+
+-- -----------------------------------------------
+-- A.4 Invoice Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS invoice_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO invoice_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'UNPAID', 'Unpaid', '#DC3545', 1),
+(2, 'PARTIAL', 'Partial', '#FFA500', 2),
+(3, 'PAID', 'Paid', '#28A745', 3),
+(4, 'CANCELLED', 'Cancelled', '#6C757D', 4),
+(5, 'OVERPAID', 'Overpaid', '#17A2B8', 5),
+(6, 'OVERDUE', 'Overdue', '#DC3545', 6);
+
+-- -----------------------------------------------
+-- A.5 Payment Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payment_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'PENDING', 'Pending', '#FFA500', 1),
+(2, 'COMPLETED', 'Completed', '#28A745', 2),
+(3, 'FAILED', 'Failed', '#DC3545', 3),
+(4, 'REFUNDED', 'Refunded', '#6C757D', 4),
+(5, 'EXPIRED', 'Expired', '#FFC107', 5),
+(6, 'CANCELLED', 'Cancelled', '#DC3545', 6);
+
+-- -----------------------------------------------
+-- A.6 Payment Method Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_method_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payment_method_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'CASH', 'Cash', 1),
+(2, 'CARD', 'Card', 2),
+(3, 'BANK_TRANSFER', 'Bank Transfer', 3),
+(4, 'ONLINE', 'Online', 4),
+(5, 'INSURANCE', 'Insurance', 5);
+
+-- -----------------------------------------------
+-- A.7 Payment Location Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_location_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payment_location_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'CLINIC_COUNTER', 'Clinic Counter', 1),
+(2, 'ONLINE', 'Online', 2),
+(3, 'MOBILE_APP', 'Mobile App', 3),
+(4, 'BANK', 'Bank', 4),
+(5, 'INSURANCE_DIRECT', 'Insurance Direct', 5);
+
+-- -----------------------------------------------
+-- A.8 Clinic Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS clinic_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO clinic_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'ACTIVE', 'Active', '#28A745', 1),
+(2, 'SUSPENDED', 'Suspended', '#FFA500', 2),
+(3, 'EXPIRED', 'Expired', '#DC3545', 3);
+
+-- -----------------------------------------------
+-- A.9 Doctor Availability Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS doctor_availability_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO doctor_availability_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'AVAILABLE', 'Available', '#28A745', 1),
+(2, 'ON_LEAVE', 'On Leave', '#FFA500', 2),
+(3, 'UNAVAILABLE', 'Unavailable', '#DC3545', 3);
+
+-- -----------------------------------------------
+-- A.10 Staff Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS staff_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO staff_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'ACTIVE', 'Active', '#28A745', 1),
+(2, 'INACTIVE', 'Inactive', '#6C757D', 2),
+(3, 'SUSPENDED', 'Suspended', '#DC3545', 3);
+
+-- -----------------------------------------------
+-- A.11 Booking Status Lookup
+-- -----------------------------------------------
+
+
+-- -----------------------------------------------
+-- A.12 Prescription Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS prescription_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO prescription_status_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'ISSUED', 'Issued', 1),
+(2, 'DISPENSED', 'Dispensed', 2),
+(3, 'CANCELLED', 'Cancelled', 3);
+
+-- -----------------------------------------------
+-- A.13 Lab Request Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS lab_request_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    colorCode VARCHAR(20) NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO lab_request_status_lookup (id, code, displayName, colorCode, sortOrder) VALUES
+(1, 'PENDING', 'Pending', '#FFA500', 1),
+(2, 'SAMPLE_COLLECTED', 'Sample Collected', '#007BFF', 2),
+(3, 'COMPLETED', 'Completed', '#28A745', 3),
+(4, 'CANCELLED', 'Cancelled', '#DC3545', 4);
+
+-- -----------------------------------------------
+-- A.14 Lab Payment Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS lab_payment_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO lab_payment_status_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'PENDING', 'Pending', 1),
+(2, 'PAID', 'Paid', 2),
+(3, 'REFUND', 'Refund', 3);
+
+-- -----------------------------------------------
+-- A.15 Payment Plan Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_plan_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payment_plan_status_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'ACTIVE', 'Active', 1),
+(2, 'COMPLETED', 'Completed', 2),
+(3, 'DEFAULTED', 'Defaulted', 3),
+(4, 'CANCELLED', 'Cancelled', 4);
+
+-- -----------------------------------------------
+-- A.16 Payment Plan Frequency Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_frequency_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO payment_frequency_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'WEEKLY', 'Weekly', 1),
+(2, 'BIWEEKLY', 'Bi-Weekly', 2),
+(3, 'MONTHLY', 'Monthly', 3),
+(4, 'CUSTOM', 'Custom', 4);
+
+-- -----------------------------------------------
+-- A.17 Payment Reminder Type Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS reminder_type_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO reminder_type_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'SMS', 'SMS', 1),
+(2, 'EMAIL', 'Email', 2),
+(3, 'WHATSAPP', 'WhatsApp', 3),
+(4, 'CALL', 'Phone Call', 4),
+(5, 'PUSH_NOTIFICATION', 'Push Notification', 5);
+
+-- -----------------------------------------------
+-- A.18 Reminder Status Lookup
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS reminder_status_lookup (
+    id TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) UNIQUE NOT NULL,
+    displayName VARCHAR(50) NOT NULL,
+    sortOrder INT DEFAULT 0,
+    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO reminder_status_lookup (id, code, displayName, sortOrder) VALUES
+(1, 'PENDING', 'Pending', 1),
+(2, 'SENT', 'Sent', 2),
+(3, 'FAILED', 'Failed', 3),
+(4, 'DELIVERED', 'Delivered', 4),
+(5, 'CANCELLED', 'Cancelled', 5);
+
+-- ==================================================================================
+-- PART B: UPDATE PAYMENTS TABLE (Payment Enhancement)
+-- ==================================================================================
+
+-- Check and add columns for payments table
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'receivedBy');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN receivedBy VARCHAR(50) NULL COMMENT ''Staff/Cashier who physically received payment'' AFTER createdBy',
+    'SELECT ''Column receivedBy already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'paymentLocation');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN paymentLocation ENUM(''CLINIC_COUNTER'', ''ONLINE'', ''MOBILE_APP'', ''BANK'', ''INSURANCE_DIRECT'') NULL DEFAULT ''CLINIC_COUNTER'' AFTER paymentMethod',
+    'SELECT ''Column paymentLocation already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'paymentGateway');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN paymentGateway VARCHAR(50) NULL COMMENT ''Payment gateway: Stripe, PayPal, PayHere'' AFTER paymentLocation',
+    'SELECT ''Column paymentGateway already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'gatewayResponse');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN gatewayResponse JSON NULL COMMENT ''Raw payment gateway response'' AFTER transactionId',
+    'SELECT ''Column gatewayResponse already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'expiresAt');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN expiresAt DATETIME NULL COMMENT ''Expiry time for pending online payments'' AFTER paymentTimestamp',
+    'SELECT ''Column expiresAt already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'cashierWorkstationId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN cashierWorkstationId INT NULL COMMENT ''Which counter/terminal was used'' AFTER receivedBy',
+    'SELECT ''Column cashierWorkstationId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Update paymentStatus ENUM to include more states
+ALTER TABLE payments
+MODIFY COLUMN paymentStatus ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'EXPIRED', 'CANCELLED') NOT NULL DEFAULT 'PENDING';
+
+-- ==================================================================================
+-- PART C: UPDATE INVOICES TABLE (Payment Enhancement)
+-- ==================================================================================
+
+-- Check and add columns for invoices table
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'amountPaid');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE invoices ADD COLUMN amountPaid DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT ''Total received from all completed payments'' AFTER finalAmount',
+    'SELECT ''Column amountPaid already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'balanceRemaining');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE invoices ADD COLUMN balanceRemaining DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT ''Outstanding balance = finalAmount - amountPaid'' AFTER amountPaid',
+    'SELECT ''Column balanceRemaining already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'paymentDueDate');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE invoices ADD COLUMN paymentDueDate DATE NULL COMMENT ''When full payment is expected'' AFTER dueDate',
+    'SELECT ''Column paymentDueDate already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'nextPaymentDue');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE invoices ADD COLUMN nextPaymentDue DATE NULL COMMENT ''For installment plans - next payment deadline'' AFTER paymentDueDate',
+    'SELECT ''Column nextPaymentDue already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Update status ENUM to handle partial payments
+ALTER TABLE invoices
+MODIFY COLUMN status ENUM('UNPAID', 'PARTIAL', 'PAID', 'CANCELLED', 'OVERPAID', 'OVERDUE') NOT NULL DEFAULT 'UNPAID';
+
+-- ==================================================================================
+-- PART D: CREATE NEW PAYMENT SYSTEM TABLES
+-- ==================================================================================
+
+-- -----------------------------------------------
+-- D.1 Payment Plans Table
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_plans (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+    invoice_id INT NOT NULL,
+
+    totalInstallments INT NOT NULL COMMENT 'Total number of payments',
+    installmentAmount DECIMAL(10,2) NOT NULL COMMENT 'Amount per installment',
+    frequency ENUM('WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM') NOT NULL DEFAULT 'MONTHLY',
+
+    paidInstallments INT NOT NULL DEFAULT 0 COMMENT 'Payments received so far',
+    nextDueDate DATE NOT NULL COMMENT 'When next installment is due',
+    planStatus ENUM('ACTIVE', 'COMPLETED', 'DEFAULTED', 'CANCELLED') NOT NULL DEFAULT 'ACTIVE',
+
+    notes TEXT NULL,
+
+    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+    approvedDate DATETIME DEFAULT NULL,
+    approvedBy VARCHAR(50) DEFAULT NULL,
+
+    CONSTRAINT fk_plan_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_plan_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+
+    UNIQUE INDEX idx_one_plan_per_invoice (clinic_id, invoice_id),
+    INDEX idx_active_plans (clinic_id, planStatus, nextDueDate)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------
+-- D.2 Payment Reminders Table
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_reminders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+    invoice_id INT NOT NULL,
+    patient_id INT NOT NULL,
+
+    reminderType ENUM('SMS', 'EMAIL', 'WHATSAPP', 'CALL', 'PUSH_NOTIFICATION') NOT NULL,
+    reminderStatus ENUM('PENDING', 'SENT', 'FAILED', 'DELIVERED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    scheduledDate DATETIME NOT NULL,
+    sentDate DATETIME NULL,
+
+    messageContent TEXT NULL,
+    responseReceived TEXT NULL,
+    externalMessageId VARCHAR(255) NULL,
+
+    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+
+    CONSTRAINT fk_reminder_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_reminder_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+    CONSTRAINT fk_reminder_patient FOREIGN KEY (patient_id) REFERENCES patient(id) ON DELETE CASCADE,
+
+    INDEX idx_pending_reminders (clinic_id, reminderStatus, scheduledDate),
+    INDEX idx_patient_reminders (clinic_id, patient_id, reminderStatus)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------
+-- D.3 Payment Gateway Configuration Table
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_gateway_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+
+    gatewayName VARCHAR(50) NOT NULL,
+    displayName VARCHAR(100) NULL,
+    isActive TINYINT NOT NULL DEFAULT 0,
+    isTestMode TINYINT NOT NULL DEFAULT 1,
+
+    apiKey VARCHAR(500) NULL,
+    apiSecret VARCHAR(500) NULL,
+    merchantId VARCHAR(255) NULL,
+    webhookSecret VARCHAR(500) NULL,
+
+    webhookUrl VARCHAR(500) NULL,
+    successRedirectUrl VARCHAR(500) NULL,
+    failureRedirectUrl VARCHAR(500) NULL,
+    cancelRedirectUrl VARCHAR(500) NULL,
+
+    minTransactionAmount DECIMAL(10,2) DEFAULT 100.00,
+    maxTransactionAmount DECIMAL(10,2) DEFAULT 100000.00,
+    transactionFeePercentage DECIMAL(5,2) DEFAULT 0.00,
+    transactionFeeFixed DECIMAL(10,2) DEFAULT 0.00,
+
+    supportsRefunds TINYINT DEFAULT 1,
+    supportsPartialRefunds TINYINT DEFAULT 1,
+    supportsRecurring TINYINT DEFAULT 0,
+
+    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    createdBy VARCHAR(50) NOT NULL,
+    updatedDate DATETIME DEFAULT NULL,
+    updatedBy VARCHAR(50) DEFAULT NULL,
+
+    CONSTRAINT fk_gateway_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE RESTRICT,
+
+    UNIQUE INDEX idx_gateway_per_clinic (clinic_id, gatewayName),
+    INDEX idx_active_gateways (clinic_id, isActive)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------
+-- D.4 Payment Audit Log Table
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_audit_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+    payment_id INT NOT NULL,
+    invoice_id INT NOT NULL,
+
+    actionType ENUM('CREATED', 'STATUS_CHANGED', 'AMOUNT_ADJUSTED', 'REFUNDED', 'CANCELLED', 'EXPIRED') NOT NULL,
+    oldStatus VARCHAR(50) NULL,
+    newStatus VARCHAR(50) NULL,
+    oldAmount DECIMAL(10,2) NULL,
+    newAmount DECIMAL(10,2) NULL,
+
+    reason TEXT NULL,
+    additionalData JSON NULL,
+
+    actionDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actionBy VARCHAR(50) NOT NULL,
+
+    ipAddress VARCHAR(50) NULL,
+    userAgent VARCHAR(255) NULL,
+
+    CONSTRAINT fk_audit_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_audit_payment FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_audit_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+
+    INDEX idx_audit_lookup (clinic_id, payment_id),
+    INDEX idx_audit_timeline (clinic_id, actionDate),
+    INDEX idx_audit_action (clinic_id, actionType, actionDate)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------
+-- D.5 Online Payment Transactions Table
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS online_payment_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id INT NOT NULL,
+    payment_id INT NOT NULL,
+    invoice_id INT NOT NULL,
+
+    gatewayName VARCHAR(50) NOT NULL,
+    gatewayTransactionId VARCHAR(255) NULL,
+    gatewayOrderId VARCHAR(255) NULL,
+
+    requestPayload JSON NULL,
+    responsePayload JSON NULL,
+    webhookPayload JSON NULL,
+
+    transactionStatus ENUM('INITIATED', 'REDIRECTED', 'PROCESSING', 'SUCCESS', 'FAILED', 'TIMEOUT') NOT NULL DEFAULT 'INITIATED',
+    errorCode VARCHAR(100) NULL,
+    errorMessage TEXT NULL,
+
+    initiatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completedAt DATETIME NULL,
+    webhookReceivedAt DATETIME NULL,
+
+    checksumSent VARCHAR(255) NULL,
+    checksumReceived VARCHAR(255) NULL,
+    isVerified TINYINT DEFAULT 0,
+
+    CONSTRAINT fk_online_tx_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_online_tx_payment FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_online_tx_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+
+    UNIQUE INDEX idx_gateway_transaction (gatewayName, gatewayTransactionId),
+    INDEX idx_transaction_status (clinic_id, transactionStatus),
+    INDEX idx_payment_lookup (payment_id)
+) ENGINE=InnoDB;
+
+-- ==================================================================================
+-- PART E: ADD NEW COLUMNS FOR ENUM NORMALIZATION
+-- ==================================================================================
+
+-- Appointments
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE appointments ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor Schedule
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE doctorSchedule ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND COLUMN_NAME = 'payoutStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE doctorSchedule ADD COLUMN payoutStatusId TINYINT UNSIGNED NULL AFTER payoutStatus',
+    'SELECT ''Column payoutStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- Invoices
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE invoices ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payments
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'paymentStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN paymentStatusId TINYINT UNSIGNED NULL AFTER paymentStatus',
+    'SELECT ''Column paymentStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'paymentMethodId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN paymentMethodId TINYINT UNSIGNED NULL AFTER paymentMethod',
+    'SELECT ''Column paymentMethodId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'paymentLocationId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payments ADD COLUMN paymentLocationId TINYINT UNSIGNED NULL AFTER paymentLocation',
+    'SELECT ''Column paymentLocationId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Clinics
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'clinics' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE clinics ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctor' AND COLUMN_NAME = 'availabilityStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE doctor ADD COLUMN availabilityStatusId TINYINT UNSIGNED NULL AFTER availability_status',
+    'SELECT ''Column availabilityStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Clinic Staff
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'clinic_staff' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE clinic_staff ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Prescriptions
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'prescriptions' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE prescriptions ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Lab Requests
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'patient_lab_requests' AND COLUMN_NAME = 'statusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE patient_lab_requests ADD COLUMN statusId TINYINT UNSIGNED NULL AFTER status',
+    'SELECT ''Column statusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'patient_lab_requests' AND COLUMN_NAME = 'paymentStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE patient_lab_requests ADD COLUMN paymentStatusId TINYINT UNSIGNED NULL AFTER payment_status',
+    'SELECT ''Column paymentStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Plans
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_plans' AND COLUMN_NAME = 'planStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payment_plans ADD COLUMN planStatusId TINYINT UNSIGNED NULL AFTER planStatus',
+    'SELECT ''Column planStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_plans' AND COLUMN_NAME = 'frequencyId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payment_plans ADD COLUMN frequencyId TINYINT UNSIGNED NULL AFTER frequency',
+    'SELECT ''Column frequencyId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Reminders
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_reminders' AND COLUMN_NAME = 'reminderTypeId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payment_reminders ADD COLUMN reminderTypeId TINYINT UNSIGNED NULL AFTER reminderType',
+    'SELECT ''Column reminderTypeId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_reminders' AND COLUMN_NAME = 'reminderStatusId');
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE payment_reminders ADD COLUMN reminderStatusId TINYINT UNSIGNED NULL AFTER reminderStatus',
+    'SELECT ''Column reminderStatusId already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ==================================================================================
+-- PART F: MIGRATE DATA FROM ENUM TO INT
+-- ==================================================================================
+
+-- Appointments
+UPDATE appointments a
+INNER JOIN appointment_status_lookup s ON a.status = s.code
+SET a.statusId = s.id
+WHERE a.statusId IS NULL;
+
+-- Doctor Schedule - status
+UPDATE doctorSchedule ds
+INNER JOIN schedule_status_lookup s ON ds.status = s.code
+SET ds.statusId = s.id
+WHERE ds.statusId IS NULL;
+
+-- Doctor Schedule - payoutStatus
+UPDATE doctorSchedule ds
+INNER JOIN payout_status_lookup s ON ds.payoutStatus = s.code
+SET ds.payoutStatusId = s.id
+WHERE ds.payoutStatusId IS NULL;
+
+
+-- Invoices
+UPDATE invoices i
+INNER JOIN invoice_status_lookup s ON i.status = s.code
+SET i.statusId = s.id
+WHERE i.statusId IS NULL;
+
+-- Payments - status
+UPDATE payments p
+INNER JOIN payment_status_lookup s ON p.paymentStatus = s.code
+SET p.paymentStatusId = s.id
+WHERE p.paymentStatusId IS NULL;
+
+-- Payments - method
+UPDATE payments p
+INNER JOIN payment_method_lookup m ON p.paymentMethod = m.code
+SET p.paymentMethodId = m.id
+WHERE p.paymentMethodId IS NULL;
+
+-- Payments - location
+UPDATE payments p
+INNER JOIN payment_location_lookup l ON p.paymentLocation = l.code
+SET p.paymentLocationId = l.id
+WHERE p.paymentLocationId IS NULL;
+
+-- Clinics
+UPDATE clinics c
+INNER JOIN clinic_status_lookup s ON c.status = s.code
+SET c.statusId = s.id
+WHERE c.statusId IS NULL;
+
+-- Doctor availability
+UPDATE doctor d
+INNER JOIN doctor_availability_lookup s ON d.availability_status = s.code
+SET d.availabilityStatusId = s.id
+WHERE d.availabilityStatusId IS NULL;
+
+-- Clinic Staff
+UPDATE clinic_staff cs
+INNER JOIN staff_status_lookup s ON cs.status = s.code
+SET cs.statusId = s.id
+WHERE cs.statusId IS NULL;
+
+-- Prescriptions
+UPDATE prescriptions pr
+INNER JOIN prescription_status_lookup s ON pr.status = s.code
+SET pr.statusId = s.id
+WHERE pr.statusId IS NULL;
+
+-- Lab Requests - status
+UPDATE patient_lab_requests lr
+INNER JOIN lab_request_status_lookup s ON lr.status = s.code
+SET lr.statusId = s.id
+WHERE lr.statusId IS NULL;
+
+-- Lab Requests - payment status
+UPDATE patient_lab_requests lr
+INNER JOIN lab_payment_status_lookup s ON lr.payment_status = s.code
+SET lr.paymentStatusId = s.id
+WHERE lr.paymentStatusId IS NULL;
+
+-- Payment Plans - status
+UPDATE payment_plans pp
+INNER JOIN payment_plan_status_lookup s ON pp.planStatus = s.code
+SET pp.planStatusId = s.id
+WHERE pp.planStatusId IS NULL;
+
+-- Payment Plans - frequency
+UPDATE payment_plans pp
+INNER JOIN payment_frequency_lookup f ON pp.frequency = f.code
+SET pp.frequencyId = f.id
+WHERE pp.frequencyId IS NULL;
+
+-- Payment Reminders - type
+UPDATE payment_reminders pr
+INNER JOIN reminder_type_lookup t ON pr.reminderType = t.code
+SET pr.reminderTypeId = t.id
+WHERE pr.reminderTypeId IS NULL;
+
+-- Payment Reminders - status
+UPDATE payment_reminders pr
+INNER JOIN reminder_status_lookup s ON pr.reminderStatus = s.code
+SET pr.reminderStatusId = s.id
+WHERE pr.reminderStatusId IS NULL;
+
+-- ==================================================================================
+-- PART G: INITIALIZE INVOICE BALANCES (For existing data)
+-- ==================================================================================
+
+-- Recalculate amountPaid and balanceRemaining for existing invoices
+UPDATE invoices i
+SET
+    amountPaid = COALESCE((
+        SELECT SUM(p.amountPaid)
+        FROM payments p
+        WHERE p.invoice_id = i.id
+        AND p.paymentStatus = 'COMPLETED'
+    ), 0),
+    balanceRemaining = i.finalAmount - COALESCE((
+        SELECT SUM(p.amountPaid)
+        FROM payments p
+        WHERE p.invoice_id = i.id
+        AND p.paymentStatus = 'COMPLETED'
+    ), 0),
+    updatedDate = NOW(),
+    updatedBy = 'MIGRATION_SCRIPT'
+WHERE i.id > 0 AND i.amountPaid = 0;
+
+-- Update invoice status based on payment balance
+UPDATE invoices
+SET
+    status = CASE
+        WHEN balanceRemaining <= 0 AND finalAmount > 0 THEN 'PAID'
+        WHEN amountPaid > 0 AND balanceRemaining > 0 THEN 'PARTIAL'
+        WHEN amountPaid = 0 THEN 'UNPAID'
+        ELSE status
+    END,
+    updatedDate = NOW(),
+    updatedBy = 'MIGRATION_SCRIPT'
+WHERE id > 0;
+
+-- ==================================================================================
+-- PART H: ADD INDEXES FOR PERFORMANCE
+-- ==================================================================================
+
+-- Helper function to add index if not exists
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND INDEX_NAME = 'idx_payment_status');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE payments ADD INDEX idx_payment_status (clinic_id, paymentStatus)',
+    'SELECT ''Index idx_payment_status already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND INDEX_NAME = 'idx_payment_gateway');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE payments ADD INDEX idx_payment_gateway (paymentGateway, paymentStatus)',
+    'SELECT ''Index idx_payment_gateway already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND INDEX_NAME = 'idx_expires_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE payments ADD INDEX idx_expires_lookup (expiresAt, paymentStatus)',
+    'SELECT ''Index idx_expires_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND INDEX_NAME = 'idx_received_by');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE payments ADD INDEX idx_received_by (clinic_id, receivedBy, paymentTimestamp)',
+    'SELECT ''Index idx_received_by already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments' AND INDEX_NAME = 'idx_status_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE payments ADD INDEX idx_status_lookup (clinic_id, paymentStatusId)',
+    'SELECT ''Index idx_status_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Invoices indexes
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND INDEX_NAME = 'idx_balance_tracking');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoices ADD INDEX idx_balance_tracking (clinic_id, balanceRemaining)',
+    'SELECT ''Index idx_balance_tracking already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND INDEX_NAME = 'idx_overdue_invoices');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoices ADD INDEX idx_overdue_invoices (clinic_id, paymentDueDate, status)',
+    'SELECT ''Index idx_overdue_invoices already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND INDEX_NAME = 'idx_partial_payments');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoices ADD INDEX idx_partial_payments (clinic_id, status, balanceRemaining)',
+    'SELECT ''Index idx_partial_payments already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices' AND INDEX_NAME = 'idx_invoice_status_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoices ADD INDEX idx_invoice_status_lookup (clinic_id, statusId)',
+    'SELECT ''Index idx_invoice_status_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Invoice Items indexes
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoice_items' AND INDEX_NAME = 'idx_invoice_calculation');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoice_items ADD INDEX idx_invoice_calculation (invoice_id, amount)',
+    'SELECT ''Index idx_invoice_calculation already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoice_items' AND INDEX_NAME = 'idx_item_type_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE invoice_items ADD INDEX idx_item_type_lookup (clinic_id, item_type_id)',
+    'SELECT ''Index idx_item_type_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Appointments indexes
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'appointments' AND INDEX_NAME = 'idx_appointment_invoice');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE appointments ADD INDEX idx_appointment_invoice (clinic_id, invoice_id)',
+    'SELECT ''Index idx_appointment_invoice already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'appointments' AND INDEX_NAME = 'idx_appointment_payment_status');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE appointments ADD INDEX idx_appointment_payment_status (clinic_id, status)',
+    'SELECT ''Index idx_appointment_payment_status already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'appointments' AND INDEX_NAME = 'idx_appointment_status_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE appointments ADD INDEX idx_appointment_status_lookup (clinic_id, statusId)',
+    'SELECT ''Index idx_appointment_status_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor Schedule indexes
+
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND INDEX_NAME = 'idx_schedule_date');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE doctorSchedule ADD INDEX idx_schedule_date (clinic_id, scheduleDate, status)',
+    'SELECT ''Index idx_schedule_date already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule' AND INDEX_NAME = 'idx_schedule_status_lookup');
+SET @sql = IF(@idx_exists = 0,
+    'ALTER TABLE doctorSchedule ADD INDEX idx_schedule_status_lookup (clinic_id, statusId)',
+    'SELECT ''Index idx_schedule_status_lookup already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ==================================================================================
+-- PART I: ADD FOREIGN KEY CONSTRAINTS
+-- ==================================================================================
+
+-- Appointments
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'appointments'
+    AND CONSTRAINT_NAME = 'fk_appointment_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE appointments ADD CONSTRAINT fk_appointment_status FOREIGN KEY (statusId) REFERENCES appointment_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor Schedule - status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule'
+    AND CONSTRAINT_NAME = 'fk_schedule_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE doctorSchedule ADD CONSTRAINT fk_schedule_status FOREIGN KEY (statusId) REFERENCES schedule_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor Schedule - payout status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctorSchedule'
+    AND CONSTRAINT_NAME = 'fk_schedule_payout_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE doctorSchedule ADD CONSTRAINT fk_schedule_payout_status FOREIGN KEY (payoutStatusId) REFERENCES payout_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+
+-- Invoices
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'invoices'
+    AND CONSTRAINT_NAME = 'fk_invoice_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE invoices ADD CONSTRAINT fk_invoice_status FOREIGN KEY (statusId) REFERENCES invoice_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payments - status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments'
+    AND CONSTRAINT_NAME = 'fk_payment_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payments ADD CONSTRAINT fk_payment_status FOREIGN KEY (paymentStatusId) REFERENCES payment_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payments - method
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments'
+    AND CONSTRAINT_NAME = 'fk_payment_method');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payments ADD CONSTRAINT fk_payment_method FOREIGN KEY (paymentMethodId) REFERENCES payment_method_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payments - location
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payments'
+    AND CONSTRAINT_NAME = 'fk_payment_location');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payments ADD CONSTRAINT fk_payment_location FOREIGN KEY (paymentLocationId) REFERENCES payment_location_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Clinics
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'clinics'
+    AND CONSTRAINT_NAME = 'fk_clinic_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE clinics ADD CONSTRAINT fk_clinic_status FOREIGN KEY (statusId) REFERENCES clinic_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Doctor
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'doctor'
+    AND CONSTRAINT_NAME = 'fk_doctor_availability');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE doctor ADD CONSTRAINT fk_doctor_availability FOREIGN KEY (availabilityStatusId) REFERENCES doctor_availability_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Clinic Staff
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'clinic_staff'
+    AND CONSTRAINT_NAME = 'fk_staff_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE clinic_staff ADD CONSTRAINT fk_staff_status FOREIGN KEY (statusId) REFERENCES staff_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Prescriptions
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'prescriptions'
+    AND CONSTRAINT_NAME = 'fk_prescription_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE prescriptions ADD CONSTRAINT fk_prescription_status FOREIGN KEY (statusId) REFERENCES prescription_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Lab Requests - status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'patient_lab_requests'
+    AND CONSTRAINT_NAME = 'fk_lab_request_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE patient_lab_requests ADD CONSTRAINT fk_lab_request_status FOREIGN KEY (statusId) REFERENCES lab_request_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Lab Requests - payment status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'patient_lab_requests'
+    AND CONSTRAINT_NAME = 'fk_lab_payment_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE patient_lab_requests ADD CONSTRAINT fk_lab_payment_status FOREIGN KEY (paymentStatusId) REFERENCES lab_payment_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Plans - status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_plans'
+    AND CONSTRAINT_NAME = 'fk_payment_plan_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payment_plans ADD CONSTRAINT fk_payment_plan_status FOREIGN KEY (planStatusId) REFERENCES payment_plan_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Plans - frequency
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_plans'
+    AND CONSTRAINT_NAME = 'fk_payment_plan_frequency');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payment_plans ADD CONSTRAINT fk_payment_plan_frequency FOREIGN KEY (frequencyId) REFERENCES payment_frequency_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Reminders - type
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_reminders'
+    AND CONSTRAINT_NAME = 'fk_reminder_type');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payment_reminders ADD CONSTRAINT fk_reminder_type FOREIGN KEY (reminderTypeId) REFERENCES reminder_type_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Payment Reminders - status
+SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = 'clinicmsystem' AND TABLE_NAME = 'payment_reminders'
+    AND CONSTRAINT_NAME = 'fk_reminder_status');
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE payment_reminders ADD CONSTRAINT fk_reminder_status FOREIGN KEY (reminderStatusId) REFERENCES reminder_status_lookup(id)',
+    'SELECT ''FK already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ==================================================================================
+-- PART J: ADD DATA VALIDATION CONSTRAINTS
+-- ==================================================================================
+
+-- Payments amount validation
+SET @constraint_exists = (SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE TABLE_SCHEMA = 'clinicmsystem'
+    AND TABLE_NAME = 'payments'
+    AND CONSTRAINT_NAME = 'chk_payment_amount');
+
+SET @sql_drop = IF(@constraint_exists > 0,
+    'ALTER TABLE payments DROP CONSTRAINT chk_payment_amount',
+    'SELECT "Constraint does not exist"');
+
+PREPARE stmt FROM @sql_drop;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+ALTER TABLE payments
+ADD CONSTRAINT chk_payment_amount CHECK (
+    (paymentStatus = 'REFUNDED' AND amountPaid <= 0)
+    OR
+    (paymentStatus != 'REFUNDED' AND amountPaid >= 0)
+);
+
+-- Invoices balance validation
+SET @constraint_exists = (SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE TABLE_SCHEMA = 'clinicmsystem'
+    AND TABLE_NAME = 'invoices'
+    AND CONSTRAINT_NAME = 'chk_balance_valid');
+
+SET @sql_drop = IF(@constraint_exists > 0,
+    'ALTER TABLE invoices DROP CONSTRAINT chk_balance_valid',
+    'SELECT "Constraint does not exist"');
+
+PREPARE stmt FROM @sql_drop;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+ALTER TABLE invoices
+ADD CONSTRAINT chk_balance_valid CHECK (
+    balanceRemaining >= 0 AND balanceRemaining <= finalAmount
+);
+
+-- Payment Plans installment validation
+SET @constraint_exists = (SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    WHERE TABLE_SCHEMA = 'clinicmsystem'
+    AND TABLE_NAME = 'payment_plans'
+    AND CONSTRAINT_NAME = 'chk_installments_valid');
+
+SET @sql_drop = IF(@constraint_exists > 0,
+    'ALTER TABLE payment_plans DROP CONSTRAINT chk_installments_valid',
+    'SELECT "Constraint does not exist"');
+
+PREPARE stmt FROM @sql_drop;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+ALTER TABLE payment_plans
+ADD CONSTRAINT chk_installments_valid CHECK (
+    totalInstallments > 0 AND
+    paidInstallments >= 0 AND
+    paidInstallments <= totalInstallments AND
+    installmentAmount > 0
+);
+
+-- ==================================================================================
+-- PART K: INSERT SYSTEM CONFIGURATION
+-- ==================================================================================
+
+INSERT IGNORE INTO systemConfig (clinic_id, configKey, configValue, createdBy, createdDate) VALUES
+-- Partial Payment Settings
+(1, 'ALLOW_PARTIAL_PAYMENT', 'true', 'SYSTEM', NOW()),
+(1, 'MIN_PARTIAL_PAYMENT_AMOUNT', '100.00', 'SYSTEM', NOW()),
+(1, 'MIN_PARTIAL_PAYMENT_PERCENTAGE', '20', 'SYSTEM', NOW()),
+(1, 'PARTIAL_PAYMENT_MAX_INSTALLMENTS', '6', 'SYSTEM', NOW()),
+(1, 'PAYMENT_DUE_DAYS', '30', 'SYSTEM', NOW()),
+
+-- Online Payment Settings
+(1, 'ONLINE_PAYMENT_ENABLED', 'false', 'SYSTEM', NOW()),
+(1, 'ONLINE_PAYMENT_TIMEOUT_MINUTES', '15', 'SYSTEM', NOW()),
+(1, 'ONLINE_PAYMENT_MIN_AMOUNT', '100.00', 'SYSTEM', NOW()),
+(1, 'ONLINE_PAYMENT_MAX_AMOUNT', '50000.00', 'SYSTEM', NOW()),
+
+-- Payment Policies
+(1, 'AUTO_REFUND_ON_CANCELLATION', 'true', 'SYSTEM', NOW()),
+(1, 'REQUIRE_FULL_PAYMENT_FOR_APPOINTMENT', 'false', 'SYSTEM', NOW()),
+(1, 'ALLOW_OVERPAYMENT', 'false', 'SYSTEM', NOW()),
+(1, 'OVERPAYMENT_ACTION', 'STORE_AS_CREDIT', 'SYSTEM', NOW()),
+
+-- Reminder Settings
+(1, 'PAYMENT_REMINDER_ENABLED', 'true', 'SYSTEM', NOW()),
+(1, 'PAYMENT_REMINDER_DAYS_BEFORE', '3', 'SYSTEM', NOW()),
+(1, 'PAYMENT_REMINDER_DAYS_AFTER', '7,14,30', 'SYSTEM', NOW()),
+(1, 'PAYMENT_REMINDER_MAX_ATTEMPTS', '5', 'SYSTEM', NOW()),
+
+-- Cashier Settings
+(1, 'REQUIRE_CASHIER_ID', 'true', 'SYSTEM', NOW()),
+(1, 'CASHIER_DAILY_LIMIT', '100000.00', 'SYSTEM', NOW()),
+(1, 'REQUIRE_MANAGER_APPROVAL_ABOVE', '10000.00', 'SYSTEM', NOW());
+
+-- ==================================================================================
+-- PART L: CREATE HELPER VIEWS
+-- ==================================================================================
+
+-- ==================================================================================
+-- 1. INVOICE SUMMARY VIEW (Fixed Calculation Logic)
+-- ==================================================================================
+DROP VIEW IF EXISTS v_invoice_summary;
+
+CREATE VIEW v_invoice_summary AS
+SELECT
+    i.id AS invoice_id,
+    i.clinic_id,
+    i.patient_id,
+    COALESCE(s.code, 'UNKNOWN') AS invoice_status, -- From Lookup
+    i.createdDate AS invoice_date,
+
+    -- Stored values (Fastest)
+    i.subtotalAmount AS stored_subtotal,
+    i.totalDiscount AS stored_discount,
+    i.finalAmount AS stored_final,
+    i.amountPaid AS stored_paid,
+    i.balanceRemaining AS stored_balance,
+
+    -- Calculated from Items (Fixed: Pre-aggregated to avoid duplication)
+    COALESCE(item_stats.calc_subtotal, 0) AS calculated_subtotal,
+    COALESCE(item_stats.calc_discount, 0) AS calculated_discount,
+    COALESCE(item_stats.calc_total, 0) AS calculated_final,
+
+    -- Calculated from Payments (Fixed: Pre-aggregated)
+    COALESCE(pay_stats.calc_paid, 0) AS calculated_paid,
+    (COALESCE(item_stats.calc_total, 0) - COALESCE(pay_stats.calc_paid, 0)) AS calculated_balance,
+
+    -- Integrity Check
+    CASE
+        WHEN ABS(COALESCE(item_stats.calc_total, 0) - i.finalAmount) > 0.01 THEN 'AMOUNT_MISMATCH'
+        WHEN ABS(
+            (COALESCE(item_stats.calc_total, 0) - COALESCE(pay_stats.calc_paid, 0))
+            - i.balanceRemaining
+        ) > 0.01 THEN 'BALANCE_MISMATCH'
+        ELSE 'OK'
+    END AS data_integrity_status,
+
+    COALESCE(pay_stats.total_tx, 0) AS total_payments,
+    COALESCE(pay_stats.success_tx, 0) AS successful_payments,
+    COALESCE(pay_stats.pending_tx, 0) AS pending_payments,
+
+    i.paymentDueDate,
+    i.nextPaymentDue
+
+FROM invoices i
+LEFT JOIN invoice_status_lookup s ON i.statusId = s.id
+
+-- Subquery 1: Aggregate Items per Invoice first
+LEFT JOIN (
+    SELECT
+        invoice_id,
+        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as calc_subtotal,
+        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as calc_discount,
+        SUM(amount) as calc_total
+    FROM invoice_items
+    GROUP BY invoice_id
+) item_stats ON i.id = item_stats.invoice_id
+
+-- Subquery 2: Aggregate Payments per Invoice first
+LEFT JOIN (
+    SELECT
+        invoice_id,
+        -- Hardcoded ID check is risky, joining to lookup inside subquery is safer but slower.
+        -- Assuming standard IDs or logic here. Better to join lookup in outer query or check Code.
+        SUM(CASE WHEN p.paymentStatusId = (SELECT id FROM payment_status_lookup WHERE code='COMPLETED' LIMIT 1) THEN p.amountPaid ELSE 0 END) as calc_paid,
+        COUNT(p.id) as total_tx,
+        COUNT(CASE WHEN p.paymentStatusId = (SELECT id FROM payment_status_lookup WHERE code='COMPLETED' LIMIT 1) THEN 1 END) as success_tx,
+        COUNT(CASE WHEN p.paymentStatusId = (SELECT id FROM payment_status_lookup WHERE code='PENDING' LIMIT 1) THEN 1 END) as pending_tx
+    FROM payments p
+    GROUP BY invoice_id
+) pay_stats ON i.id = pay_stats.invoice_id;
+
+-- ==================================================================================
+-- 2. PAYMENT PLAN STATUS VIEW (Updated for Lookups)
+-- ==================================================================================
+DROP VIEW IF EXISTS v_payment_plan_status;
+
+CREATE VIEW v_payment_plan_status AS
+SELECT
+    pp.id AS plan_id,
+    pp.clinic_id,
+    pp.invoice_id,
+    i.patient_id,
+    CONCAT(p.firstName, ' ', p.lastName) AS patient_name,
+
+    pp.totalInstallments,
+    pp.paidInstallments,
+    (pp.totalInstallments - pp.paidInstallments) AS remaining_installments,
+
+    pp.installmentAmount,
+    (pp.installmentAmount * pp.totalInstallments) AS total_plan_amount,
+    (pp.installmentAmount * pp.paidInstallments) AS total_paid_amount,
+    (pp.installmentAmount * (pp.totalInstallments - pp.paidInstallments)) AS remaining_amount,
+
+    freq.displayName AS frequency,   -- From Lookup
+    pp.nextDueDate,
+    stat.displayName AS planStatus,  -- From Lookup
+
+    CASE
+        WHEN pp.nextDueDate < CURDATE() AND stat.code = 'ACTIVE' THEN 'OVERDUE'
+        WHEN stat.code = 'ACTIVE' THEN 'CURRENT'
+        ELSE stat.displayName
+    END AS current_status,
+
+    DATEDIFF(CURDATE(), pp.nextDueDate) AS days_overdue,
+
+    i.finalAmount AS invoice_total,
+    i.amountPaid AS invoice_paid,
+    i.balanceRemaining AS invoice_balance
+
+FROM payment_plans pp
+INNER JOIN invoices i ON pp.invoice_id = i.id
+INNER JOIN patient p ON i.patient_id = p.id
+LEFT JOIN payment_plan_status_lookup stat ON pp.planStatusId = stat.id
+LEFT JOIN payment_frequency_lookup freq ON pp.frequencyId = freq.id;
+
+-- ==================================================================================
+-- 3. CASHIER DAILY SUMMARY VIEW (Updated for Lookups)
+-- ==================================================================================
+DROP VIEW IF EXISTS v_cashier_daily_summary;
+
+CREATE VIEW v_cashier_daily_summary AS
+SELECT
+    p.clinic_id,
+    p.receivedBy AS cashier_id,
+    DATE(p.paymentTimestamp) AS payment_date,
+
+    COUNT(p.id) AS total_transactions,
+
+    -- Status Counts using Lookup Codes
+    SUM(CASE WHEN s.code = 'COMPLETED' THEN 1 ELSE 0 END) AS successful_transactions,
+    SUM(CASE WHEN s.code = 'FAILED' THEN 1 ELSE 0 END) AS failed_transactions,
+    SUM(CASE WHEN s.code = 'REFUNDED' THEN 1 ELSE 0 END) AS refunded_transactions,
+
+    -- Totals by Method using Lookup Codes
+    SUM(CASE WHEN s.code = 'COMPLETED' AND m.code = 'CASH' THEN p.amountPaid ELSE 0 END) AS total_cash,
+    SUM(CASE WHEN s.code = 'COMPLETED' AND m.code = 'CARD' THEN p.amountPaid ELSE 0 END) AS total_card,
+    SUM(CASE WHEN s.code = 'COMPLETED' AND m.code = 'BANK_TRANSFER' THEN p.amountPaid ELSE 0 END) AS total_bank,
+    SUM(CASE WHEN s.code = 'COMPLETED' AND m.code = 'ONLINE' THEN p.amountPaid ELSE 0 END) AS total_online,
+
+    SUM(CASE WHEN s.code = 'COMPLETED' THEN p.amountPaid ELSE 0 END) AS total_collected,
+    SUM(CASE WHEN s.code = 'REFUNDED' THEN ABS(p.amountPaid) ELSE 0 END) AS total_refunded,
+
+    MIN(p.paymentTimestamp) AS first_transaction_time,
+    MAX(p.paymentTimestamp) AS last_transaction_time
+
+FROM payments p
+LEFT JOIN payment_status_lookup s ON p.paymentStatusId = s.id
+LEFT JOIN payment_method_lookup m ON p.paymentMethodId = m.id
+WHERE p.receivedBy IS NOT NULL
+GROUP BY p.clinic_id, p.receivedBy, DATE(p.paymentTimestamp);
+
+-- Add to your migration script PART B or PART E
+
+ALTER TABLE payments
+ADD COLUMN receivedByStaffId INT NULL COMMENT 'Foreign key to clinic_staff who received payment' AFTER receivedBy;
+
+-- Add foreign key constraint
+ALTER TABLE payments
+ADD CONSTRAINT fk_payment_received_by_staff
+    FOREIGN KEY (receivedByStaffId)
+    REFERENCES clinic_staff(id)
+    ON DELETE SET NULL;  -- If staff deleted, keep the VARCHAR value
+
+-- Add index for performance
+ALTER TABLE payments
+ADD INDEX idx_received_by_staff (clinic_id, receivedByStaffId);
+-- ==================================================================================
+-- MIGRATION VERIFICATION QUERIES
+-- ==================================================================================
+
+/*
+-- Run these queries to verify the migration was successful:
+
+-- 1. Check for NULL statusId values
+SELECT 'appointments' AS table_name, COUNT(*) AS total, SUM(CASE WHEN statusId IS NULL THEN 1 ELSE 0 END) AS null_count FROM appointments
+UNION ALL
+SELECT 'doctorSchedule', COUNT(*), SUM(CASE WHEN statusId IS NULL THEN 1 ELSE 0 END) FROM doctorSchedule
+UNION ALL
+SELECT 'invoices', COUNT(*), SUM(CASE WHEN statusId IS NULL THEN 1 ELSE 0 END) FROM invoices
+UNION ALL
+SELECT 'payments', COUNT(*), SUM(CASE WHEN paymentStatusId IS NULL THEN 1 ELSE 0 END) FROM payments;
+
+-- 2. Check invoice balance consistency
+SELECT
+    COUNT(*) AS total_invoices,
+    SUM(CASE WHEN balanceRemaining = 0 THEN 1 ELSE 0 END) AS fully_paid,
+    SUM(CASE WHEN balanceRemaining > 0 AND amountPaid > 0 THEN 1 ELSE 0 END) AS partial_paid,
+    SUM(CASE WHEN amountPaid = 0 THEN 1 ELSE 0 END) AS unpaid
+FROM invoices;
+
+-- 3. Check for data integrity issues
+SELECT * FROM v_invoice_summary WHERE data_integrity_status != 'OK' LIMIT 10;
+
+-- 4. Verify system configs
+SELECT * FROM systemConfig WHERE configKey LIKE '%PAYMENT%';
+
+-- 5. Check lookup tables populated
+SELECT 'appointment_status_lookup' AS table_name, COUNT(*) AS record_count FROM appointment_status_lookup
+UNION ALL
+SELECT 'payment_status_lookup', COUNT(*) FROM payment_status_lookup
+UNION ALL
+SELECT 'invoice_status_lookup', COUNT(*) FROM invoice_status_lookup
+UNION ALL
+SELECT 'payment_method_lookup', COUNT(*) FROM payment_method_lookup;
+
+
+-- 3. Invoices Table
+
+*/
+
+ALTER TABLE invoices
+DROP COLUMN status;
+
+ALTER TABLE appointments
+DROP COLUMN status;
+-- 4. Payments Table (Fix: Drop constraint first)
+ALTER TABLE payments
+DROP CHECK chk_payment_amount; -- Must run this line first!
+
+ALTER TABLE payments
+DROP COLUMN paymentMethod,
+DROP COLUMN paymentStatus,
+DROP COLUMN paymentLocation;
+
+ALTER TABLE doctorSchedule
+DROP COLUMN status,
+DROP COLUMN payoutStatus;
+
+-- ==================================================================================
+-- END OF MIGRATION
+-- ==================================================================================
+
+SELECT 'Migration completed successfully!' AS status;

@@ -23,21 +23,30 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
 
     @Procedure(name = "Appointment.spBookAppointment")
     Map<String, Object> sp_BookAppointment(
-            @Param("p_clinic_id") Integer clinicId, // <--- Added Clinic ID
+            @Param("p_clinic_id") Integer clinicId,
             @Param("p_createdBy") String createdBy,
             @Param("p_doctor_schedule_id") Long doctorScheduleId,
             @Param("p_patient_id") Long patientId,
             @Param("p_note") String note
     );
 
-    @Query("SELECT a.status FROM Appointment a WHERE a.id = :id AND a.clinicId = :clinicId")
-    Optional<Appointment.AppointmentStatus> findStatusById(@Param("id") Long id, @Param("clinicId") Integer clinicId);
+    // CHANGED: Native Query to get code from Lookup Table
+    @Query(nativeQuery = true, value = """
+        SELECT asl.code 
+        FROM appointments a
+        JOIN appointment_status_lookup asl ON a.statusId = asl.id
+        WHERE a.id = :id AND a.clinic_id = :clinicId
+    """)
+    Optional<String> findStatusById(@Param("id") Long id, @Param("clinicId") Integer clinicId);
 
+    // (findRawInvoicesByAppointmentId remains unchanged as it looks at Invoice Status, which was already fixed)
     @Query(nativeQuery = true, value = """
     SELECT
         i.id AS invoiceId,
         i.createdDate AS invoiceDate,
-        i.status AS invoiceStatus,
+        isl.code AS invoiceStatusCode,
+        isl.displayName AS invoiceStatusDisplay,
+        isl.colorCode AS invoiceStatusColor,
         i.subtotalAmount AS subtotal,
         i.totalDiscount AS totalDiscount,
         i.finalAmount AS finalAmount,
@@ -45,6 +54,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         pm.latestMethod AS paymentMethod,
         COALESCE(pm.totalPaid, 0) AS amountPaid,
         pm.latestTxnId AS transactionId,
+        p.id AS patientId,
         p.patientNo AS patientNo,
         p.firstName AS patientFirstName,
         p.lastName AS patientLastName,
@@ -66,17 +76,20 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         ii.amount AS itemAmount
     FROM appointments a
     JOIN invoices i ON a.invoice_id = i.id
+    LEFT JOIN invoice_status_lookup isl ON i.statusId = isl.id
     JOIN patient p ON i.patient_id = p.id
     LEFT JOIN (
         SELECT
-            invoice_id,
-            SUM(amountPaid) as totalPaid,
-            MAX(paymentTimestamp) as latestDate,
-            SUBSTRING_INDEX(GROUP_CONCAT(paymentMethod ORDER BY paymentTimestamp DESC), ',', 1) as latestMethod,
-            SUBSTRING_INDEX(GROUP_CONCAT(transactionId ORDER BY paymentTimestamp DESC), ',', 1) as latestTxnId
-        FROM payments
-        WHERE paymentStatus = 'COMPLETED'
-        GROUP BY invoice_id
+            p.invoice_id,
+            SUM(p.amountPaid) as totalPaid,
+            MAX(p.paymentTimestamp) as latestDate,
+            SUBSTRING_INDEX(GROUP_CONCAT(pml.displayName ORDER BY p.paymentTimestamp DESC), ',', 1) as latestMethod,
+            SUBSTRING_INDEX(GROUP_CONCAT(p.transactionId ORDER BY p.paymentTimestamp DESC), ',', 1) as latestTxnId
+        FROM payments p
+        LEFT JOIN payment_method_lookup pml ON p.paymentMethodId = pml.id
+        LEFT JOIN payment_status_lookup psl ON p.paymentStatusId = psl.id
+        WHERE psl.code = 'COMPLETED'
+        GROUP BY p.invoice_id
     ) pm ON i.id = pm.invoice_id
     LEFT JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     LEFT JOIN doctor d ON ds.doctor_id = d.id
@@ -91,11 +104,12 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("apptId") Long apptId,
             @Param("clinicId") Integer clinicId);
 
+    // CHANGED: Added Join to appointment_status_lookup
     @Query(nativeQuery = true, value = """
     SELECT
         a.id AS appointmentId,
         a.queuePosition AS queuePosition,
-        a.status AS status,
+        asl.code AS status,  -- Get Code
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS startTime,
         ds.doctorFee AS doctorFee,
@@ -106,6 +120,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorFullName,
         s.name AS specialization
     FROM appointments a
+    JOIN appointment_status_lookup asl ON a.statusId = asl.id -- JOIN
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
@@ -113,8 +128,8 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
       AND a.clinic_id = :clinicId
     ORDER BY 
         CASE 
-            WHEN a.status = 'PENDING_PAYMENT' THEN 1
-            WHEN a.status = 'BOOKED' THEN 2
+            WHEN asl.code = 'PENDING_PAYMENT' THEN 1
+            WHEN asl.code = 'BOOKED' THEN 2
             ELSE 3
         END ASC,
         ds.scheduleDate DESC, 
@@ -128,7 +143,12 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     SELECT
         a.id AS id,
         a.queuePosition AS queuePosition,
-        a.status AS status,
+        
+        -- Full Status Details
+        asl.code AS status,
+        asl.displayName AS statusDisplayName,
+        asl.colorCode AS statusColor,
+
         a.note AS note,
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS startTime,
@@ -138,12 +158,14 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         CONCAT(p.firstName, ' ', p.lastName) AS patientName,
         p.mobileNo AS patientMobile
     FROM appointments a
+    JOIN appointment_status_lookup asl ON a.statusId = asl.id
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     JOIN patient p ON a.patient_id = p.id
     WHERE
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:doctorId IS NULL OR d.id = :doctorId)    -- NEW: Doctor Filter
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
         AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
@@ -153,15 +175,18 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     SELECT COUNT(a.id)
     FROM appointments a
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+    JOIN doctor d ON ds.doctor_id = d.id
     WHERE
         a.clinic_id = :clinicId
         AND (:patientId IS NULL OR a.patient_id = :patientId)
+        AND (:doctorId IS NULL OR d.id = :doctorId)    -- NEW: Doctor Filter
         AND (:scheduleId IS NULL OR a.doctor_schedule_id = :scheduleId)
         AND (cast(:startDate as date) IS NULL OR ds.scheduleDate >= :startDate)
         AND (cast(:endDate as date) IS NULL OR ds.scheduleDate <= :endDate)
 """)
     Page<AppointmentAdminListDTO> findFilteredAppointments(
             @Param("patientId") Long patientId,
+            @Param("doctorId") Long doctorId,       // NEW
             @Param("scheduleId") Long scheduleId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
@@ -169,50 +194,47 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             Pageable pageable
     );
 
+    // (This one was already correct in your prompt, keeping it)
     @Query(nativeQuery = true, value = """
     SELECT
         a.id AS id,
         a.queuePosition AS queuePosition,
         a.note AS note,
-        a.status AS status,
-        
-        -- Schedule Details
+        asl.code AS status,
+        asl.displayName AS statusDisplayName,
+        asl.colorCode AS statusColor,
         ds.id AS scheduleId,
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS startTime,
         ds.endTime AS endTime,
         ds.doctorFee AS doctorFee,
         ds.clinicFee AS clinicFee,
-        
-        -- Patient Details
         p.id AS patientId,
         CONCAT(p.firstName, ' ', p.lastName) AS patientName,
         p.patientNo AS patientNo,
         p.mobileNo AS patientMobile,
         p.nic AS patientNic,
-        
-        -- Doctor Details
         d.id AS doctorId,
         CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
         s.name AS specialization,
-        
-        -- Invoice Details
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
-        i.status AS invoiceStatus,
-
-        -- System Columns
+        i.amountPaid AS amountPaid,
+        i.balanceRemaining AS balanceRemaining,
+        isl.code AS invoiceStatus,
+        isl.displayName AS invoiceStatusDisplayName,
+        isl.colorCode AS invoiceStatusColor,
         a.createdDate, a.createdBy,
         a.updatedDate, a.updatedBy,
         a.approvedDate, a.approvedBy
-
     FROM appointments a
+    LEFT JOIN appointment_status_lookup asl ON a.statusId = asl.id
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
     JOIN patient p ON a.patient_id = p.id
     LEFT JOIN invoices i ON a.invoice_id = i.id
-
+    LEFT JOIN invoice_status_lookup isl ON i.statusId = isl.id
     WHERE a.id = :appointmentId
       AND a.clinic_id = :clinicId
 """)
@@ -220,14 +242,18 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("appointmentId") Long appointmentId,
             @Param("clinicId") Integer clinicId);
 
+    // CHANGED: Added Joins to get Statuses
     @Query(nativeQuery = true, value = """
     SELECT
         a.id AS id,
         a.queuePosition AS queuePosition,
         a.note AS note,
-        a.status AS status,
         
-        -- Schedule Details
+        -- MAPPED STATUS
+        asl.code AS status,
+        asl.displayName AS statusDisplayName,
+        asl.colorCode AS statusColor,
+        
         ds.id AS scheduleId,
         ds.scheduleDate AS scheduleDate,
         ds.startTime AS startTime,
@@ -235,34 +261,38 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         ds.doctorFee AS doctorFee,
         ds.clinicFee AS clinicFee,
         
-        -- Patient Details
         p.id AS patientId,
         CONCAT(p.firstName, ' ', p.lastName) AS patientName,
         p.patientNo AS patientNo,
         p.mobileNo AS patientMobile,
         p.nic AS patientNic,
         
-        -- Doctor Details
         d.id AS doctorId,
         CONCAT('Dr. ', d.firstName, ' ', d.lastName) AS doctorName,
         s.name AS specialization,
         
-        -- Invoice Details
         i.totalDiscount AS invoiceTotalDiscount,
         i.finalAmount AS invoiceFinalAmount,
-        i.status AS invoiceStatus,
+        i.amountPaid AS amountPaid,
+        i.balanceRemaining AS balanceRemaining,
+        
+        -- MAPPED INVOICE STATUS
+        isl.code AS invoiceStatus,
+        isl.displayName AS invoiceStatusDisplayName,
+        isl.colorCode AS invoiceStatusColor,
 
-        -- System Columns
         a.createdDate, a.createdBy,
         a.updatedDate, a.updatedBy,
         a.approvedDate, a.approvedBy
 
     FROM appointments a
+    LEFT JOIN appointment_status_lookup asl ON a.statusId = asl.id -- JOIN
     JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
     JOIN doctor d ON ds.doctor_id = d.id
     LEFT JOIN specialization s ON d.specialization_id = s.id
     JOIN patient p ON a.patient_id = p.id
     LEFT JOIN invoices i ON a.invoice_id = i.id
+    LEFT JOIN invoice_status_lookup isl ON i.statusId = isl.id -- JOIN
 
     WHERE a.id = :appointmentId
       AND a.clinic_id = :clinicId
@@ -275,11 +305,12 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     );
 
 
+    // CHANGED: Added Join to appointment_status_lookup
     @Query(nativeQuery = true, value = """
         SELECT
             a.id AS id,
             a.queuePosition AS queuePosition,
-            a.status AS status,
+            asl.code AS status, -- Get Code
             a.note AS note,
             ds.scheduleDate AS scheduleDate,
             ds.startTime AS startTime,
@@ -288,6 +319,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             CONCAT(p.firstName, ' ', p.lastName) AS patientName,
             p.mobileNo AS patientMobile
         FROM appointments a
+        JOIN appointment_status_lookup asl ON a.statusId = asl.id -- JOIN
         JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
         JOIN patient p ON a.patient_id = p.id
         WHERE a.doctor_schedule_id = :scheduleId
@@ -306,38 +338,45 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             Pageable pageable
     );
 
+    // CHANGED: Updated analytics to use the Lookup table for status strings
     @Query(nativeQuery = true, value = """
     SELECT
-        COUNT(id) AS total,
-        COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS completed,
-        COALESCE(SUM(CASE WHEN status = 'BOOKED' THEN 1 ELSE 0 END), 0) AS booked,
-        COALESCE(SUM(CASE WHEN status = 'PENDING_PAYMENT' THEN 1 ELSE 0 END), 0) AS pendingPayment,
-        COALESCE(SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END), 0) AS cancelled
-    FROM appointments
-    WHERE doctor_schedule_id = :scheduleId
-      AND clinic_id = :clinicId
+        COUNT(a.id) AS total,
+        COALESCE(SUM(CASE WHEN asl.code = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS completed,
+        COALESCE(SUM(CASE WHEN asl.code = 'BOOKED' THEN 1 ELSE 0 END), 0) AS booked,
+        COALESCE(SUM(CASE WHEN asl.code = 'PENDING_PAYMENT' THEN 1 ELSE 0 END), 0) AS pendingPayment,
+        COALESCE(SUM(CASE WHEN asl.code = 'CANCELLED' THEN 1 ELSE 0 END), 0) AS cancelled
+    FROM appointments a
+    JOIN appointment_status_lookup asl ON a.statusId = asl.id
+    WHERE a.doctor_schedule_id = :scheduleId
+      AND a.clinic_id = :clinicId
 """)
     ScheduleAnalyticsDTO getScheduleAnalytics(
             @Param("scheduleId") Long scheduleId,
             @Param("clinicId") Integer clinicId);
 
 
-    @Query("""
-        SELECT new com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCheckDTO(
-            p.Id,
-            a.Id,
-            CONCAT(p.firstName, ' ', p.lastName),
-            p.patientNo,
-            p.nic,
-            a.queuePosition,
-            CAST(a.status AS string),
-            a.createdDate
-        )
-        FROM Appointment a
-        JOIN a.patient p
-        WHERE a.doctorSchedule.id = :scheduleId
+    @Query(nativeQuery = true, value = """
+        SELECT
+            p.id AS patientId,
+            a.id AS appointmentId,
+            CONCAT(p.firstName, ' ', p.lastName) AS patientName,
+            p.patientNo AS patientNo,
+            p.nic AS nic,
+            a.queuePosition AS queuePosition,
+            a.createdDate AS createdDate,
+            asl.code AS statusCode,
+            asl.displayName AS statusDisplayName,
+            asl.colorCode AS statusColor
+        FROM appointments a
+        JOIN appointment_status_lookup asl ON a.statusId = asl.id
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.doctor_schedule_id = :scheduleId
           AND p.id = :patientId
-          AND a.clinicId = :clinicId
+          AND a.clinic_id = :clinicId
+          AND asl.code != 'CANCELLED'   -- 1. Ignore Cancelled Appointments
+        ORDER BY a.id DESC              -- 2. Pick the Latest one (The new booking)
+        LIMIT 1                         -- 3. Ensure strictly one result
     """)
     Optional<AppointmentCheckDTO> findDetailsByScheduleAndPatient(
             @Param("scheduleId") Long scheduleId,
@@ -346,10 +385,13 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
     );
 
     @Procedure(name = "Appointment.cancel")
-    String sp_CancelAppointment(
+    Map<String, Object> sp_CancelAppointment(
             @Param("p_clinic_id") Integer clinicId,
             @Param("p_appointment_id") Integer appointmentId,
             @Param("p_cancel_reason") String cancelReason,
-            @Param("p_cancelled_by") String cancelledBy
+            @Param("p_cancelled_by") String cancelledBy,
+            @Param("p_received_by_staff_id") Long staffId,
+            @Param("p_cashier_workstation_id") Integer workstationId,
+            @Param("p_refund_method") String refundMethod
     );
 }

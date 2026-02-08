@@ -20,14 +20,30 @@ public class DoctorScheduleMapper {
         dto.setMaxPatientCount(schedule.getMaxPatientCount());
         dto.setRegisteredPatientCount(schedule.getRegisteredPatientCount());
 
-        // Optional: remove isActive if you rely on status enum
-//        dto.setIsActive(schedule.getIsActive());
+        // --- UPDATED MAPPING ---
 
-        // Map enums
-        dto.setStatus(schedule.getStatus());
-        dto.setBookingStatus(schedule.getBookingStatus());
-        dto.setPayoutStatus(schedule.getPayoutStatus());
+        // 1. Map Status Entity -> StatusDTO
+        if (schedule.getStatus() != null) {
+            dto.setStatus(new DoctorScheduleResponseDTO.StatusDTO(
+                    schedule.getStatus().getCode(),
+                    schedule.getStatus().getDisplayName(),
+                    schedule.getStatus().getColorCode()
+            ));
+        }
 
+        // 2. Map Payout Entity -> StatusDTO
+        if (schedule.getPayoutStatus() != null) {
+            dto.setPayoutStatus(new DoctorScheduleResponseDTO.StatusDTO(
+                    schedule.getPayoutStatus().getCode(),
+                    schedule.getPayoutStatus().getDisplayName(),
+                    schedule.getPayoutStatus().getColorCode()
+            ));
+        }
+
+        // 3. Map Boolean
+        dto.setIsBookingOpen(schedule.getIsBookingOpen());
+
+        // 4. Map Doctor Details
         if (schedule.getDoctor() != null) {
             dto.setDoctorId(schedule.getDoctor().getId());
             dto.setDoctorName(schedule.getDoctor().getFirstName() + " " + schedule.getDoctor().getLastName());

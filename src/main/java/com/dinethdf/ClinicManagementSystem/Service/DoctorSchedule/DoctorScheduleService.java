@@ -18,6 +18,13 @@ public interface DoctorScheduleService {
 
     DoctorScheduleResponseDTO createSchedule(DoctorScheduleCreateDTO createDTO);
 
+    Page<DoctorScheduleResponseDTO> getAllSchedulesList(
+            Long doctorId,
+            Integer specializationId,
+            LocalDate startDate, // New
+            LocalDate endDate,   // New
+            Pageable pageable);
+
     /**
      * --- NEW BATCH METHOD SIGNATURE ---
      */
@@ -31,13 +38,6 @@ public interface DoctorScheduleService {
      */
     DoctorScheduleResponseDTO getScheduleById(Long id);
 
-    Page<DoctorScheduleResponseDTO> getAllSchedulesList(String doctorName,String specialization,LocalDate searchDate, Pageable pageable);
-
-    /**
-     * Retrieves all schedules, with an option to include inactive ones.
-     * @param includeInactive If true, returns all schedules. If false, returns only active.
-     * @return A list of schedule Response DTOs.
-     */
     List<DoctorScheduleResponseDTO> getAllSchedules(boolean includeInactive);
 
 

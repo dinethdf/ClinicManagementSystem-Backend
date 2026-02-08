@@ -5,14 +5,13 @@ import java.time.LocalTime;
 
 public interface AppointmentByScheduleListDTO {
     Long getId();
-    String getAppointmentNumber();
     Integer getQueuePosition();
     String getStatus();
+    String getStatusDisplayName();
+    String getStatusColor();
     String getNote();
-
     LocalDate getScheduleDate();
     LocalTime getStartTime();
-
     Long getPatientId();
     String getPatientNo();
     String getPatientName();

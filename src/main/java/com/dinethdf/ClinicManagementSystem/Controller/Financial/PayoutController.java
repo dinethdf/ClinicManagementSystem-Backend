@@ -80,7 +80,7 @@ public class PayoutController {
     @PostMapping("/doctor/generate-bill/{scheduleId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR')")
     public ResponseEntity<ApiResponse<DoctorPayoutResultDTO>> generateDoctorBill(
-            @PathVariable Integer scheduleId, Principal p) {
+            @PathVariable Long scheduleId, Principal p) {
 
         DoctorPayoutResultDTO result = payoutService.generateDoctorBill(scheduleId, p.getName());
         return ResponseEntity.ok(ApiResponse.success(result, "Bill Generated"));
@@ -89,7 +89,7 @@ public class PayoutController {
     @GetMapping("/doctor/pending")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<Page<PendingBillView>>> getPendingDoctorBills(
-            @RequestParam(required = false) Integer doctorId,
+            @RequestParam(required = false) Long doctorId,
             @RequestParam(defaultValue = "0") int page, // Default to first page
             @RequestParam(defaultValue = "10") int size // Default 10 items
     ) {

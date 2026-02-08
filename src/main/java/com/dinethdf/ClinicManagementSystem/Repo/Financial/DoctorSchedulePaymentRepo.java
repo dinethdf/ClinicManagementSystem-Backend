@@ -18,9 +18,11 @@ import java.util.Optional;
 @Repository
 public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorSchedulePayment, Integer> {
 
-    boolean existsByDoctorScheduleIdAndClinicId(Integer doctorScheduleId, Integer clinicId);
+    // CHANGED: Integer -> Long for doctorScheduleId
+    boolean existsByDoctorScheduleIdAndClinicId(Long doctorScheduleId, Integer clinicId);
 
-    Optional<DoctorSchedulePayment> findByDoctorScheduleIdAndClinicId(Integer doctorScheduleId, Integer clinicId);
+    // CHANGED: Integer -> Long for doctorScheduleId
+    Optional<DoctorSchedulePayment> findByDoctorScheduleIdAndClinicId(Long doctorScheduleId, Integer clinicId);
 
     List<DoctorSchedulePayment> findByStatusAndClinicId(DoctorSchedulePayment.PayoutStatus status, Integer clinicId);
 
@@ -52,9 +54,9 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
 """)
     Page<PendingBillView> findPendingBillsFiltered(
             @Param("status") DoctorSchedulePayment.PayoutStatus status,
-            @Param("doctorId") Integer doctorId,
+            @Param("doctorId") Long doctorId, // CHANGED: Integer -> Long
             @Param("clinicId") Integer clinicId,
-            Pageable pageable // <--- Add this!
+            Pageable pageable
     );
 
     @Query("""
@@ -86,7 +88,6 @@ public interface DoctorSchedulePaymentRepo extends JpaRepository<DoctorScheduleP
             Pageable pageable
     );
 
-    // --- NEW: Sum with Date Range ---
     @Query("""
         SELECT COALESCE(SUM(p.finalPayableAmount), 0)
         FROM DoctorSchedulePayment p

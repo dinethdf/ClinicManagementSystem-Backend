@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.Analytics;
 
-import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -20,8 +20,7 @@ public class AdminAnalysisService {
     public Map<String, Object> getSummaryCards() {
         Map<String, Object> summary = new HashMap<>();
         String today = LocalDate.now().toString();
-        Integer clinicId = TenantContext.getCurrentTenant(); // <--- Get Tenant
-
+        Integer clinicId = TenantContext.getCurrentTenant();
 
         String revenueSql = "SELECT COALESCE(SUM(finalAmount), 0) FROM invoices WHERE DATE(createdDate) = ? AND clinic_id = ?";
         summary.put("todayRevenue", jdbcTemplate.queryForObject(revenueSql, Double.class, today, clinicId));
@@ -29,15 +28,26 @@ public class AdminAnalysisService {
         String apptSql = """
             SELECT COUNT(*) FROM appointments a
             JOIN doctorSchedule ds ON a.doctor_schedule_id = ds.id
+            JOIN appointment_status_lookup asl ON a.statusId = asl.id
             WHERE ds.scheduleDate = ? 
-              AND a.status != 'CANCELLED'
+              AND asl.code != 'CANCELLED'
               AND a.clinic_id = ? 
         """;
         summary.put("todayAppointments", jdbcTemplate.queryForObject(apptSql, Integer.class, today, clinicId));
 
-        String pendingSql = "SELECT COUNT(*) FROM appointments WHERE status = 'PENDING_PAYMENT' AND clinic_id = ?";
+        // 3. Pending Payments (Appointments that are waiting for payment)
+        // FIXED: Joined appointment_status_lookup or check PARTIAL/PENDING codes
+        // Note: You used 'PENDING_PAYMENT' before. Now you might have 'PARTIAL' too.
+        // I will check for both just in case, or stick to your specific need.
+        String pendingSql = """
+            SELECT COUNT(*) FROM appointments a
+            JOIN appointment_status_lookup asl ON a.statusId = asl.id
+            WHERE asl.code IN ('PENDING_PAYMENT', 'PARTIAL') 
+              AND a.clinic_id = ?
+        """;
         summary.put("pendingPayments", jdbcTemplate.queryForObject(pendingSql, Integer.class, clinicId));
 
+        // 4. Active Patients (No change needed)
         String patientSql = "SELECT COUNT(*) FROM patient WHERE isActive = 1 AND clinic_id = ?";
         summary.put("activePatients", jdbcTemplate.queryForObject(patientSql, Integer.class, clinicId));
 
@@ -46,36 +56,44 @@ public class AdminAnalysisService {
 
     public List<Map<String, Object>> getMonthlyRevenue(int year) {
         Integer clinicId = TenantContext.getCurrentTenant();
+        // FIXED: Joined invoice_status_lookup to check for 'PAID' (and maybe 'PARTIAL')
         String sql = """
             SELECT
-                MONTHNAME(createdDate) as month,
-                MONTH(createdDate) as monthIndex,
-                SUM(finalAmount) as totalRevenue,
-                COUNT(id) as invoiceCount
-            FROM invoices
-            WHERE YEAR(createdDate) = ? 
-              AND status = 'PAID'
-              AND clinic_id = ? 
-            GROUP BY MONTH(createdDate), MONTHNAME(createdDate)
-            ORDER BY MONTH(createdDate)
+                MONTHNAME(i.createdDate) as month,
+                MONTH(i.createdDate) as monthIndex,
+                SUM(i.finalAmount) as totalRevenue,
+                COUNT(i.id) as invoiceCount
+            FROM invoices i
+            JOIN invoice_status_lookup isl ON i.statusId = isl.id
+            WHERE YEAR(i.createdDate) = ? 
+              AND isl.code IN ('PAID', 'PARTIAL') -- Count revenue from Partial too?
+              AND i.clinic_id = ? 
+            GROUP BY MONTH(i.createdDate), MONTHNAME(i.createdDate)
+            ORDER BY MONTH(i.createdDate)
         """;
         return jdbcTemplate.queryForList(sql, year, clinicId);
     }
 
     public List<Map<String, Object>> getDoctorPerformanceStats() {
         Integer clinicId = TenantContext.getCurrentTenant();
+        // FIXED: Joined appointmentss_status_lookup for status checks
         String sql = """
             SELECT
                 CONCAT('Dr. ', d.firstName, ' ', d.lastName) as doctorName,
                 s.name as specialization,
                 COUNT(a.id) as totalAppointments,
-                SUM(CASE WHEN a.status = 'COMPLETED' THEN 1 ELSE 0 END) as completedCount,
-                SUM(CASE WHEN a.status IN ('COMPLETED', 'Booked') THEN (ds.doctorFee + ds.clinicFee) ELSE 0 END) as generatedRevenue
+                
+                -- Count Completed
+                SUM(CASE WHEN asl.code = 'COMPLETED' THEN 1 ELSE 0 END) as completedCount,
+                
+                -- Calculate Revenue (Completed OR Booked appointments imply revenue generation potential)
+                SUM(CASE WHEN asl.code IN ('COMPLETED', 'BOOKED') THEN (ds.doctorFee + ds.clinicFee) ELSE 0 END) as generatedRevenue
             FROM doctor d
             JOIN doctorSchedule ds ON d.id = ds.doctor_id
             JOIN appointments a ON ds.id = a.doctor_schedule_id
+            JOIN appointment_status_lookup asl ON a.statusId = asl.id
             LEFT JOIN specialization s ON d.specialization_id = s.id
-            WHERE a.status != 'CANCELLED'
+            WHERE asl.code != 'CANCELLED'
               AND d.clinic_id = ?
             GROUP BY d.id
             ORDER BY generatedRevenue DESC
@@ -86,14 +104,17 @@ public class AdminAnalysisService {
 
     public List<Map<String, Object>> getAppointmentStatusBreakdown() {
         Integer clinicId = TenantContext.getCurrentTenant();
+        // FIXED: Select displayName from Lookup table
         String sql = """
             SELECT
-                status,
+                asl.displayName as status, -- Use readable name
+                asl.colorCode as color,    -- Bonus: Send color to frontend
                 COUNT(*) as count,
                 ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM appointments WHERE clinic_id = ?), 1) as percentage
-            FROM appointments
-            WHERE clinic_id = ?
-            GROUP BY status
+            FROM appointments a
+            JOIN appointment_status_lookup asl ON a.statusId = asl.id
+            WHERE a.clinic_id = ?
+            GROUP BY asl.displayName, asl.colorCode
         """;
         return jdbcTemplate.queryForList(sql, clinicId, clinicId);
     }

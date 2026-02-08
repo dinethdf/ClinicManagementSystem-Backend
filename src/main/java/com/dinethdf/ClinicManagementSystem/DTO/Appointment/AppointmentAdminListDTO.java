@@ -5,9 +5,13 @@ import java.time.LocalTime;
 
 public interface AppointmentAdminListDTO {
     Long getId();
-    String getAppointmentNumber();
     Integer getQueuePosition();
-    String getStatus();
+
+    // --- Full Status Info ---
+    String getStatus();              // e.g. "BOOKED"
+    String getStatusDisplayName();   // e.g. "Booked"
+    String getStatusColor();         // e.g. "#28a745"
+
     String getNote();
 
     LocalDate getScheduleDate();

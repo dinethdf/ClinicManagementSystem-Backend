@@ -2,17 +2,19 @@ package com.dinethdf.ClinicManagementSystem.Service.Financial;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.PayoutStatusLookup; // <--- Import Lookup
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.ScheduleStatusLookup; // <--- Import Lookup
 import com.dinethdf.ClinicManagementSystem.Model.Financial.*;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
+import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.PayoutStatusLookupRepo; // <--- Import Repo
+import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.ScheduleStatusLookupRepo; // <--- Import Repo
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.DoctorSchedulePaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.ExpenseCategoryRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.FinancialRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Financial.OperationalExpenseRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Projection.ScheduleFinancialProjection;
-import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
-
-import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule.PayoutStatus;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,8 +43,12 @@ public class PayoutServiceImpl implements PayoutService {
     private final DoctorScheduleRepo scheduleRepo;
     private final FinancialRepo calculationRepo;
 
+    // --- NEW: Inject Lookup Repos ---
+    private final ScheduleStatusLookupRepo scheduleStatusRepo;
+    private final PayoutStatusLookupRepo payoutStatusRepo;
+
     @Override
-    public DoctorPayoutResultDTO generateDoctorBill(Integer scheduleId, String createdBy) {
+    public DoctorPayoutResultDTO generateDoctorBill(Long scheduleId, String createdBy) {
 
         Integer clinicId = TenantContext.getCurrentTenant();
 
@@ -73,19 +79,27 @@ public class PayoutServiceImpl implements PayoutService {
 
         // 5. Create the Bill (Liability)
         DoctorSchedulePayment bill = new DoctorSchedulePayment();
-        bill.setClinicId(clinicId); // <--- Set Clinic ID
+        bill.setClinicId(clinicId);
         bill.setDoctorSchedule(schedule);
         bill.setTotalDoctorFee(fee);
         bill.setTotalDoctorDiscounts(discount);
         bill.setFinalPayableAmount(payable);
-        bill.setStatus(DoctorSchedulePayment.PayoutStatus.PENDING);
+        bill.setStatus(DoctorSchedulePayment.PayoutStatus.PENDING); // This Enum likely belongs to the Payment Model, not Schedule Model, so it might be fine.
         bill.setCreatedBy(createdBy);
 
         DoctorSchedulePayment saved = doctorBillRepo.save(bill);
 
-        // 6. Update Schedule Status
-        schedule.setPayoutStatus(PayoutStatus.PENDING);
-        schedule.setStatus(DoctorSchedule.ScheduleStatus.COMPLETED);
+        // 6. Update Schedule Status (UPDATED)
+        // Fetch 'PENDING' Payout Status
+        PayoutStatusLookup pendingPayout = payoutStatusRepo.findByCode("PENDING")
+                .orElseThrow(() -> new ValidationException("System Error: Payout Status 'PENDING' not found", "CONFIG_ERROR"));
+
+        // Fetch 'COMPLETED' Schedule Status
+        ScheduleStatusLookup completedSchedule = scheduleStatusRepo.findByCode("COMPLETED")
+                .orElseThrow(() -> new ValidationException("System Error: Schedule Status 'COMPLETED' not found", "CONFIG_ERROR"));
+
+        schedule.setPayoutStatus(pendingPayout);
+        schedule.setStatus(completedSchedule);
         scheduleRepo.save(schedule);
 
         // 7. Return Result
@@ -121,7 +135,7 @@ public class PayoutServiceImpl implements PayoutService {
     }
 
     @Override
-    public Page<PendingBillView> getPendingDoctorBills(Integer doctorId, int page, int size) {
+    public Page<PendingBillView> getPendingDoctorBills(Long doctorId, int page, int size) {
         // 1. Create PageRequest (Sort by date usually makes sense for bills)
         Pageable pageable = PageRequest.of(page, size, Sort.by("ds.scheduleDate").descending());
 
@@ -212,6 +226,11 @@ public class PayoutServiceImpl implements PayoutService {
             );
         }
 
+        // --- PRE-FETCH PAID STATUS ---
+        PayoutStatusLookup paidStatus = payoutStatusRepo.findByCode("PAID")
+                .orElseThrow(() -> new ValidationException("System Error: Payout Status 'PAID' not found", "CONFIG_ERROR"));
+
+
         int count = 0;
         List<DoctorSchedulePayment> billsToSave = new ArrayList<>();
         List<DoctorSchedule> schedulesToSave = new ArrayList<>();
@@ -235,7 +254,7 @@ public class PayoutServiceImpl implements PayoutService {
             billsToSave.add(bill);
 
             DoctorSchedule schedule = bill.getDoctorSchedule();
-            schedule.setPayoutStatus(PayoutStatus.PAID);
+            schedule.setPayoutStatus(paidStatus); // <--- Set Entity
             schedulesToSave.add(schedule);
 
             count++;
@@ -259,7 +278,6 @@ public class PayoutServiceImpl implements PayoutService {
         DoctorSchedulePayment bill = doctorBillRepo.findById(payoutId)
                 .orElseThrow(() -> new ValidationException("Bill not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        // SECURITY Check
         if (!Objects.equals(bill.getClinicId(), TenantContext.getCurrentTenant())) {
             throw new ValidationException("Bill not found", "NOT_FOUND", HttpStatus.NOT_FOUND);
         }
@@ -274,6 +292,15 @@ public class PayoutServiceImpl implements PayoutService {
 
         bill.getTransactions().clear();
 
+        // --- NEW: Revert Schedule Status ---
+        // We revert the Schedule's payout status back to 'PENDING'
+        PayoutStatusLookup pendingPayout = payoutStatusRepo.findByCode("PENDING")
+                .orElseThrow(() -> new ValidationException("System Error: Status 'PENDING' not found", "CONFIG_ERROR"));
+
+        DoctorSchedule schedule = bill.getDoctorSchedule();
+        schedule.setPayoutStatus(pendingPayout);
+        scheduleRepo.save(schedule);
+
         doctorBillRepo.save(bill);
     }
 
@@ -286,7 +313,7 @@ public class PayoutServiceImpl implements PayoutService {
                 .orElseThrow(() -> new ValidationException("Invalid Category ID", "INVALID_CAT", HttpStatus.BAD_REQUEST));
 
         OperationalExpense exp = new OperationalExpense();
-        exp.setClinicId(clinicId); // <--- Set Clinic ID
+        exp.setClinicId(clinicId);
         exp.setExpenseCategory(cat);
         exp.setDescription(dto.getDescription());
         exp.setAmount(dto.getAmount());

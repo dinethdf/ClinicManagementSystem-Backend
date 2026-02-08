@@ -1,0 +1,125 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_ProcessRefund$$
+
+CREATE PROCEDURE sp_ProcessRefund(
+    IN p_clinic_id INT,
+    IN p_invoice_id INT,
+    IN p_refund_amount DECIMAL(10,2),
+    IN p_refund_category VARCHAR(20), -- 'DOCTOR' or 'CLINIC'
+    IN p_reason VARCHAR(255),
+    IN p_authorized_by VARCHAR(50),
+    IN p_created_by VARCHAR(50),
+    OUT o_refund_id INT,
+    OUT o_status_message VARCHAR(255)
+)
+proc_label: BEGIN
+
+    -- Variables
+    DECLARE v_current_final_amount DECIMAL(10, 2);
+    DECLARE v_current_amount_paid DECIMAL(10, 2);
+    DECLARE v_refund_item_type_id INT; -- Will hold ID 4 or 5
+    DECLARE v_refunded_status_id INT;
+    DECLARE v_now DATETIME;
+
+    -- Error Handling
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET o_status_message = 'SQL_ERROR';
+    END;
+
+    SET v_now = NOW();
+    START TRANSACTION;
+
+    -- 1. Validation: Check Invoice & Amount
+    SELECT finalAmount, amountPaid
+    INTO v_current_final_amount, v_current_amount_paid
+    FROM invoices
+    WHERE id = p_invoice_id AND clinic_id = p_clinic_id
+    FOR UPDATE;
+
+    IF v_current_final_amount IS NULL THEN
+        SET o_status_message = 'ERROR_INVOICE_NOT_FOUND';
+        ROLLBACK; LEAVE proc_label;
+    END IF;
+
+    IF p_refund_amount > v_current_amount_paid THEN
+        SET o_status_message = 'ERROR_REFUND_EXCEEDS_PAYMENT';
+        ROLLBACK; LEAVE proc_label;
+    END IF;
+
+    -- 2. SELECT CORRECT ITEM TYPE (Based on your list)
+    IF p_refund_category = 'DOCTOR' THEN
+        -- Uses ID 4 (DOCTOR_DISCOUNT)
+        SELECT id INTO v_refund_item_type_id FROM item_types WHERE typeName = 'DOCTOR_DISCOUNT' LIMIT 1;
+    ELSEIF p_refund_category = 'CLINIC' THEN
+        -- Uses ID 5 (CLINIC_DISCOUNT)
+        SELECT id INTO v_refund_item_type_id FROM item_types WHERE typeName = 'CLINIC_DISCOUNT' LIMIT 1;
+    ELSE
+        SET o_status_message = 'ERROR_INVALID_REFUND_CATEGORY';
+        ROLLBACK; LEAVE proc_label;
+    END IF;
+
+    -- Safety Check
+    IF v_refund_item_type_id IS NULL THEN
+        SET o_status_message = 'ERROR_ITEM_TYPE_NOT_FOUND';
+        ROLLBACK; LEAVE proc_label;
+    END IF;
+
+    SELECT id INTO v_refunded_status_id FROM payment_status_lookup WHERE code = 'REFUNDED' LIMIT 1;
+
+    -- 3. Step A: Apply Negative Line Item
+    -- This maps the refund to the specific Discount Type (Doctor vs Clinic)
+    INSERT INTO invoice_items (
+        clinic_id, invoice_id, item_type_id, description, amount, createdDate, createdBy
+    ) VALUES (
+        p_clinic_id, p_invoice_id,
+        v_refund_item_type_id, -- ID 4 or 5
+        CONCAT('Refund: ', p_reason),
+        (p_refund_amount * -1), -- Negative Amount
+        v_now, p_created_by
+    );
+
+    -- 4. Step B: Record Cash Out (Payment Refund)
+    INSERT INTO payments (
+        clinic_id, invoice_id, amountPaid,
+        paymentMethodId, paymentStatusId, paymentLocationId,
+        receivedBy, transactionId, paymentTimestamp, createdDate, createdBy
+    ) VALUES (
+        p_clinic_id, p_invoice_id,
+        (p_refund_amount * -1), -- Negative Payment
+        (SELECT id FROM payment_method_lookup WHERE code = 'CASH' LIMIT 1),
+        v_refunded_status_id,
+        (SELECT id FROM payment_location_lookup WHERE code = 'CLINIC_COUNTER' LIMIT 1),
+        p_authorized_by,
+        CONCAT('REF-', UUID_SHORT()),
+        v_now, v_now, p_created_by
+    );
+
+    SET o_refund_id = LAST_INSERT_ID();
+
+    -- 5. Step C: Update Invoice
+    UPDATE invoices
+    SET
+        finalAmount = finalAmount - p_refund_amount,
+        totalDiscount = totalDiscount + p_refund_amount, -- Increases the Total Discount field
+        amountPaid = amountPaid - p_refund_amount,       -- Decreases Amount Paid
+        updatedDate = v_now,
+        updatedBy = p_created_by
+    WHERE id = p_invoice_id AND clinic_id = p_clinic_id;
+
+    -- 6. Audit
+    INSERT INTO payment_audit_log (
+        clinic_id, payment_id, invoice_id, actionType, newStatus, newAmount, reason, actionBy, actionDate
+    ) VALUES (
+        p_clinic_id, o_refund_id, p_invoice_id, 'REFUNDED', 'REFUNDED', p_refund_amount,
+        CONCAT(p_refund_category, ': ', p_reason), p_created_by, v_now
+    );
+
+    SET o_status_message = 'REFUND_SUCCESS';
+    COMMIT;
+
+END$$
+
+DELIMITER ;
