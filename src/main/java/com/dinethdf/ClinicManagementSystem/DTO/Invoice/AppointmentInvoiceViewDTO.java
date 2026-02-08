@@ -21,6 +21,7 @@ public class AppointmentInvoiceViewDTO {
     private StatusDTO status;
 
     // --- 'Bill To' (Patient) Section ---
+    private Long patientId;
     private String patientNo;
     private String patientName;
     private String patientAddress;

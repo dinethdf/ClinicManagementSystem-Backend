@@ -27,6 +27,7 @@ public interface InvoiceAppointmentFlatDTO {
     String getTransactionId();        // Matches SQL: pm.latestTxnId AS transactionId
 
     // Patient Details
+    Long getPatientId();
     String getPatientNo();
     String getPatientFirstName();
     String getPatientLastName();

@@ -155,6 +155,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             dto.setTransactionId(header.getTransactionId());
 
             // --- Patient Info ---
+            dto.setPatientId(header.getPatientId());
             dto.setPatientNo(header.getPatientNo());
             dto.setPatientName(header.getPatientFirstName() + " " + header.getPatientLastName());
             dto.setPatientAddress((header.getPatientAddress() != null ? header.getPatientAddress() : "") +

@@ -54,6 +54,7 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
         pm.latestMethod AS paymentMethod,
         COALESCE(pm.totalPaid, 0) AS amountPaid,
         pm.latestTxnId AS transactionId,
+        p.id AS patientId,
         p.patientNo AS patientNo,
         p.firstName AS patientFirstName,
         p.lastName AS patientLastName,
@@ -355,7 +356,6 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("clinicId") Integer clinicId);
 
 
-    // CHANGED: Converted to Native Query because JPQL cannot easily join the lookup table if it's not mapped in Entity
     @Query(nativeQuery = true, value = """
         SELECT
             p.id AS patientId,
@@ -364,14 +364,19 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             p.patientNo AS patientNo,
             p.nic AS nic,
             a.queuePosition AS queuePosition,
-            asl.code AS status,
-            a.createdDate AS createdDate
+            a.createdDate AS createdDate,
+            asl.code AS statusCode,
+            asl.displayName AS statusDisplayName,
+            asl.colorCode AS statusColor
         FROM appointments a
         JOIN appointment_status_lookup asl ON a.statusId = asl.id
         JOIN patient p ON a.patient_id = p.id
         WHERE a.doctor_schedule_id = :scheduleId
           AND p.id = :patientId
           AND a.clinic_id = :clinicId
+          AND asl.code != 'CANCELLED'   -- 1. Ignore Cancelled Appointments
+        ORDER BY a.id DESC              -- 2. Pick the Latest one (The new booking)
+        LIMIT 1                         -- 3. Ensure strictly one result
     """)
     Optional<AppointmentCheckDTO> findDetailsByScheduleAndPatient(
             @Param("scheduleId") Long scheduleId,

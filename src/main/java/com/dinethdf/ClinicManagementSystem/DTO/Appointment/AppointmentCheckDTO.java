@@ -1,21 +1,20 @@
 package com.dinethdf.ClinicManagementSystem.DTO.Appointment;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AppointmentCheckDTO {
-    private Long id;
-    private Long appointmentId;
-    private String fullName;
-    private String patientNo;
-    private String nic;
-    private Integer queueNo;
-    private String status;
-    private LocalDateTime createdDate;
+// For Native Queries, use an Interface (Spring maps SQL aliases to these getters)
+public interface AppointmentCheckDTO {
+
+    Long getPatientId();        // Matches SQL: p.id AS patientId
+    Long getAppointmentId();    // Matches SQL: a.id AS appointmentId
+    String getPatientName();    // Matches SQL: CONCAT(...) AS patientName
+    String getPatientNo();      // Matches SQL: p.patientNo AS patientNo
+    String getNic();            // Matches SQL: p.nic AS nic
+    Integer getQueuePosition(); // Matches SQL: a.queuePosition AS queuePosition
+    LocalDateTime getCreatedDate(); // Matches SQL: a.createdDate
+
+    // --- Status Fields ---
+    String getStatusCode();        // Matches SQL: asl.code AS statusCode
+    String getStatusDisplayName(); // Matches SQL: asl.displayName AS statusDisplayName
+    String getStatusColor();       // Matches SQL: asl.colorCode AS statusColor
 }
