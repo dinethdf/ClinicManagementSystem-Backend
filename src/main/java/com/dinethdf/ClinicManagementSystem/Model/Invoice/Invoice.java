@@ -23,11 +23,12 @@ public class Invoice extends AuditWrapper {
     private Long id;
 
     @Column(name = "clinic_id", nullable = false)
-    private Integer clinicId; // <--- Multi-Tenant Field
+    private Integer clinicId;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private InvoiceStatus status;
+    // --- CHANGED: Replaced Enum with Lookup Entity Relationship ---
+    @ManyToOne(fetch = FetchType.EAGER) // Eager is fine for small lookup tables
+    @JoinColumn(name = "statusId", referencedColumnName = "id", nullable = false)
+    private InvoiceStatusLookup status;
 
     @Column(nullable = false)
     private BigDecimal subtotalAmount;
@@ -43,6 +44,7 @@ public class Invoice extends AuditWrapper {
     @Column(nullable = false)
     private Boolean isApproved = false;
 
+    // ... Other mappings remain the same ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
@@ -53,17 +55,5 @@ public class Invoice extends AuditWrapper {
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<InvoiceItem> invoiceItems;
 
-    public enum InvoiceStatus {
-        UNPAID, PAID, PARTIAL, CANCELLED
-    }
-
-    // Override PrePersist to set defaults for financial fields specifically
-    @Override
-    public void prePersist() {
-        super.prePersist();
-        if (subtotalAmount == null) subtotalAmount = BigDecimal.ZERO;
-        if (totalDiscount == null) totalDiscount = BigDecimal.ZERO;
-        if (finalAmount == null) finalAmount = BigDecimal.ZERO;
-        if (status == null) status = InvoiceStatus.UNPAID;
-    }
+    // Remove the inner Enum since we use the DB table now
 }

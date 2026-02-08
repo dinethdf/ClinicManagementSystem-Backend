@@ -1,0 +1,217 @@
+
+USE clinicmsystem;
+
+-- 1. Create the Default Tenant (Clinic)
+INSERT INTO clinics ( name, subdomain, address, city, district, mobile_no, land_no, email, website, 
+logo_url, status, subscription_plan, max_doctors, max_patients, expiry_date, createdDate ) 
+VALUES 
+( 'City Care Hospital', 'citycare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
+'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() ),
+( 'ABCD Hospital', 'abcdCare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
+'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() );
+
+-- 2. Master Roles
+INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');
+
+-- 3. Users (Linked to Clinic 1)
+-- Note: clinic_id = 1 added to all auth records
+INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`) VALUES
+(1, '$2a$12$Z/h2MTBuOrefYxbKkQGhcOxc5in8vvq0JY0yyxUnCncw8uL7HQQNm', 'dineth@admin.com', '1', '1'),
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@user.com', '1', '2'),
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@user.com', '1', '2'),
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@staff.com', '1', '5'),
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@staff.com', '1', '5');
+
+
+UPDATE userAuth
+SET
+    detailsId = 1
+WHERE email = 'dineth@admin.com';
+
+
+INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`, `detailsId`) VALUES
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor.com', '1', '3', 1);
+
+INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, 
+							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy ) 
+			VALUES ( 1, 1, 1, 'Dineth', 'Dilshan', 'D. Dilshan', 1, '2000-01-12', '809934567V', 'admin@clinic.com', '0711234567', '123, Galle Road', 'Colombo', 'Colombo',
+								NOW(),'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin', 'ACTIVE', 1, NOW(), 'Super Admin' );
+
+-- 4. Specializations (Global)
+INSERT INTO specialization (name, note) VALUES
+('General Practitioner', 'Family Doctor'),
+('Dermatologist', 'Skin Specialist'),
+('Orthopedic Surgeon', 'Bone and Joint Specialist'),
+('Cardiologist', 'Heart Specialist'),
+('Endocrinologist', 'Diabetes & Hormone Specialist'),
+('Nephrologist', 'Kidney Specialist'),
+('Neurologist', 'Brain & Nerve Specialist'),
+('Surgeon ', 'Surgical operations'),
+('Ophthalmologist', 'Eye Specialist'),
+('Dental Surgeon', 'Teeth & Oral Specialist');
+
+
+-- 5. Doctors (Linked to Clinic 1)
+INSERT INTO doctor (id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, profileImg, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy) VALUES
+(1, 1, 6, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '809934567V', 'test1@doctor.com', '0711234567', '123, Galle Road, Colombo', 'https://t4.ftcdn.net/jpg/02/29/53/11/360_F_229531197_jmFcViuzXaYOQdoOK1qyg7uIGdnuKhpt.jpg', 'DOC001', '1', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1, NOW(), 'admin'),
+(2, 1, NULL, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851299567V', 'saman.fernando@clinic.com', '0779876543', '45, Temple Road, Kandy', null, 'DOC002', '2', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1, NOW(), 'admin'),
+(3, 1, NULL, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234599V', 'nimali.jayasinghe@clinic.com', '0705674321', '67, Main Street, Gampaha', null, 'DOC003', '3', 'MBBS, DCH', 8, 'ON_LEAVE', 1, NOW(), 'admin');
+
+
+-- 6. Patients (Linked to Clinic 1)
+INSERT INTO patientAuth (`clinic_id`, `password`, `email`, `isEnable`, `isTempCredential`, `role`, `detailsId`) VALUES
+(1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient.com', '1', '1', '4', 51);
+
+INSERT INTO patient (id, clinic_id, patient_auth_id, patientNo, firstName, lastName, fullName, ethnicity, gender, maritalStatus, nic, dob, address, city, district, email, mobileNo, landNo, emergencyContactName, emergencyContactRelationship, emergencyContactMobile, emergencyContactEmail, bloodGroup, registrationDate, profileImg, isActive, isApproved, createdDate, createdBy, updatedDate, updatedBy)
+VALUES
+(50, 1, 1, 'P250050', 'Fasdad', 'Qweqwe', 'Fasdad Qweqwe', 1, 1, 1, '201232345678', '2000-10-24', '123 Main Street', 'Colombo', 'Colombo', 'fasdad@example.com', '0776935124', '0112345678', 'Jane Doe', 'Spouse', '+94787654321', 'janedoe@example.com', 'AB-', '2025-09-30 10:30:00', 'https://example.com/images/patient1.png', 1, 1, '2025-10-24 12:20:41', 'test1@user.com', '2025-10-24 12:20:41', 'test1@user.com'),
+(51, 1, NULL, 'P250002', 'Kamal', 'Perera', 'Kamal Perera', 2, 1, 2, '201232345679', '1998-05-12', '45 Lake Road', 'Kandy', 'Kandy', 'kamalp@demo.com', '0776935124', '0812233445', 'Sunil Perera', 'Father', '+94775543210', 'sunilp@demo.com', 'B+', '2025-10-01 11:00:00', 'https://example.com/images/patient2.png', 1, 1, '2025-10-24 12:25:00', 'admin@demo.com', '2025-10-24 12:25:00', 'admin@demo.com'),
+(60, 1, NULL, 'P250011', 'Isuru', 'Abeywickrama', 'Isuru Abeywickrama', 2, 1, 1, '201232345688', '1992-03-12', '7 Lotus Avenue', 'Kalutara', 'Kalutara', 'isuru@demo.com', '0776935124', '0343344556', 'Suresh Abeywickrama', 'Father', '+94778881234', 'suresha@demo.com', 'B-', '2025-10-06 10:45:00', 'https://example.com/images/patient11.png', 1, 1, '2025-10-24 13:15:00', 'staff@demo.com', '2025-10-24 13:15:00', 'staff@demo.com'),
+(61, 1, NULL, 'P250012', 'Thilini', 'De Silva', 'Thilini De Silva', 3, 2, 1, '201232345689', '1996-09-20', '12 Rose Lane', 'Colombo', 'Colombo', 'thilini@demo.com', '0776935124', '0117788990', 'Sameera De Silva', 'Husband', '+94775554433', 'sameerad@demo.com', 'A+', '2025-10-06 15:20:00', 'https://example.com/images/patient12.png', 1, 1, '2025-10-24 13:20:00', 'staff@demo.com', '2025-10-24 13:20:00', 'staff@demo.com'),
+(62, 1, NULL, 'P250013', 'Madushan', 'Ranasinghe', 'Madushan Ranasinghe', 1, 1, 1, '201232345690', '1989-01-10', '25 Beach Road', 'Gampaha', 'Gampaha', 'madushan@demo.com', '0776935124', '0332233445', 'Lakmini Ranasinghe', 'Wife', '+94770002211', 'lakmini@demo.com', 'AB-', '2025-10-06 14:10:00', 'https://example.com/images/patient13.png', 1, 1, '2025-10-24 13:25:00', 'staff@demo.com', '2025-10-24 13:25:00', 'staff@demo.com');
+
+
+-- 8. Global Items
+INSERT INTO item_types (typeName, description) VALUES
+('APPOINTMENT', 'Doctor Consultation or Booking'),
+('LAB_TEST', 'Laboratory Test Request'),
+('PHARMACY', 'Pharmacy Sale or Prescription'),
+('DOCTOR_DISCOUNT', 'Discount given by the doctor'),
+('CLINIC_DISCOUNT', 'Discount or promotion from the clinic'),
+('OTHER_DISCOUNT', 'Discount or promotion from outside Buisness');
+
+
+-- 10. System Config (Tenant Specific)
+-- Primary Key is (clinic_id, configKey)
+INSERT INTO systemConfig (clinic_id, configKey, configValue, createdDate, createdBy)
+VALUES
+(1, 'SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
+(1, 'EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
+(1, 'CLINIC_THEME', 'BLUE', NOW(), 'SYSTEM');
+
+-- 11. Expense Categories (Global)
+INSERT INTO expense_categories (name, description) VALUES
+('RENT', 'Monthly Building Rent'),
+('UTILITY', 'Electricity, Water, Internet'),
+('SALARY', 'Staff Salaries'),
+('MAINTENANCE', 'Repairs and Cleaning');
+
+
+
+
+USE clinicmsystem;
+
+INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`) VALUES
+(2, '$2a$12$Z/h2MTBuOrefYxbKkQGhcOxc5in8vvq0JY0yyxUnCncw8uL7HQQNm', 'dineth@admin2.com', '1', '1'), -- Admin
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@user2.com', '1', '2'),   -- Staff
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@user2.com', '1', '2'),   -- Staff
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@staff2.com', '1', '5'),  -- Nurse
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@staff2.com', '1', '5');  -- Nurse
+
+-- Doctor User Auth
+INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`, `detailsId`) VALUES
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor2.com', '1', '3', 7);
+
+-- Capture the last inserted ID for the doctor link (Optional safety step, or assume auto-inc)
+SET @doc_auth_id = LAST_INSERT_ID();
+
+INSERT INTO doctor (id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, slmcNumber, specialization_id, qualification, experienceYears, availability_status, isApproved, createdDate, createdBy) VALUES
+(7, 2, @doc_auth_id, 'Kamal', 'Perera', 'K. Perera', 1, '1980-05-12', '809934567V', 'test2@doctor.com', '0711234567', '123, Galle Road, Colombo', 'DOC001', '1', 'MBBS, MD (Cardiology)', 15, 'AVAILABLE', 1, NOW(), 'admin'),
+(8, 2, NULL, 'Saman', 'Fernando', 'S. Fernando', 1, '1985-09-22', '851299567V', 'saman.fernando@clinic.com', '0779876543', '45, Temple Road, Kandy', 'DOC002', '2', 'MBBS, MD (Dermatology)', 10, 'AVAILABLE', 1, NOW(), 'admin'),
+(9, 2, NULL, 'Nimali', 'Jayasinghe', 'N. Jayasinghe', 2, '1990-11-10', '901234599V', 'nimali.jayasinghe@clinic.com', '0705674321', '67, Main Street, Gampaha', 'DOC003', '3', 'MBBS, DCH', 8, 'ON_LEAVE', 1, NOW(), 'admin');
+
+
+INSERT INTO patientAuth (`clinic_id`, `password`, `email`, `isEnable`, `isTempCredential`, `role`) VALUES
+(2, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test@patient2.com', '1', '1', '4');
+
+SET @pat_auth_id = LAST_INSERT_ID();
+
+-- Explicitly inserting IDs 80-84 to ensure transaction scripts below work correctly
+INSERT INTO patient (id, clinic_id, patient_auth_id, patientNo, firstName, lastName, fullName, ethnicity, gender, maritalStatus, nic, dob, address, city, district, email, mobileNo, landNo, emergencyContactName, emergencyContactRelationship, emergencyContactMobile, emergencyContactEmail, bloodGroup, registrationDate, profileImg, isActive, isApproved, createdDate, createdBy, updatedDate, updatedBy)
+VALUES
+(80, 2, @pat_auth_id, 'P250050', 'Fasdad', 'Qweqwe', 'Fasdad Qweqwe', 1, 1, 1, '201232345678', '2000-10-24', '123 Main Street', 'Colombo', 'Colombo', 'fasdad@example.com', '0776935124', '0112345678', 'Jane Doe', 'Spouse', '+94787654321', 'janedoe@example.com', 'AB-', '2025-09-30 10:30:00', 'https://example.com/images/patient1.png', 1, 1, '2025-10-24 12:20:41', 'test1@user.com', '2025-10-24 12:20:41', 'test1@user.com'),
+(81, 2, NULL, 'P250002', 'Kamal', 'Perera', 'Kamal Perera', 2, 1, 2, '201232345679', '1998-05-12', '45 Lake Road', 'Kandy', 'Kandy', 'kamalp@demo.com', '0776935124', '0812233445', 'Sunil Perera', 'Father', '+94775543210', 'sunilp@demo.com', 'B+', '2025-10-01 11:00:00', 'https://example.com/images/patient2.png', 1, 1, '2025-10-24 12:25:00', 'admin@demo.com', '2025-10-24 12:25:00', 'admin@demo.com'),
+(82, 2, NULL, 'P250011', 'Isuru', 'Abeywickrama', 'Isuru Abeywickrama', 2, 1, 1, '201232345688', '1992-03-12', '7 Lotus Avenue', 'Kalutara', 'Kalutara', 'isuru@demo.com', '0776935124', '0343344556', 'Suresh Abeywickrama', 'Father', '+94778881234', 'suresha@demo.com', 'B-', '2025-10-06 10:45:00', 'https://example.com/images/patient11.png', 1, 1, '2025-10-24 13:15:00', 'staff@demo.com', '2025-10-24 13:15:00', 'staff@demo.com'),
+(83, 2, NULL, 'P250012', 'Thilini', 'De Silva', 'Thilini De Silva', 3, 2, 1, '201232345689', '1996-09-20', '12 Rose Lane', 'Colombo', 'Colombo', 'thilini@demo.com', '0776935124', '0117788990', 'Sameera De Silva', 'Husband', '+94775554433', 'sameerad@demo.com', 'A+', '2025-10-06 15:20:00', 'https://example.com/images/patient12.png', 1, 1, '2025-10-24 13:20:00', 'staff@demo.com', '2025-10-24 13:20:00', 'staff@demo.com'),
+(84, 2, NULL, 'P250013', 'Madushan', 'Ranasinghe', 'Madushan Ranasinghe', 1, 1, 1, '201232345690', '1989-01-10', '25 Beach Road', 'Gampaha', 'Gampaha', 'madushan@demo.com', '0776935124', '0332233445', 'Lakmini Ranasinghe', 'Wife', '+94770002211', 'lakmini@demo.com', 'AB-', '2025-10-06 14:10:00', 'https://example.com/images/patient13.png', 1, 1, '2025-10-24 13:25:00', 'staff@demo.com', '2025-10-24 13:25:00', 'staff@demo.com');
+
+-- 6. System Config (Tenant Specific)
+INSERT INTO systemConfig (clinic_id, configKey, configValue, createdDate, createdBy)
+VALUES
+(2, 'SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
+(2, 'EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
+(2, 'CLINIC_THEME', 'BLUE', NOW(), 'SYSTEM');
+
+
+-- 7. Final Update for Schedule Counts
+-- FIX: Updates the schedule for Doctor 7 (Clinic 2)
+UPDATE `doctorSchedule`
+SET `registeredPatientCount` = '3', `lastQueueNumber` = '3'
+WHERE `clinic_id` = 2 AND `doctor_id` = 7;
+
+
+INSERT INTO lab_test_types (
+    clinic_id,
+    name,
+    code,
+    description,
+    test_fee,
+    clinic_fee,
+    isActive,
+    isApproved,
+    createdDate,
+    createdBy,
+    updatedDate,
+    updatedBy,
+    approvedDate,
+    approvedBy
+)
+VALUES
+(
+    1,
+    'Full Blood Count',
+    'FBC',
+    'Complete blood count test',
+    1500.00,
+    300.00,
+    1,
+    1,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NOW(),
+    'admin'
+),
+(
+    1,
+    'Lipid Profile',
+    'LP',
+    'Measures cholesterol and triglycerides',
+    3500.00,
+    500.00,
+    1,
+    0,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NULL,
+    NULL
+),
+(
+    2,
+    'Fasting Blood Sugar',
+    'FBS',
+    'Blood sugar level after fasting',
+    1200.00,
+    250.00,
+    1,
+    1,
+    NOW(),
+    'admin',
+    NOW(),
+    'admin',
+    NOW(),
+    'doctor01'
+);

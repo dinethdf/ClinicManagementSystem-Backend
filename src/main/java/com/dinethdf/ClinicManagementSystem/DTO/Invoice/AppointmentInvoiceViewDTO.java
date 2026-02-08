@@ -1,7 +1,9 @@
-// DTO/Invoice/AppointmentInvoiceViewDTO.java
 package com.dinethdf.ClinicManagementSystem.DTO.Invoice;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,11 +14,14 @@ import java.util.List;
 public class AppointmentInvoiceViewDTO {
     // --- Invoice Header ---
     private Long invoiceId;
-    private LocalDateTime dateIssued; // Changed to LocalDateTime (usually invoice creation has time)
-    private LocalDateTime datePaidDate; // Changed to LocalDateTime (to match paymentTimestamp)
-    private String status; // e.g., 'UNPAID', 'PAID'
+    private LocalDateTime dateIssued;
+    private LocalDateTime datePaidDate;
+
+    // --- CHANGED: Replaced String with Object ---
+    private StatusDTO status;
 
     // --- 'Bill To' (Patient) Section ---
+    private Long patientId;
     private String patientNo;
     private String patientName;
     private String patientAddress;
@@ -33,14 +38,25 @@ public class AppointmentInvoiceViewDTO {
     private LocalTime appointmentTime;
     private Long queuePosition;
     private Long scheduleId;
+
     // --- Financials ---
     private List<InvoiceItemViewDTO> items;
     private BigDecimal subtotal;
     private BigDecimal totalDiscount;
     private BigDecimal finalAmount;
 
-    // --- Payment Details (NEW) ---
-    private String paymentMethod;   // e.g. "CASH", "CARD"
-    private BigDecimal amountPaid;  // Total paid amount
-    private String transactionId;   // e.g. "TXN-12345"
+    // --- Payment Details ---
+    private String paymentMethod;
+    private BigDecimal amountPaid;
+    private String transactionId;
+
+    // --- NEW: Nested Status Class ---
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class StatusDTO {
+        private String code;        // e.g., 'PAID' (for logic)
+        private String displayName; // e.g., 'Paid' (for display)
+        private String colorCode;   // e.g., '#28A745' (for frontend badge)
+    }
 }

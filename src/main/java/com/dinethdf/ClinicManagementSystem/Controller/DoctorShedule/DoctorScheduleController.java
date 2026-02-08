@@ -34,34 +34,25 @@ public class DoctorScheduleController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'USER', 'DOCTOR')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<DoctorScheduleResponseDTO>>> getScheduleList(
-            @RequestParam(required = false) String doctorName,
-            @RequestParam(required = false) String specialization,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Integer specializationId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
-        System.out.println("Page No " + pageable.getPageNumber());
-        System.out.println("P{age Size " + pageable.getPageSize());
-        System.out.println("Date " + date);
-        System.out.println("doctorName " + doctorName);
-        System.out.println("specialization " + specialization);
-        System.out.println("Page  " + pageable.toString());
 
         Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getAllSchedulesList(
-                doctorName,
-                specialization,
-                date,
+                doctorId,
+                specializationId,
+                startDate,
+                endDate,
                 pageable
         );
 
-
-        System.out.println(schedules.getPageable());
-        System.out.println( " Total Elements: " + schedules.getTotalElements());
-        ApiResponse<Page<DoctorScheduleResponseDTO>> response = ApiResponse.success(
+        return ResponseEntity.ok(ApiResponse.success(
                 schedules,
                 messageSourceUtil.getMessage("schedule.success")
-        );
-
-        return ResponseEntity.ok(response);
+        ));
     }
 
     @GetMapping("/validate-owner")

@@ -1,23 +1,30 @@
 package com.dinethdf.ClinicManagementSystem.DTO.Payment;
 
 import lombok.Data;
-import org.antlr.v4.runtime.misc.NotNull;
-
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 public class InvoicePaymentDTO {
+
+    // Identifiers
     private Long invoiceId;
 
-    private String paymentMethod; // "Cash" or "Card"
+    // Financials
+    private BigDecimal amountPaid;        // NEW: Mandatory for Partial Payments
 
-    // Optional: for card payments
-    private String transactionCode;
+    // Payment Details
+    private String paymentMethod;         // "CASH", "CARD", "ONLINE" (Must match Lookup Code)
+    private String paymentLocation;       // NEW: "CLINIC_COUNTER", "ONLINE" (Must match Lookup Code)
 
-//    private
+    // Transaction Details (Optional)
+    private String transactionCode;       // e.g., "TXN-12345"
+    private String paymentGateway;        // NEW: Optional (e.g., "Stripe") if method is Online
 
-    // Can be an empty list or null if no discounts
-    private List<DiscountDTO> discounts;
+    // Staff Info
+    private Integer receivedByStaffId;    // NEW: ID of the logged-in user taking payment
 
-    private String patientMobileNo;
+    // Discounts (Optional)
+    private List<DiscountDTO> discounts;  // Can be empty/null
+
 }

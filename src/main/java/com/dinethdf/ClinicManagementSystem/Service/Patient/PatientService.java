@@ -64,5 +64,5 @@ public interface PatientService {
 
     Long findExistingPatientIdByNic(String nic);
 
-    PatientResponseDTO findPatientDetailsByNic(String nic);
+    List<PatientResponseDTO> checkPatientExistence(String searchValue);
 }

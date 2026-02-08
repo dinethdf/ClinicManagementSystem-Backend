@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 @Data
 public class DoctorPayoutResultDTO {
     private Integer payoutId;
-    private Integer scheduleId;
+    private Long scheduleId;
     private BigDecimal totalFee;
     private BigDecimal totalDiscounts;
     private BigDecimal finalPayable;

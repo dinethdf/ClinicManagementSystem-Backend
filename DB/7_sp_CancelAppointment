@@ -1,0 +1,172 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_CancelAppointment$$
+
+CREATE PROCEDURE sp_CancelAppointment(
+    IN p_clinic_id INT,
+    IN p_appointment_id INT,
+    IN p_cancel_reason VARCHAR(255),
+    IN p_cancelled_by VARCHAR(50),      -- Name of the user (e.g. "John Doe")
+    IN p_received_by_staff_id INT,      -- NEW: ID of the staff member
+    IN p_cashier_workstation_id INT,    -- NEW: Workstation ID (can be NULL)
+    IN p_refund_method VARCHAR(50),
+    OUT o_refund_amount DECIMAL(10,2),
+    OUT o_status_message VARCHAR(255),
+    OUT o_is_success BOOLEAN
+)
+BEGIN
+    -- Variables
+    DECLARE v_current_status_id INT;
+    DECLARE v_doctor_schedule_id INT;
+    DECLARE v_invoice_id INT;
+    DECLARE v_total_paid DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_now DATETIME;
+
+    -- Refund Processing
+    DECLARE v_payment_id INT;
+    DECLARE v_payment_amount DECIMAL(10, 2);
+    DECLARE v_payment_method_id INT;
+    DECLARE v_payment_location_id INT;
+    DECLARE v_done INT DEFAULT 0;
+    DECLARE v_refund_method_id INT;
+
+    -- Lookups
+    DECLARE v_appt_cancelled_id INT;
+    DECLARE v_inv_cancelled_id INT;
+    DECLARE v_pmt_completed_id INT;
+    DECLARE v_pmt_refunded_id INT;
+
+    -- Cursor to iterate payments
+    DECLARE payment_cursor CURSOR FOR
+        SELECT id, amountPaid, paymentMethodId, paymentLocationId
+        FROM payments
+        WHERE invoice_id = v_invoice_id
+          AND clinic_id = p_clinic_id
+          AND paymentStatusId = v_pmt_completed_id
+          AND amountPaid > 0;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+    -- ERROR HANDLER
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET DIAGNOSTICS CONDITION 1 @sqlState = RETURNED_SQLSTATE, @errMsg = MESSAGE_TEXT;
+        ROLLBACK;
+        SET o_status_message = CONCAT('Database Error: ', @errMsg);
+        SET o_is_success = FALSE;
+        SET o_refund_amount = 0;
+    END;
+
+    SET v_now = NOW();
+    START TRANSACTION;
+
+    -- Initialize Outputs
+    SET o_is_success = FALSE;
+    SET o_refund_amount = 0;
+
+    -- 1. FETCH IDs
+    SELECT id INTO v_appt_cancelled_id FROM appointment_status_lookup WHERE code = 'CANCELLED' LIMIT 1;
+    SELECT id INTO v_inv_cancelled_id FROM invoice_status_lookup WHERE code = 'CANCELLED' LIMIT 1;
+    SELECT id INTO v_pmt_completed_id FROM payment_status_lookup WHERE code = 'COMPLETED' LIMIT 1;
+    SELECT id INTO v_pmt_refunded_id FROM payment_status_lookup WHERE code = 'REFUNDED' LIMIT 1;
+
+    IF v_appt_cancelled_id IS NULL OR v_inv_cancelled_id IS NULL THEN
+        SET o_status_message = 'Configuration Error: Missing Lookup Data';
+        ROLLBACK;
+    ELSE
+        -- 2. GET APPOINTMENT
+        SELECT statusId, doctor_schedule_id, invoice_id
+        INTO v_current_status_id, v_doctor_schedule_id, v_invoice_id
+        FROM appointments
+        WHERE id = p_appointment_id AND clinic_id = p_clinic_id
+        FOR UPDATE;
+
+        IF v_current_status_id IS NULL THEN
+            SET o_status_message = 'Appointment not found';
+            ROLLBACK;
+        ELSEIF v_current_status_id = v_appt_cancelled_id THEN
+            SET o_status_message = 'Appointment is already cancelled';
+            ROLLBACK;
+        ELSE
+            -- 3. GET INVOICE TOTAL
+            SELECT amountPaid INTO v_total_paid FROM invoices WHERE id = v_invoice_id AND clinic_id = p_clinic_id FOR UPDATE;
+
+            -- 4. UPDATE APPOINTMENT
+            UPDATE appointments SET statusId = v_appt_cancelled_id, note = CONCAT(COALESCE(note, ''), '\n[Cancelled]: ', p_cancel_reason), updatedDate = v_now, updatedBy = p_cancelled_by WHERE id = p_appointment_id;
+
+            -- 5. UPDATE SCHEDULE
+            UPDATE doctorSchedule SET registeredPatientCount = GREATEST(registeredPatientCount - 1, 0) WHERE id = v_doctor_schedule_id;
+
+            -- 6. PROCESS REFUNDS OR CANCELLATION
+            IF v_total_paid <= 0 THEN
+                -- Case A: No Payment made
+                UPDATE invoices SET statusId = v_inv_cancelled_id, updatedDate = v_now, updatedBy = p_cancelled_by WHERE id = v_invoice_id;
+                SET o_status_message = 'Appointment cancelled successfully.';
+            ELSE
+                -- Case B: Payments exist -> Refund them
+                UPDATE invoices SET statusId = v_inv_cancelled_id, amountPaid = 0, balanceRemaining = 0, updatedDate = v_now, updatedBy = p_cancelled_by WHERE id = v_invoice_id;
+
+                -- Resolve Refund Method ID
+                IF p_refund_method != 'ORIGINAL_METHOD' THEN
+                    SELECT id INTO v_refund_method_id FROM payment_method_lookup WHERE code = p_refund_method LIMIT 1;
+                END IF;
+
+                OPEN payment_cursor;
+                refund_loop: LOOP
+                    FETCH payment_cursor INTO v_payment_id, v_payment_amount, v_payment_method_id, v_payment_location_id;
+                    IF v_done = 1 THEN LEAVE refund_loop; END IF;
+
+                    -- If 'ORIGINAL_METHOD', reuse the method ID from the original payment
+                    IF p_refund_method = 'ORIGINAL_METHOD' THEN SET v_refund_method_id = v_payment_method_id; END IF;
+
+                    -- INSERT REFUND RECORD
+                    INSERT INTO payments (
+                        clinic_id,
+                        invoice_id,
+                        amountPaid,
+                        paymentMethodId,
+                        paymentStatusId,
+                        paymentLocationId,
+
+                        -- Who processed the refund
+                        receivedBy,
+                        receivedByStaffId,      -- NEW
+                        cashierWorkstationId,   -- NEW
+
+                        transactionId,
+                        isApproved,
+                        paymentTimestamp,
+                        createdDate,
+                        createdBy
+                    ) VALUES (
+                        p_clinic_id,
+                        v_invoice_id,
+                        v_payment_amount * -1,  -- Negative for Refund
+                        v_refund_method_id,
+                        v_pmt_refunded_id,
+                        v_payment_location_id,
+
+                        p_cancelled_by,         -- receivedBy (Name)
+                        p_received_by_staff_id, -- receivedByStaffId (ID)
+                        p_cashier_workstation_id, -- workstationId (Nullable)
+
+                        CONCAT('REF-APT-', p_appointment_id),
+                        1,                      -- isApproved (Refunds auto-approved for now)
+                        v_now,
+                        v_now,
+                        p_cancelled_by
+                    );
+                END LOOP;
+                CLOSE payment_cursor;
+
+                SET o_refund_amount = v_total_paid;
+                SET o_status_message = 'Appointment cancelled & refund processed.';
+            END IF;
+
+            SET o_is_success = TRUE;
+            COMMIT;
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
