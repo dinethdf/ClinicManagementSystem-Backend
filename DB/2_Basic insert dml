@@ -1,14 +1,387 @@
 
 USE clinicmsystem;
 
--- 1. Create the Default Tenant (Clinic)
-INSERT INTO clinics ( name, subdomain, address, city, district, mobile_no, land_no, email, website, 
-logo_url, status, subscription_plan, max_doctors, max_patients, expiry_date, createdDate ) 
-VALUES 
-( 'City Care Hospital', 'citycare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
-'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() ),
-( 'ABCD Hospital', 'abcdCare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
-'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() );
+-- ============================================
+-- INSERT SUBSCRIPTION PLANS
+-- ============================================
+INSERT INTO subscription_plans
+    (plan_code, plan_name, description, max_doctors, max_patients, max_storage_mb, max_sms_monthly, max_email_monthly, trial_days, monthly_price, yearly_price, display_order)
+VALUES
+    ('PLAN_BASIC', 'Basic Plan', 'Perfect for small clinics just getting started', 5, 1000, 1000, 50, 500, 14, 49.99, 499.99, 1),
+    ('PLAN_PRO', 'Professional Plan', 'For growing clinics with advanced needs', 20, 10000, 5000, 500, 2000, 14, 149.99, 1499.99, 2),
+    ('PLAN_ENTERPRISE', 'Enterprise Plan', 'Complete solution for large healthcare facilities', 100, 100000, 50000, 5000, 10000, 30, 499.99, 4999.99, 3);
+
+-- ============================================
+-- INSERT FEATURES (Only Boolean)
+-- ============================================
+INSERT INTO features
+    (feature_code, feature_name, description, category, default_enabled, display_order)
+VALUES
+    -- CORE Features
+    ('FEAT_APPOINTMENTS', 'Appointment Management', 'Schedule and manage patient appointments', 'CORE', TRUE, 1),
+    ('FEAT_PATIENT_RECORDS', 'Patient Records', 'Comprehensive patient record management', 'CORE', TRUE, 2),
+    ('FEAT_BILLING', 'Billing & Invoicing', 'Create bills and manage payments', 'CORE', FALSE, 3),
+    ('FEAT_INVENTORY', 'Inventory Management', 'Track medicines and supplies', 'CORE', FALSE, 4),
+    ('FEAT_PRESCRIPTION', 'Digital Prescription', 'Create and manage digital prescriptions', 'CORE', TRUE, 5),
+
+    -- REPORTING Features
+    ('FEAT_REPORTS_BASIC', 'Basic Reports', 'Standard patient and appointment reports', 'REPORTING', TRUE, 10),
+    ('FEAT_REPORTS_FINANCIAL', 'Financial Reports', 'Revenue, expenses, and financial analytics', 'REPORTING', FALSE, 11),
+    ('FEAT_REPORTS_ADVANCED', 'Advanced Analytics', 'Deep insights with charts and trends', 'REPORTING', FALSE, 12),
+    ('FEAT_REPORTS_CUSTOM', 'Custom Report Builder', 'Build your own custom reports', 'REPORTING', FALSE, 13),
+    ('FEAT_REPORTS_EXPORT_PDF', 'Export to PDF', 'Download reports as PDF files', 'REPORTING', TRUE, 14),
+    ('FEAT_REPORTS_EXPORT_EXCEL', 'Export to Excel', 'Download reports as Excel spreadsheets', 'REPORTING', FALSE, 15),
+    ('FEAT_REPORTS_SCHEDULED', 'Scheduled Reports', 'Auto-generate and email reports', 'REPORTING', FALSE, 16),
+    ('FEAT_REPORTS_DASHBOARD', 'Real-time Dashboard', 'Live metrics and KPIs', 'REPORTING', FALSE, 17),
+
+    -- COMMUNICATION Features
+    ('FEAT_SMS_NOTIFICATIONS', 'SMS Notifications', 'Send SMS to patients (limit in plan)', 'COMMUNICATION', FALSE, 20),
+    ('FEAT_EMAIL_NOTIFICATIONS', 'Email Notifications', 'Send email notifications (limit in plan)', 'COMMUNICATION', TRUE, 21),
+    ('FEAT_WHATSAPP_INTEGRATION', 'WhatsApp Integration', 'Send messages via WhatsApp', 'COMMUNICATION', FALSE, 22),
+    ('FEAT_APPOINTMENT_REMINDERS', 'Appointment Reminders', 'Auto-reminders for upcoming appointments', 'COMMUNICATION', FALSE, 23),
+    ('FEAT_PATIENT_PORTAL', 'Patient Portal', 'Online portal for patients', 'COMMUNICATION', FALSE, 24),
+
+    -- INTEGRATION Features
+    ('FEAT_API_ACCESS', 'API Access', 'REST API for third-party integrations', 'INTEGRATION', FALSE, 30),
+    ('FEAT_THIRD_PARTY_LAB', 'Lab Integration', 'Connect with external laboratories', 'INTEGRATION', FALSE, 31),
+    ('FEAT_PAYMENT_GATEWAY', 'Payment Gateway', 'Online payment processing', 'INTEGRATION', FALSE, 32),
+    ('FEAT_BACKUP_CLOUD', 'Cloud Backup', 'Automated cloud backups', 'INTEGRATION', FALSE, 33),
+
+    -- ADVANCED Features
+    ('FEAT_MULTI_LOCATION', 'Multi-location Support', 'Manage multiple clinic branches', 'ADVANCED', FALSE, 40),
+    ('FEAT_TELEMEDICINE', 'Telemedicine', 'Video consultations with patients', 'ADVANCED', FALSE, 41),
+    ('FEAT_AI_ASSISTANCE', 'AI Medical Assistant', 'AI-powered medical suggestions', 'ADVANCED', FALSE, 42),
+    ('FEAT_QUEUE_MANAGEMENT', 'Queue Management', 'Digital queue and waiting list', 'ADVANCED', FALSE, 43);
+
+-- ============================================
+-- MAP FEATURES TO BASIC PLAN
+-- ============================================
+INSERT INTO plan_features (subscription_plan_id, feature_id, is_enabled)
+SELECT
+    (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_BASIC'),
+    f.id,
+    TRUE
+FROM features f
+WHERE f.feature_code IN (
+    'FEAT_APPOINTMENTS',
+    'FEAT_PATIENT_RECORDS',
+    'FEAT_PRESCRIPTION',
+    'FEAT_REPORTS_BASIC',
+    'FEAT_REPORTS_EXPORT_PDF',
+    'FEAT_EMAIL_NOTIFICATIONS',
+    'FEAT_SMS_NOTIFICATIONS'
+);
+
+-- ============================================
+-- MAP FEATURES TO PROFESSIONAL PLAN
+-- ============================================
+INSERT INTO plan_features (subscription_plan_id, feature_id, is_enabled)
+SELECT
+    (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_PRO'),
+    f.id,
+    TRUE
+FROM features f
+WHERE f.feature_code IN (
+    'FEAT_APPOINTMENTS',
+    'FEAT_PATIENT_RECORDS',
+    'FEAT_BILLING',
+    'FEAT_INVENTORY',
+    'FEAT_PRESCRIPTION',
+    'FEAT_REPORTS_BASIC',
+    'FEAT_REPORTS_FINANCIAL',
+    'FEAT_REPORTS_ADVANCED',
+    'FEAT_REPORTS_EXPORT_PDF',
+    'FEAT_REPORTS_EXPORT_EXCEL',
+    'FEAT_REPORTS_DASHBOARD',
+    'FEAT_SMS_NOTIFICATIONS',
+    'FEAT_EMAIL_NOTIFICATIONS',
+    'FEAT_WHATSAPP_INTEGRATION',
+    'FEAT_APPOINTMENT_REMINDERS',
+    'FEAT_PATIENT_PORTAL',
+    'FEAT_PAYMENT_GATEWAY',
+    'FEAT_BACKUP_CLOUD',
+    'FEAT_QUEUE_MANAGEMENT'
+);
+
+-- ============================================
+-- MAP ALL FEATURES TO ENTERPRISE PLAN
+-- ============================================
+INSERT INTO plan_features (subscription_plan_id, feature_id, is_enabled)
+SELECT
+    (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_ENTERPRISE'),
+    f.id,
+    TRUE
+FROM features f
+WHERE f.is_active = TRUE AND f.is_deleted = FALSE;
+
+-- ============================================
+-- CREATE 3 DIFFERENT CLINICS
+-- ============================================
+
+-- Clinic 1: Trial - Basic Plan
+INSERT INTO clinics
+    (name, subdomain, address, city, district, postal_code, mobile_no, land_no, email, website,
+     subscription_plan_id, status, registered_at, trial_ends_at,
+     settings, created_by)
+VALUES
+    (
+        'City Care Medical Center',
+        'citycare',
+        '123 Main Street, Fort Area',
+        'Colombo',
+        'Colombo 3',
+        '00300',
+        '+94771234567',
+        '+94112345678',
+        'info@citycare.lk',
+        'www.citycare.lk',
+        (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_BASIC'),
+        'TRIAL',
+        NOW(),
+        DATE_ADD(NOW(), INTERVAL 14 DAY),
+        JSON_OBJECT(
+            'timezone', 'Asia/Colombo',
+            'language', 'en',
+            'currency', 'LKR',
+            'date_format', 'DD/MM/YYYY',
+            'appointment_slot_duration', 30,
+            'advance_booking_days', 30,
+            'working_hours_start', '09:00',
+            'working_hours_end', '17:00',
+            'tax_rate', 0,
+            'invoice_prefix', 'CC'
+        ),
+        'registration_system'
+    );
+
+-- Clinic 2: Active - Professional Plan
+INSERT INTO clinics
+    (name, subdomain, address, city, district, postal_code, mobile_no, land_no, email, website,
+     logo_url, subscription_plan_id, status, registered_at, trial_ends_at,
+     subscription_started_at, subscription_ends_at,
+     max_doctors, max_patients, max_sms_monthly,
+     settings, created_by)
+VALUES
+    (
+        'Health Plus Clinic',
+        'healthplus',
+        '456 Galle Road, Bambalapitiya',
+        'Galle',
+        'Galle',
+        '80000',
+        '+94777654321',
+        '+94912345678',
+        'contact@healthplus.lk',
+        'www.healthplus.lk',
+        'https://cdn.healthplus.lk/logo.png',
+        (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_PRO'),
+        'ACTIVE',
+        DATE_SUB(NOW(), INTERVAL 20 DAY),
+        DATE_SUB(NOW(), INTERVAL 6 DAY),
+        DATE_SUB(NOW(), INTERVAL 5 DAY),
+        DATE_ADD(NOW(), INTERVAL 360 DAY),
+        15,
+        5000,
+        1000,
+        JSON_OBJECT(
+            'timezone', 'Asia/Colombo',
+            'language', 'en',
+            'currency', 'LKR',
+            'date_format', 'YYYY-MM-DD',
+            'appointment_slot_duration', 20,
+            'advance_booking_days', 60,
+            'allow_online_booking', true,
+            'send_reminders', true,
+            'reminder_hours_before', 24,
+            'working_hours_start', '08:00',
+            'working_hours_end', '20:00',
+            'tax_rate', 8,
+            'invoice_prefix', 'HP',
+            'payment_terms_days', 15
+        ),
+        'registration_system'
+    );
+
+-- Clinic 3: Active - Enterprise Plan
+INSERT INTO clinics
+    (name, subdomain, address, city, district, postal_code, mobile_no, land_no, email, website,
+     logo_url, subscription_plan_id, status, registered_at, trial_ends_at,
+     subscription_started_at, subscription_ends_at,
+     max_doctors, max_patients, max_storage_mb,
+     settings, created_by)
+VALUES
+    (
+        'MediLife Hospital Group',
+        'medilife',
+        '789 Kandy Road, Peradeniya',
+        'Kandy',
+        'Kandy Central',
+        '20400',
+        '+94712223333',
+        '+94812345678',
+        'admin@medilife.lk',
+        'www.medilife.lk',
+        'https://cdn.medilife.lk/logo.png',
+        (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_ENTERPRISE'),
+        'ACTIVE',
+        DATE_SUB(NOW(), INTERVAL 210 DAY),
+        DATE_SUB(NOW(), INTERVAL 180 DAY),
+        DATE_SUB(NOW(), INTERVAL 180 DAY),
+        DATE_ADD(NOW(), INTERVAL 185 DAY),
+        50,
+        50000,
+        25000,
+        JSON_OBJECT(
+            'timezone', 'Asia/Colombo',
+            'language', 'en',
+            'secondary_language', 'si',
+            'currency', 'LKR',
+            'date_format', 'DD-MM-YYYY',
+            'appointment_slot_duration', 15,
+            'advance_booking_days', 90,
+            'allow_online_booking', true,
+            'send_reminders', true,
+            'reminder_hours_before', 48,
+            'enable_queue_management', true,
+            'working_hours_start', '06:00',
+            'working_hours_end', '22:00',
+            'emergency_services', true,
+            'tax_rate', 12,
+            'invoice_prefix', 'ML',
+            'payment_terms_days', 30,
+            'multi_currency', true,
+            'dashboard_refresh_seconds', 30,
+            'lab_integration_enabled', true,
+            'backup_frequency_hours', 6
+        ),
+        'registration_system'
+    );
+
+-- ============================================
+-- CLINIC FEATURE OVERRIDES
+-- ============================================
+
+-- Clinic 1: Give trial billing access
+INSERT INTO clinic_features (clinic_id, feature_id, is_enabled, notes, override_reason, expires_at, created_by)
+VALUES
+    (
+        (SELECT id FROM clinics WHERE subdomain = 'citycare'),
+        (SELECT id FROM features WHERE feature_code = 'FEAT_BILLING'),
+        TRUE,
+        'Trial access to billing for evaluation',
+        'PROMOTIONAL_TRIAL',
+        DATE_ADD(NOW(), INTERVAL 14 DAY),
+        'sales_team'
+    );
+
+-- Clinic 2: Enable telemedicine (beta)
+INSERT INTO clinic_features (clinic_id, feature_id, is_enabled, notes, override_reason, created_by)
+VALUES
+    (
+        (SELECT id FROM clinics WHERE subdomain = 'healthplus'),
+        (SELECT id FROM features WHERE feature_code = 'FEAT_TELEMEDICINE'),
+        TRUE,
+        'Beta access - 3 months promotional',
+        'BETA_PROGRAM',
+        'product_team'
+    );
+
+-- Clinic 2: Enable scheduled reports
+INSERT INTO clinic_features (clinic_id, feature_id, is_enabled, notes, override_reason, created_by)
+VALUES
+    (
+        (SELECT id FROM clinics WHERE subdomain = 'healthplus'),
+        (SELECT id FROM features WHERE feature_code = 'FEAT_REPORTS_SCHEDULED'),
+        TRUE,
+        'Requested for automated monthly reporting',
+        'BUSINESS_REQUIREMENT',
+        'support_team'
+    );
+
+-- Clinic 3: Temporarily disable API (security audit)
+INSERT INTO clinic_features (clinic_id, feature_id, is_enabled, notes, override_reason, expires_at, created_by)
+VALUES
+    (
+        (SELECT id FROM clinics WHERE subdomain = 'medilife'),
+        (SELECT id FROM features WHERE feature_code = 'FEAT_API_ACCESS'),
+        FALSE,
+        'Disabled during security audit',
+        'SECURITY_AUDIT',
+        '2026-02-15 23:59:59',
+        'security_team'
+    );
+
+-- ============================================
+-- OPTIMIZED VIEWS (Support both clinic_id and subdomain)
+-- ============================================
+
+-- VIEW 1: Clinic Complete Info
+
+-- ============================================
+-- USAGE EXAMPLES
+-- ============================================
+
+-- Example 1: Get clinic data by clinic_id (FASTEST)
+SELECT * FROM v_clinic_data WHERE clinic_id = 1;
+
+-- Example 2: Get clinic data by subdomain
+SELECT * FROM v_clinic_data WHERE subdomain = 'citycare';
+
+-- Example 3: Get features by clinic_id
+CALL GetClinicFeatures(1, NULL);
+
+-- Example 4: Get features by subdomain
+CALL GetClinicFeatures(NULL, 'healthplus');
+
+-- Example 5: Check specific feature
+SELECT CheckClinicFeature(1, 'FEAT_BILLING') as has_billing;
+
+-- Example 6: Get only enabled features
+SELECT feature_code, feature_name
+FROM v_clinic_features
+WHERE clinic_id = 2
+  AND is_enabled = TRUE;
+
+-- ============================================
+-- VERIFICATION QUERIES
+-- ============================================
+
+-- View all clinics summary
+SELECT
+    clinic_id,
+    clinic_name,
+    subdomain,
+    status,
+    plan_name,
+    max_doctors,
+    max_sms_monthly,
+    days_remaining
+FROM v_clinic_data
+ORDER BY clinic_id;
+
+-- Check features for a clinic
+SELECT
+    category,
+    feature_code,
+    feature_name,
+    is_enabled,
+    feature_source
+FROM v_clinic_features
+WHERE subdomain = 'citycare'
+ORDER BY category, display_order;
+
+-- ============================================
+-- SUMMARY
+-- ============================================
+SELECT '=== DATABASE SETUP COMPLETE ===' as status;
+SELECT CONCAT('✓ Plans: ', COUNT(*)) as summary FROM subscription_plans WHERE is_deleted = FALSE;
+SELECT CONCAT('✓ Features: ', COUNT(*)) as summary FROM features WHERE is_deleted = FALSE;
+SELECT CONCAT('✓ Clinics: ', COUNT(*)) as summary FROM clinics WHERE is_deleted = FALSE;
+SELECT CONCAT('✓ Plan Features: ', COUNT(*)) as summary FROM plan_features WHERE is_deleted = FALSE;
+SELECT CONCAT('✓ Clinic Overrides: ', COUNT(*)) as summary FROM clinic_features WHERE is_deleted = FALSE;
+
+
+
 
 -- 2. Master Roles
 INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');
@@ -32,8 +405,8 @@ WHERE email = 'dineth@admin.com';
 INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`, `detailsId`) VALUES
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor.com', '1', '3', 1);
 
-INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, 
-							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy ) 
+INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district,
+							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy )
 			VALUES ( 1, 1, 1, 'Dineth', 'Dilshan', 'D. Dilshan', 1, '2000-01-12', '809934567V', 'admin@clinic.com', '0711234567', '123, Galle Road', 'Colombo', 'Colombo',
 								NOW(),'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin', 'ACTIVE', 1, NOW(), 'Super Admin' );
 
@@ -81,22 +454,6 @@ INSERT INTO item_types (typeName, description) VALUES
 ('OTHER_DISCOUNT', 'Discount or promotion from outside Buisness');
 
 
--- 10. System Config (Tenant Specific)
--- Primary Key is (clinic_id, configKey)
-INSERT INTO systemConfig (clinic_id, configKey, configValue, createdDate, createdBy)
-VALUES
-(1, 'SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
-(1, 'EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
-(1, 'CLINIC_THEME', 'BLUE', NOW(), 'SYSTEM');
-
--- 11. Expense Categories (Global)
-INSERT INTO expense_categories (name, description) VALUES
-('RENT', 'Monthly Building Rent'),
-('UTILITY', 'Electricity, Water, Internet'),
-('SALARY', 'Staff Salaries'),
-('MAINTENANCE', 'Repairs and Cleaning');
-
-
 
 
 USE clinicmsystem;
@@ -135,12 +492,7 @@ VALUES
 (83, 2, NULL, 'P250012', 'Thilini', 'De Silva', 'Thilini De Silva', 3, 2, 1, '201232345689', '1996-09-20', '12 Rose Lane', 'Colombo', 'Colombo', 'thilini@demo.com', '0776935124', '0117788990', 'Sameera De Silva', 'Husband', '+94775554433', 'sameerad@demo.com', 'A+', '2025-10-06 15:20:00', 'https://example.com/images/patient12.png', 1, 1, '2025-10-24 13:20:00', 'staff@demo.com', '2025-10-24 13:20:00', 'staff@demo.com'),
 (84, 2, NULL, 'P250013', 'Madushan', 'Ranasinghe', 'Madushan Ranasinghe', 1, 1, 1, '201232345690', '1989-01-10', '25 Beach Road', 'Gampaha', 'Gampaha', 'madushan@demo.com', '0776935124', '0332233445', 'Lakmini Ranasinghe', 'Wife', '+94770002211', 'lakmini@demo.com', 'AB-', '2025-10-06 14:10:00', 'https://example.com/images/patient13.png', 1, 1, '2025-10-24 13:25:00', 'staff@demo.com', '2025-10-24 13:25:00', 'staff@demo.com');
 
--- 6. System Config (Tenant Specific)
-INSERT INTO systemConfig (clinic_id, configKey, configValue, createdDate, createdBy)
-VALUES
-(2, 'SMS_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
-(2, 'EMAIL_OTP_ENABLED', 'true', NOW(), 'SYSTEM'),
-(2, 'CLINIC_THEME', 'BLUE', NOW(), 'SYSTEM');
+
 
 
 -- 7. Final Update for Schedule Counts

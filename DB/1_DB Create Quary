@@ -339,26 +339,7 @@ CREATE TABLE expense_categories (
     isActive TINYINT DEFAULT 1
 ) ENGINE=InnoDB;
 
-CREATE TABLE systemConfig (
-    id INT AUTO_INCREMENT PRIMARY KEY,
 
-    clinic_id INT NOT NULL,               -- Tenant Link
-    configKey VARCHAR(100) NOT NULL,
-    configValue VARCHAR(255) NOT NULL,
-
-    createdDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    createdBy VARCHAR(50) NOT NULL,
-    updatedDate DATETIME DEFAULT NULL,
-    updatedBy VARCHAR(50) DEFAULT NULL,
-
-    -- One config key per clinic
-    CONSTRAINT uq_clinic_config UNIQUE (clinic_id, configKey),
-
-    CONSTRAINT fk_config_clinic
-        FOREIGN KEY (clinic_id)
-        REFERENCES clinics(id)
-        ON DELETE RESTRICT
-) ENGINE=InnoDB;
 
 
 
@@ -942,3 +923,174 @@ CREATE TABLE patient_lab_requests (
     CONSTRAINT fk_lab_req_appt FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT,
     CONSTRAINT fk_lab_req_type FOREIGN KEY (lab_test_type_id) REFERENCES lab_test_types(id)
 ) ENGINE=InnoDB;
+
+
+DROP VIEW IF EXISTS v_clinic_data;
+CREATE VIEW v_clinic_data AS
+SELECT
+    -- Clinic basic info
+    c.id AS clinic_id,
+    c.name AS clinic_name,
+    c.subdomain,
+    c.email,
+    c.mobile_no,
+    c.logo_url,
+    c.status,
+    c.settings,
+
+    -- Plan info
+    c.subscription_plan_id,
+    sp.plan_code,
+    sp.plan_name,
+    sp.monthly_price,
+    sp.yearly_price,
+
+    -- Effective limits (override or plan default)
+    COALESCE(c.max_doctors, sp.max_doctors) AS max_doctors,
+    COALESCE(c.max_patients, sp.max_patients) AS max_patients,
+    COALESCE(c.max_storage_mb, sp.max_storage_mb) AS max_storage_mb,
+    COALESCE(c.max_sms_monthly, sp.max_sms_monthly) AS max_sms_monthly,
+    COALESCE(c.max_email_monthly, sp.max_email_monthly) AS max_email_monthly,
+
+    -- Current usage (for display only)
+    c.current_doctors_count,
+    c.current_patients_count,
+    c.current_storage_mb AS current_storage_used_mb,
+    c.current_month_sms_sent,
+    c.current_month_email_sent,
+    c.usage_last_updated_at,
+
+    -- Subscription dates
+    c.registered_at,
+    c.trial_ends_at,
+    c.subscription_started_at,
+    c.subscription_ends_at,
+
+    -- Calculated fields
+    CASE
+        WHEN c.status = 'TRIAL' THEN GREATEST(0, DATEDIFF(c.trial_ends_at, NOW()))
+        WHEN c.status = 'ACTIVE' THEN GREATEST(0, DATEDIFF(c.subscription_ends_at, NOW()))
+        ELSE 0
+    END AS days_remaining,
+
+    CASE
+        WHEN c.status = 'TRIAL' AND c.trial_ends_at < NOW() THEN 'TRIAL_EXPIRED'
+        WHEN c.status = 'ACTIVE' AND c.subscription_ends_at < NOW() THEN 'SUBSCRIPTION_EXPIRED'
+        ELSE c.status
+    END AS actual_status,
+
+    -- Timestamps
+    c.created_at,
+    c.updated_at
+
+FROM clinics c
+INNER JOIN subscription_plans sp ON c.subscription_plan_id = sp.id
+WHERE c.is_deleted = FALSE
+  AND sp.is_deleted = FALSE;
+
+-- VIEW 2: Clinic Features
+DROP VIEW IF EXISTS v_clinic_features;
+CREATE VIEW v_clinic_features AS
+SELECT
+    c.id AS clinic_id,
+    c.subdomain,
+    f.id AS feature_id,
+    f.feature_code,
+    f.feature_name,
+    f.category,
+    f.description,
+
+    -- Feature status (override > plan > default)
+    COALESCE(cf.is_enabled, pf.is_enabled, f.default_enabled) AS is_enabled,
+
+    -- Source tracking
+    CASE
+        WHEN cf.id IS NOT NULL THEN 'CLINIC_OVERRIDE'
+        WHEN pf.id IS NOT NULL THEN 'PLAN_DEFAULT'
+        ELSE 'SYSTEM_DEFAULT'
+    END AS feature_source,
+
+    -- Override metadata (if exists)
+    cf.notes AS override_notes,
+    cf.override_reason,
+    cf.expires_at AS override_expires_at,
+
+    -- Display order
+    f.display_order
+
+FROM clinics c
+CROSS JOIN features f
+LEFT JOIN plan_features pf
+    ON pf.subscription_plan_id = c.subscription_plan_id
+    AND pf.feature_id = f.id
+    AND pf.is_deleted = FALSE
+LEFT JOIN clinic_features cf
+    ON cf.clinic_id = c.id
+    AND cf.feature_id = f.id
+    AND cf.is_deleted = FALSE
+    AND (cf.expires_at IS NULL OR cf.expires_at > NOW())
+
+WHERE c.is_deleted = FALSE
+  AND f.is_active = TRUE
+  AND f.is_deleted = FALSE;
+
+-- ============================================
+-- STORED PROCEDURES (Support both clinic_id and subdomain)
+-- ============================================
+
+DELIMITER //
+
+-- Get clinic features (supports both clinic_id and subdomain)
+DROP PROCEDURE IF EXISTS GetClinicFeatures//
+CREATE PROCEDURE GetClinicFeatures(
+    IN p_clinic_id INT,
+    IN p_subdomain VARCHAR(50)
+)
+BEGIN
+    DECLARE v_clinic_id INT;
+
+    -- If clinic_id provided, use it. Otherwise find by subdomain
+    IF p_clinic_id IS NOT NULL THEN
+        SET v_clinic_id = p_clinic_id;
+    ELSE
+        SELECT id INTO v_clinic_id
+        FROM clinics
+        WHERE subdomain = p_subdomain
+          AND is_deleted = FALSE
+        LIMIT 1;
+    END IF;
+
+    -- Return features
+    SELECT
+        feature_code,
+        feature_name,
+        category,
+        is_enabled,
+        feature_source
+    FROM v_clinic_features
+    WHERE clinic_id = v_clinic_id
+    ORDER BY category, display_order;
+END//
+
+-- Simple feature check function
+DROP FUNCTION IF EXISTS CheckClinicFeature//
+CREATE FUNCTION CheckClinicFeature(
+    clinic_id_param INT,
+    feature_code_param VARCHAR(100)
+)
+RETURNS BOOLEAN
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE is_enabled BOOLEAN DEFAULT FALSE;
+
+    SELECT v_clinic_features.is_enabled INTO is_enabled
+    FROM v_clinic_features
+    WHERE clinic_id = clinic_id_param
+      AND feature_code = feature_code_param
+    LIMIT 1;
+
+    RETURN COALESCE(is_enabled, FALSE);
+END//
+
+DELIMITER ;
