@@ -135,7 +135,7 @@ VALUES
         '+94112345678',
         'info@citycare.lk',
         'www.citycare.lk',
-        (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_BASIC'),
+        (SELECT id FROM subscription_plans WHERE plan_code = 'PLAN_ENTERPRISE'),
         'TRIAL',
         NOW(),
         DATE_ADD(NOW(), INTERVAL 14 DAY),
