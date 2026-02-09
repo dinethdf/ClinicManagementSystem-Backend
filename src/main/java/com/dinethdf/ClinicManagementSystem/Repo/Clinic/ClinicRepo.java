@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface ClinicRepo extends JpaRepository<Clinic, Integer> {
-    Optional<Clinic> findBySubdomain(String subdomain);
+    // For Updates
 }

@@ -1,6 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Clinic;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicCompleteContextDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicUpdateDTO;
 import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicServiceImpl;
@@ -17,13 +18,13 @@ public class ClinicController {
     private final ClinicServiceImpl clinicService;
 
     @GetMapping("/details")
-    public ResponseEntity<ApiResponse<ClinicResponseDTO>> getClinicDetails() {
-        return ResponseEntity.ok(clinicService.getCurrentClinicDetails());
+    public ResponseEntity<ClinicCompleteContextDTO> getClinicDetails() {
+        return ResponseEntity.ok(clinicService.getFullClinicContext());
     }
 
-    @PutMapping("/update")
-    @PreAuthorize("hasAuthority('ADMIN')") // Only Admin can update clinic details
-    public ResponseEntity<ApiResponse<ClinicResponseDTO>> updateClinic(@RequestBody ClinicUpdateDTO request) {
-        return ResponseEntity.ok(clinicService.updateClinicDetails(request));
-    }
+//    @PutMapping("/update")
+//    @PreAuthorize("hasAuthority('ADMIN')") // Only Admin can update clinic details
+//    public ResponseEntity<ApiResponse<ClinicResponseDTO>> updateClinic(@RequestBody ClinicUpdateDTO request) {
+//        return ResponseEntity.ok(clinicService.updateClinicDetails(request));
+//    }
 }

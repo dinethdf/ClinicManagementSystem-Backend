@@ -1,38 +1,41 @@
 package com.dinethdf.ClinicManagementSystem.Service.SystemConfig;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicCompleteContextDTO;
 import com.dinethdf.ClinicManagementSystem.Model.SystemConfig.SystemConfig;
 import com.dinethdf.ClinicManagementSystem.Repo.SystemConfig.SystemConfigRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicServiceImpl;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class SystemConfigService {
 
-    @Autowired
-    private SystemConfigRepo repo;
-
-    /* NOTE: We cannot auto-initialize defaults at startup (@PostConstruct)
-     because we don't know which Clinic ID to use.
-     Defaults are handled dynamically in the getters below.
-    */
+    private final ClinicServiceImpl clinicService;
 
     public boolean isSmsEnabled() {
-        Integer clinicId = TenantContext.getCurrentTenant();
 
-        // Find config for THIS clinic. If missing, default to "true"
-        return repo.findByClinicIdAndKey(clinicId, "SMS_OTP_ENABLED")
-                .map(config -> Boolean.parseBoolean(config.getValue()))
-                .orElse(true);
+        ClinicCompleteContextDTO context = clinicService.getFullClinicContext();
+        boolean featureAllowed = context.hasFeature("FEAT_SMS_NOTIFICATIONS");
+
+//        boolean settingEnabled = context.getClinicInfo().get(); // Assuming you mapped this in DTO
+
+//        return featureAllowed && settingEnabled;
+        return featureAllowed;
     }
 
     public boolean isEmailEnabled() {
-        Integer clinicId = TenantContext.getCurrentTenant();
 
-        // Find config for THIS clinic. If missing, default to "true"
-        return repo.findByClinicIdAndKey(clinicId, "EMAIL_OTP_ENABLED")
-                .map(config -> Boolean.parseBoolean(config.getValue()))
-                .orElse(true);
+        ClinicCompleteContextDTO context = clinicService.getFullClinicContext();
+        boolean featureAllowed = context.hasFeature("FEAT_EMAIL_NOTIFICATIONS");
+
+//        boolean settingEnabled = context.getClinicInfo().get(); // Assuming you mapped this in DTO
+
+//        return featureAllowed && settingEnabled;
+        return featureAllowed;
     }
+
 }

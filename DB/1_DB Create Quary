@@ -5,22 +5,86 @@ DROP DATABASE IF EXISTS clinicmsystem;
 CREATE DATABASE IF NOT EXISTS clinicmsystem CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE clinicmsystem;
 
--- ==================================================================================
--- MASTER TENANT TABLE (NEW)
--- ==================================================================================
+
+-- +++++++++++++++++++++++
+
+
+-- ============================================
+-- MULTI-TENANT CLINIC MANAGEMENT SYSTEM
+-- OPTIMIZED FOR LOW LOAD - FINAL VERSION
+-- ============================================
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ============================================
+-- DROP EXISTING TABLES
+-- ============================================
+DROP TABLE IF EXISTS clinic_features;
+DROP TABLE IF EXISTS plan_features;
+DROP TABLE IF EXISTS system_config;
+DROP TABLE IF EXISTS features;
+DROP TABLE IF EXISTS subscription_plans;
 DROP TABLE IF EXISTS clinics;
 
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================
+-- SUBSCRIPTION PLANS (Master Data)
+-- ============================================
+CREATE TABLE subscription_plans (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    plan_code VARCHAR(50) UNIQUE NOT NULL,
+    plan_name VARCHAR(100) NOT NULL,
+    description TEXT,
+
+    -- Limits (For future usage tracking - NOT checked in real-time)
+    max_doctors INT DEFAULT 5,
+    max_patients INT DEFAULT 10000,
+    max_storage_mb INT DEFAULT 1000,
+    max_sms_monthly INT DEFAULT 100,
+    max_email_monthly INT DEFAULT 500,
+
+    -- Trial
+    trial_days INT DEFAULT 14,
+
+    -- Pricing
+    monthly_price DECIMAL(10,2) DEFAULT 0.00,
+    yearly_price DECIMAL(10,2) DEFAULT 0.00,
+    currency VARCHAR(10) DEFAULT 'USD',
+
+    -- Status
+    is_active BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+
+    -- Auditing
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME DEFAULT NULL,
+
+    INDEX idx_plan_code (plan_code),
+    INDEX idx_is_active (is_active, is_deleted)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- CLINICS TABLE
+-- ============================================
 CREATE TABLE clinics (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Basic Identity
     name VARCHAR(100) NOT NULL,
-    subdomain VARCHAR(50) UNIQUE NOT NULL, -- used for tenant identification (e.g., 'citycare')
+    subdomain VARCHAR(50) UNIQUE NOT NULL,
 
-    -- Contact & Location Details (NEW)
+    -- Contact & Location
     address VARCHAR(255),
     city VARCHAR(50),
     district VARCHAR(50),
+    state VARCHAR(50),
+    postal_code VARCHAR(20),
+    country VARCHAR(50) DEFAULT 'Sri Lanka',
+
     mobile_no VARCHAR(20),
     land_no VARCHAR(20),
     email VARCHAR(100),
@@ -29,19 +93,227 @@ CREATE TABLE clinics (
     -- Branding
     logo_url VARCHAR(255),
 
-    -- System Status & Configs
-    status ENUM('ACTIVE', 'SUSPENDED', 'EXPIRED') DEFAULT 'ACTIVE',
-    subscription_plan VARCHAR(50) DEFAULT 'BASIC',
+    -- Subscription & Plan
+    subscription_plan_id INT NOT NULL,
+    status ENUM('TRIAL', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'CANCELLED') DEFAULT 'TRIAL',
 
-    max_doctors INT DEFAULT 5,
-    max_patients INT DEFAULT 10000,
-    expiry_date DATE,
+    -- Override Limits (NULL = use plan defaults)
+    -- These are for DISPLAY/REPORTING only, NOT real-time validation
+    max_doctors INT DEFAULT NULL,
+    max_patients INT DEFAULT NULL,
+    max_storage_mb INT DEFAULT NULL,
+    max_sms_monthly INT DEFAULT NULL,
+    max_email_monthly INT DEFAULT NULL,
+
+    -- Registration & Trial
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    trial_ends_at DATETIME DEFAULT NULL,
+
+    -- Active Subscription Dates
+    subscription_started_at DATETIME DEFAULT NULL,
+    subscription_ends_at DATETIME DEFAULT NULL,
+
+    -- Usage Counters (For future implementation - updated via batch jobs, NOT real-time)
+    -- These will be populated by scheduled tasks, not on every action
+    current_doctors_count INT DEFAULT 0,
+    current_patients_count INT DEFAULT 0,
+    current_storage_mb DECIMAL(10,2) DEFAULT 0.00,
+    current_month_sms_sent INT DEFAULT 0,
+    current_month_email_sent INT DEFAULT 0,
+    usage_last_updated_at DATETIME DEFAULT NULL,
+
+    -- Settings JSON (Avoid system_config table for simple settings)
+    settings JSON DEFAULT NULL,
+    -- Example: {"timezone": "Asia/Colombo", "language": "en", "currency": "LKR"}
+
+    -- Soft Delete
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at DATETIME DEFAULT NULL,
 
     -- Auditing
-    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedDate DATETIME DEFAULT NULL
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50) DEFAULT 'system',
+    updated_by VARCHAR(50) DEFAULT NULL,
+
+    -- Foreign Keys
+    CONSTRAINT fk_clinic_subscription_plan
+        FOREIGN KEY (subscription_plan_id)
+        REFERENCES subscription_plans(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_status (status, is_deleted),
+    INDEX idx_subdomain (subdomain),
+    INDEX idx_subscription_plan (subscription_plan_id),
+    INDEX idx_trial_ends (trial_ends_at),
+    INDEX idx_subscription_ends (subscription_ends_at)
 ) ENGINE=InnoDB;
 
+-- ============================================
+-- FEATURE CATALOG (Simplified - Boolean only)
+-- ============================================
+CREATE TABLE features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    feature_code VARCHAR(100) UNIQUE NOT NULL,
+    feature_name VARCHAR(150) NOT NULL,
+    description TEXT,
+    category VARCHAR(50),
+
+    -- Simplified: Only BOOLEAN features for performance
+    -- SMS/Email limits are in plans table
+    default_enabled BOOLEAN DEFAULT FALSE,
+
+    -- Grouping
+    parent_feature_id INT DEFAULT NULL,
+    display_order INT DEFAULT 0,
+
+    -- Status
+    is_active BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    -- Auditing
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME DEFAULT NULL,
+
+    CONSTRAINT fk_feature_parent
+        FOREIGN KEY (parent_feature_id)
+        REFERENCES features(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    INDEX idx_feature_code (feature_code),
+    INDEX idx_category (category),
+    INDEX idx_is_active (is_active, is_deleted)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- PLAN-FEATURE MAPPING (Simple boolean enabled/disabled)
+-- ============================================
+CREATE TABLE plan_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    subscription_plan_id INT NOT NULL,
+    feature_id INT NOT NULL,
+
+    -- Simple: Just enabled or disabled
+    is_enabled BOOLEAN DEFAULT TRUE,
+
+    -- Soft Delete
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    -- Auditing
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME DEFAULT NULL,
+
+    UNIQUE KEY uq_plan_feature (subscription_plan_id, feature_id),
+
+    CONSTRAINT fk_planfeature_plan
+        FOREIGN KEY (subscription_plan_id)
+        REFERENCES subscription_plans(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_planfeature_feature
+        FOREIGN KEY (feature_id)
+        REFERENCES features(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_plan (subscription_plan_id),
+    INDEX idx_feature (feature_id)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- CLINIC-SPECIFIC FEATURE OVERRIDES (Simplified)
+-- ============================================
+CREATE TABLE clinic_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    clinic_id INT NOT NULL,
+    feature_id INT NOT NULL,
+
+    -- Simple override: enabled or disabled (NULL = use plan default)
+    is_enabled BOOLEAN DEFAULT NULL,
+
+    -- Metadata
+    notes TEXT,
+    override_reason VARCHAR(255),
+    expires_at DATETIME DEFAULT NULL,
+
+    -- Soft Delete
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    -- Auditing
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50) DEFAULT 'system',
+    updated_by VARCHAR(50) DEFAULT NULL,
+    deleted_at DATETIME DEFAULT NULL,
+
+    UNIQUE KEY uq_clinic_feature (clinic_id, feature_id),
+
+    CONSTRAINT fk_clinicfeature_clinic
+        FOREIGN KEY (clinic_id)
+        REFERENCES clinics(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_clinicfeature_feature
+        FOREIGN KEY (feature_id)
+        REFERENCES features(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    INDEX idx_clinic (clinic_id),
+    INDEX idx_feature (feature_id),
+    INDEX idx_expires (expires_at, is_deleted)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- SYSTEM CONFIGURATION (Optional - Only for complex configs)
+-- Use clinics.settings JSON for simple key-value pairs
+-- ============================================
+CREATE TABLE system_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    clinic_id INT NOT NULL,
+
+    config_category VARCHAR(50) NOT NULL,
+    config_key VARCHAR(100) NOT NULL,
+    config_value TEXT,
+    data_type ENUM('STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE') DEFAULT 'STRING',
+
+    description VARCHAR(255),
+
+    -- Soft Delete
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    -- Auditing
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50) DEFAULT 'system',
+    updated_by VARCHAR(50) DEFAULT NULL,
+    deleted_at DATETIME DEFAULT NULL,
+
+    UNIQUE KEY uq_clinic_config (clinic_id, config_category, config_key, is_deleted),
+
+    CONSTRAINT fk_config_clinic
+        FOREIGN KEY (clinic_id)
+        REFERENCES clinics(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    INDEX idx_clinic_category (clinic_id, config_category, is_deleted)
+) ENGINE=InnoDB;
+
+
+
+
+-- +++++++++++++++++++++++
 
 CREATE TABLE user_role (
     id INT AUTO_INCREMENT PRIMARY KEY,
