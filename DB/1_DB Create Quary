@@ -10,37 +10,57 @@ USE clinicmsystem;
 -- ==================================================================================
 DROP TABLE IF EXISTS clinics;
 
+
+DROP TABLE IF EXISTS clinics;
+
+-- ============================================
+-- CLINICS TABLE (Simple INT ID)
+-- ============================================
 CREATE TABLE clinics (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Basic Identity
+    clinic_code VARCHAR(36) NOT NULL,
     name VARCHAR(100) NOT NULL,
-    subdomain VARCHAR(50) UNIQUE NOT NULL, -- used for tenant identification (e.g., 'citycare')
+    subdomain VARCHAR(50) UNIQUE NOT NULL,
 
-    -- Contact & Location Details (NEW)
+    -- Contact (Optional - for admin display only)
+    email VARCHAR(100),
+    mobile_no VARCHAR(20),
     address VARCHAR(255),
     city VARCHAR(50),
     district VARCHAR(50),
-    mobile_no VARCHAR(20),
-    land_no VARCHAR(20),
-    email VARCHAR(100),
-    website VARCHAR(100),
-
-    -- Branding
     logo_url VARCHAR(255),
 
-    -- System Status & Configs
-    status ENUM('ACTIVE', 'SUSPENDED', 'EXPIRED') DEFAULT 'ACTIVE',
-    subscription_plan VARCHAR(50) DEFAULT 'BASIC',
+    -- IMPORTANT: Plan Code (Everything derived from this)
+    plan_code VARCHAR(50) NOT NULL DEFAULT 'PLAN_BASIC',
+    -- Values: 'PLAN_BASIC', 'PLAN_PRO', 'PLAN_ENTERPRISE'
 
-    max_doctors INT DEFAULT 5,
-    max_patients INT DEFAULT 10000,
-    expiry_date DATE,
+    -- Status
+    status ENUM('TRIAL', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'CANCELLED') DEFAULT 'TRIAL',
+
+    -- Dates
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    trial_ends_at DATETIME,
+    subscription_ends_at DATETIME,
+
+    -- Settings (Clinic-specific configs only)
+    settings JSON DEFAULT NULL,
+    -- Example: {"currency": "LKR", "invoicePrefix": "CC", "timezone": "Asia/Colombo"}
+    clinic_secret varchar(20),
+    -- Soft Delete
+    is_deleted BOOLEAN DEFAULT FALSE,
 
     -- Auditing
-    createdDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedDate DATETIME DEFAULT NULL
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+	UNIQUE KEY uk_clinic_code (clinic_code),
+    INDEX idx_subdomain (subdomain),
+    INDEX idx_plan_code (plan_code),
+    INDEX idx_status (status, is_deleted)
 ) ENGINE=InnoDB;
+
 
 
 CREATE TABLE user_role (

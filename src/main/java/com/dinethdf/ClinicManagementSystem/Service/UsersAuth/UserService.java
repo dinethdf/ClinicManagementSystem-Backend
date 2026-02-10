@@ -4,17 +4,20 @@ import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDt
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // NEW: Context Handling
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+import com.dinethdf.ClinicManagementSystem.util.EncryptionUtil;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,6 +46,12 @@ public class UserService {
 
     @Autowired
     UserDetailsService userDetailsService;
+
+    @Autowired
+    ClinicService clinicService;
+
+    @Autowired
+    EncryptionUtil encryptionUtil;
 
     @Autowired
     ClinicStaffService clinicStaffService;
@@ -91,7 +100,11 @@ public class UserService {
 
             if (auth.isAuthenticated()) {
 
-                var jwt = jwtService.generateUserToken(user.getUsername(), user.getRole().getName(), user.getUserDetailsId(), user.getClinicId());
+                Clinic clinic = clinicService.getClinicById(user.getClinicId());
+
+                var jwt = jwtService.generateUserToken(user.getUsername(), user.getRole().getName(),
+                        user.getUserDetailsId(), user.getClinicId(),
+                        encryptionUtil.encryptClinicPlane(clinic.getPlanCode()), clinic.getClinicCode());
 
 
                 jwtAuthenticationResponse.setAccessToken(jwt);

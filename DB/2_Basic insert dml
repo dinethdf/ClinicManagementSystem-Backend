@@ -1,14 +1,78 @@
 
 USE clinicmsystem;
 
--- 1. Create the Default Tenant (Clinic)
-INSERT INTO clinics ( name, subdomain, address, city, district, mobile_no, land_no, email, website, 
-logo_url, status, subscription_plan, max_doctors, max_patients, expiry_date, createdDate ) 
-VALUES 
-( 'City Care Hospital', 'citycare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
-'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() ),
-( 'ABCD Hospital', 'abcdCare', 'No. 123, Main Street', 'Colombo', 'Colombo', '0771234567', '0112345678', 'info@citycare.lk', 
-'www.citycare.lk', 'https://example.com/logo.png', 'ACTIVE', 'PREMIUM', 15, 50000, '2030-12-31', NOW() );
+-- ============================================
+-- SAMPLE DATA
+-- ============================================
+
+-- Clinic 1: Basic Plan (Trial)
+INSERT INTO clinics
+    (name, clinic_code, subdomain, email, mobile_no, plan_code, status, trial_ends_at, settings)
+VALUES (
+    'City Care Medical Center',
+    'my-clinic-12345',
+    'citycare',
+    'info@citycare.lk',
+    '+94771234567',
+    'PLAN_ENTERPRISE',
+    'TRIAL',
+    DATE_ADD(NOW(), INTERVAL 14 DAY),
+    JSON_OBJECT(
+        'currency', 'LKR',
+        'timezone', 'Asia/Colombo',
+        'invoicePrefix', 'CC',
+        'language', 'en'
+    )
+);
+
+-- Clinic 2: Pro Plan (Active)
+INSERT INTO clinics
+    (name, clinic_code, subdomain, email, mobile_no, city, plan_code, status, subscription_ends_at, settings)
+VALUES (
+    'Health Plus Clinic',
+    'my-clinic-12345ww',
+    'healthplus',
+    'contact@healthplus.lk',
+    '+94777654321',
+    'Galle',
+    'PLAN_PRO',
+    'ACTIVE',
+    DATE_ADD(NOW(), INTERVAL 365 DAY),
+    JSON_OBJECT(
+        'currency', 'LKR',
+        'timezone', 'Asia/Colombo',
+        'invoicePrefix', 'HP',
+        'taxRate', 8,
+        'language', 'en'
+    )
+);
+
+-- Clinic 3: Enterprise Plan (Active)
+INSERT INTO clinics
+    (name, clinic_code, subdomain, email, mobile_no, city, plan_code, status, subscription_ends_at, settings)
+VALUES (
+    'MediLife Hospital',
+    'my-clinic-12345wzxdaw',
+    'medilife',
+    'admin@medilife.lk',
+    '+94712223333',
+    'Kandy',
+    'PLAN_BASIC',
+    'ACTIVE',
+    DATE_ADD(NOW(), INTERVAL 365 DAY),
+    JSON_OBJECT(
+        'currency', 'LKR',
+        'timezone', 'Asia/Colombo',
+        'invoicePrefix', 'ML',
+        'taxRate', 12,
+        'multiCurrency', true,
+        'language', 'en',
+        'secondaryLanguage', 'si'
+    )
+);
+
+
+-- That's it! Everything else is in code.
 
 -- 2. Master Roles
 INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');

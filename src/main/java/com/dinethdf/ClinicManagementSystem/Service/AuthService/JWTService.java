@@ -51,7 +51,7 @@ public class JWTService {
     }
 
 
-    public String generateUserToken(String userEmail, String role, Long detailsId, Integer clinicId) {
+    public String generateUserToken(String userEmail, String role, Long detailsId, Integer clinicId, String planeCode,String clinicCode) {
         // 1. Set Context so userDetailsService knows which clinic to look in
         TenantContext.setCurrentTenant(clinicId);
 
@@ -60,6 +60,8 @@ public class JWTService {
             Map<String, Object> claims = new HashMap<>();
             claims.put("clinicId", clinicId); // <--- Add to Claims
             claims.put("userDetailsId", detailsId);
+            claims.put("planeCode", planeCode);
+            claims.put("clinicCode", clinicCode);
             claims.put("role", role);
 
             return Jwts.builder()
@@ -76,13 +78,15 @@ public class JWTService {
         }
     }
 
-    public String generatePatientToken(String userEmail, String role, Long detailsId, Integer clinicId) {
+    public String generatePatientToken(String userEmail, String role, Long detailsId, Integer clinicId, String planeCode,String clinicCode) {
         TenantContext.setCurrentTenant(clinicId);
         try {
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("clinicId", clinicId); // <--- Add to Claims
             claims.put("userDetailsId", detailsId);
+            claims.put("planeCode", planeCode);
+            claims.put("clinicCode", clinicCode);
             claims.put("role", role);
 
             return Jwts.builder()
@@ -115,6 +119,10 @@ public class JWTService {
 
     public Integer extractClinicId(String token) {
         return extractClaim(token, claims -> claims.get("clinicId", Integer.class)); // custom claim
+    }
+
+    public String extractPlaneCode(String token) {
+        return extractClaim(token, claims -> claims.get("planeCode", String.class)); // custom claim
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {

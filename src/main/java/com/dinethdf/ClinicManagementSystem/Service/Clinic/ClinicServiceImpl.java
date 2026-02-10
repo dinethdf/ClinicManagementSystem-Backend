@@ -1,89 +1,123 @@
 package com.dinethdf.ClinicManagementSystem.Service.Clinic;
 
-import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicUpdateDTO;
+
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
-import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepo;
-import com.dinethdf.ClinicManagementSystem.config.TenantContext;
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
+
+import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
-import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 @Service
-@RequiredArgsConstructor
-public class ClinicServiceImpl {
+@Transactional
+public class ClinicServiceImpl implements ClinicService {
 
-    private final ClinicRepo clinicRepo;
-    private final MessageSourceUtil messageSourceUtil;
+    private final ClinicRepository clinicRepository;
 
-    /**
-     * Get details of the currently logged-in Clinic (Tenant)
-     */
-    public ApiResponse<ClinicResponseDTO> getCurrentClinicDetails() {
-        Integer clinicId = TenantContext.getCurrentTenant();
-
-        Clinic clinic = clinicRepo.findById(clinicId)
-                .orElseThrow(() -> new ValidationException("Clinic not found", "CLINIC_NOT_FOUND", HttpStatus.NOT_FOUND));
-
-        return ApiResponse.success(
-                mapToResponseDTO(clinic),
-                "Clinic details retrieved successfully"
-        );
+    @Autowired
+    public ClinicServiceImpl(ClinicRepository clinicRepository) {
+        this.clinicRepository = clinicRepository;
     }
 
-    /**
-     * Update Clinic Profile (Address, Contact info, etc.)
-     */
-    @Transactional
-    public ApiResponse<ClinicResponseDTO> updateClinicDetails(ClinicUpdateDTO request) {
-        Integer clinicId = TenantContext.getCurrentTenant();
+    @Override
+    public Clinic createClinic(Clinic clinic) {
+        // 1. Validation: Check if subdomain is unique
+        if (clinicRepository.existsBySubdomain(clinic.getSubdomain())) {
+            throw new RuntimeException("Subdomain '" + clinic.getSubdomain() + "' is already taken.");
+        }
 
-        Clinic clinic = clinicRepo.findById(clinicId)
-                .orElseThrow(() -> new ValidationException("Clinic not found", "CLINIC_NOT_FOUND", HttpStatus.NOT_FOUND));
+        // 2. Generate Clinic Code (UUID) if not provided
+        if (clinic.getClinicCode() == null || clinic.getClinicCode().isEmpty()) {
+            clinic.setClinicCode(UUID.randomUUID().toString());
+        }
 
-        // Update fields only if they are provided (not null)
-        if (request.getName() != null) clinic.setName(request.getName());
-        if (request.getAddress() != null) clinic.setAddress(request.getAddress());
-        if (request.getCity() != null) clinic.setCity(request.getCity());
-        if (request.getDistrict() != null) clinic.setDistrict(request.getDistrict());
-        if (request.getMobileNo() != null) clinic.setMobileNo(request.getMobileNo());
-        if (request.getLandNo() != null) clinic.setLandNo(request.getLandNo());
-        if (request.getEmail() != null) clinic.setEmail(request.getEmail());
-        if (request.getWebsite() != null) clinic.setWebsite(request.getWebsite());
+        // 3. Set Defaults if missing
+        if (clinic.getSettings() == null) {
+            clinic.setSettings(new ClinicSettings()); // Uses defaults defined in POJO
+        }
+        if (clinic.getStatus() == null) {
+            clinic.setStatus(Clinic.ClinicStatus.TRIAL);
+        }
 
-        // Update timestamp is handled by @PreUpdate in Entity
-        Clinic savedClinic = clinicRepo.save(clinic);
+        // 4. Set Trial Logic (e.g., Default 14 days if not set)
+        if (clinic.getTrialEndsAt() == null && clinic.getStatus() == Clinic.ClinicStatus.TRIAL) {
+            clinic.setTrialEndsAt(LocalDateTime.now().plusDays(14));
+        }
 
-        return ApiResponse.success(
-                mapToResponseDTO(savedClinic),
-                messageSourceUtil.getMessage("clinic.update.success")
-        );
+        return clinicRepository.save(clinic);
     }
 
-    // --- Helper Method for Manual Mapping ---
-    private ClinicResponseDTO mapToResponseDTO(Clinic clinic) {
-        ClinicResponseDTO dto = new ClinicResponseDTO();
-        dto.setId(clinic.getId());
-        dto.setName(clinic.getName());
-        dto.setSubdomain(clinic.getSubdomain());
+    @Override
+    public List<Clinic> getAllClinics() {
+        return clinicRepository.findAll();
+    }
 
-        // Contact Details
-        dto.setAddress(clinic.getAddress());
-        dto.setCity(clinic.getCity());
-        dto.setMobileNo(clinic.getMobileNo());
-        dto.setLandNo(clinic.getLandNo());
-        dto.setEmail(clinic.getEmail());
+    @Override
+    public Clinic getClinicById(Integer id) {
+        return clinicRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("Clinic not found with ID: " + id, "CLINIC_NOT_FOUND"));
+    }
 
-        // Branding & Status
-        dto.setLogoUrl(clinic.getLogoUrl());
-        dto.setStatus(clinic.getStatus().name()); // Convert Enum to String
-        dto.setSubscriptionPlan(clinic.getSubscriptionPlan());
-        dto.setExpiryDate(clinic.getExpiryDate());
+    @Override
+    public Optional<Clinic> getClinicByCode(String clinicCode) {
+        return clinicRepository.findByClinicCodeAndDeletedFalse(clinicCode);
+    }
 
-        return dto;
+    @Override
+    public Optional<Clinic> getClinicBySubdomain(String subdomain) {
+        return clinicRepository.findBySubdomain(subdomain);
+    }
+
+    @Override
+    public Clinic updateClinic(String clinicCode, Clinic clinicDetails) {
+        Clinic existingClinic = clinicRepository.findByClinicCodeAndDeletedFalse(clinicCode)
+                .orElseThrow(() -> new RuntimeException("Clinic not found with code: " + clinicCode));
+
+        // Update basic fields
+        existingClinic.setName(clinicDetails.getName());
+        existingClinic.setMobileNo(clinicDetails.getMobileNo());
+        existingClinic.setAddress(clinicDetails.getAddress());
+        existingClinic.setCity(clinicDetails.getCity());
+        existingClinic.setDistrict(clinicDetails.getDistrict());
+        existingClinic.setLogoUrl(clinicDetails.getLogoUrl());
+
+        // Update Status/Plan if provided
+        if (clinicDetails.getPlanCode() != null) {
+            existingClinic.setPlanCode(clinicDetails.getPlanCode());
+        }
+        if (clinicDetails.getStatus() != null) {
+            existingClinic.setStatus(clinicDetails.getStatus());
+        }
+
+        // Update Settings (Merge or Replace logic)
+        // Here we replace, but you could implement logic to merge specific keys
+        if (clinicDetails.getSettings() != null) {
+            existingClinic.setSettings(clinicDetails.getSettings());
+        }
+
+        return clinicRepository.save(existingClinic);
+    }
+
+    @Override
+    public void deleteClinic(String clinicCode) {
+        Clinic clinic = clinicRepository.findByClinicCode(clinicCode)
+                .orElseThrow(() -> new RuntimeException("Clinic not found"));
+
+        // Soft Delete
+        clinic.setDeleted(true);
+        clinic.setStatus(Clinic.ClinicStatus.CANCELLED);
+        clinicRepository.save(clinic);
+    }
+
+    @Override
+    public boolean isSubdomainTaken(String subdomain) {
+        return clinicRepository.existsBySubdomain(subdomain);
     }
 }
