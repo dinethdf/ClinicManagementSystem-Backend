@@ -5,15 +5,17 @@ USE clinicmsystem;
 -- SAMPLE DATA
 -- ============================================
 
--- Clinic 1: Basic Plan (Trial)
+-- Clinic 1: Basic Plan (Trial) - Has 1 Mobile only
 INSERT INTO clinics
-    (name, clinic_code, subdomain, email, mobile_no, plan_code, status, trial_ends_at, settings)
+    (name, clinic_code, subdomain, email, mobile_no_1, mobile_no_2, landline_no, plan_code, status, trial_ends_at, settings)
 VALUES (
     'City Care Medical Center',
     'my-clinic-12345',
     'citycare',
     'info@citycare.lk',
     '+94771234567',
+    NULL,            -- No second mobile
+    NULL,            -- No landline
     'PLAN_ENTERPRISE',
     'TRIAL',
     DATE_ADD(NOW(), INTERVAL 14 DAY),
@@ -25,15 +27,17 @@ VALUES (
     )
 );
 
--- Clinic 2: Pro Plan (Active)
+-- Clinic 2: Pro Plan (Active) - Has 2 Mobiles
 INSERT INTO clinics
-    (name, clinic_code, subdomain, email, mobile_no, city, plan_code, status, subscription_ends_at, settings)
+    (name, clinic_code, subdomain, email, mobile_no_1, mobile_no_2, landline_no, city, plan_code, status, subscription_ends_at, settings)
 VALUES (
     'Health Plus Clinic',
     'my-clinic-12345ww',
     'healthplus',
     'contact@healthplus.lk',
     '+94777654321',
+    '+94771112222',  -- Second mobile added
+    NULL,
     'Galle',
     'PLAN_PRO',
     'ACTIVE',
@@ -47,15 +51,17 @@ VALUES (
     )
 );
 
--- Clinic 3: Enterprise Plan (Active)
+-- Clinic 3: Enterprise Plan (Active) - Has 1 Mobile and 1 Landline
 INSERT INTO clinics
-    (name, clinic_code, subdomain, email, mobile_no, city, plan_code, status, subscription_ends_at, settings)
+    (name, clinic_code, subdomain, email, mobile_no_1, mobile_no_2, landline_no, city, plan_code, status, subscription_ends_at, settings)
 VALUES (
     'MediLife Hospital',
     'my-clinic-12345wzxdaw',
     'medilife',
     'admin@medilife.lk',
     '+94712223333',
+    NULL,
+    '+94812233444',  -- Landline added (Kandy area code example)
     'Kandy',
     'PLAN_BASIC',
     'ACTIVE',

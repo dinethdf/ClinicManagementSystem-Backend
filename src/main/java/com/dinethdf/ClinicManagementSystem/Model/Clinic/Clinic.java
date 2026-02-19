@@ -18,7 +18,7 @@ public class Clinic {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;  // Simple INT
+    private Integer id;
 
     @Column(name = "clinic_code", nullable = false, unique = true, length = 36)
     private String clinicCode;
@@ -31,8 +31,16 @@ public class Clinic {
 
     private String email;
 
-    @Column(name = "mobile_no")
-    private String mobileNo;
+    // --- UPDATED CONTACT FIELDS START ---
+    @Column(name = "mobile_no_1", length = 20)
+    private String mobileNo1;
+
+    @Column(name = "mobile_no_2", length = 20)
+    private String mobileNo2;
+
+    @Column(name = "landline_no", length = 20)
+    private String landlineNo;
+    // --- UPDATED CONTACT FIELDS END ---
 
     private String address;
     private String city;

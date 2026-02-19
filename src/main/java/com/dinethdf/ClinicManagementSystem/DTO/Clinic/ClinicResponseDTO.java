@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.DTO.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import lombok.Data;
 import java.time.LocalDate;
 
@@ -10,11 +11,48 @@ public class ClinicResponseDTO {
     private String subdomain;
     private String address;
     private String city;
-    private String mobileNo;
-    private String landNo;
+    private String district;
+
+    // --- UPDATED CONTACT FIELDS ---
+    private String mobileNo1;
+    private String mobileNo2;
+    private String landlineNo;
+
     private String email;
     private String logoUrl;
     private String status;
     private String subscriptionPlan;
     private LocalDate expiryDate;
+
+    // ✅ STATIC MAPPER UPDATED
+    public static ClinicResponseDTO fromEntity(Clinic clinic) {
+        ClinicResponseDTO dto = new ClinicResponseDTO();
+        dto.setId(clinic.getId());
+        dto.setName(clinic.getName());
+        dto.setSubdomain(clinic.getSubdomain());
+        dto.setAddress(clinic.getAddress());
+        dto.setCity(clinic.getCity());
+        dto.setDistrict(clinic.getDistrict());
+
+        // --- MAP NEW FIELDS ---
+        dto.setMobileNo1(clinic.getMobileNo1());
+        dto.setMobileNo2(clinic.getMobileNo2());
+        dto.setLandlineNo(clinic.getLandlineNo());
+
+        dto.setEmail(clinic.getEmail());
+        dto.setLogoUrl(clinic.getLogoUrl());
+
+        // Handle Enums & Plan Codes
+        dto.setStatus(clinic.getStatus().name());
+        dto.setSubscriptionPlan(clinic.getPlanCode());
+
+        // Handle Date Conversion
+        if (clinic.getSubscriptionEndsAt() != null) {
+            dto.setExpiryDate(clinic.getSubscriptionEndsAt().toLocalDate());
+        } else if (clinic.getTrialEndsAt() != null) {
+            dto.setExpiryDate(clinic.getTrialEndsAt().toLocalDate());
+        }
+
+        return dto;
+    }
 }

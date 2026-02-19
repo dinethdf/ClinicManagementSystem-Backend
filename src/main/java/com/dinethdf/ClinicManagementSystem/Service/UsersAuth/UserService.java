@@ -79,12 +79,15 @@ public class UserService {
     public JwtAuthenticationResponse signIn(LoginRequest request){
 
         try {
-            // 1. Create Token with Clinic ID
+            // 1. SMART RESOLUTION: Get Clinic Entity (by ID or Subdomain)
+            Clinic loginClinic = resolveClinic(request);
+            Integer clinicId = loginClinic.getId();
+
             CustomAuthToken authToken = new CustomAuthToken(
                     request.getUsername(),
                     request.getPassword(),
                     request.getLoginType(),
-                    request.getClinicId() // Pass Clinic ID to Auth Provider
+                    clinicId
             );
 
             // 2. Authenticate
@@ -144,6 +147,20 @@ public class UserService {
             // Often thrown if clinicId is null
             throw new ValidationException("Invalid Login Request Data", "INVALID_REQUEST");
         }
+    }
+
+    private Clinic resolveClinic(LoginRequest request) {
+
+        if (request.getClinicId() != null) {
+            return clinicService.getClinicById(request.getClinicId());
+        }
+
+        if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
+            return clinicService.getClinicBySubdomain(request.getSubdomain())
+                    .orElseThrow(() -> new ValidationException("Clinic not found for subdomain: " + request.getSubdomain(), "INVALID_SUBDOMAIN"));
+        }
+
+        throw new ValidationException("Either Clinic ID or Subdomain is required for login", "MISSING_TENANT_INFO");
     }
 
 

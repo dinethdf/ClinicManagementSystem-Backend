@@ -24,9 +24,11 @@ CREATE TABLE clinics (
     name VARCHAR(100) NOT NULL,
     subdomain VARCHAR(50) UNIQUE NOT NULL,
 
-    -- Contact (Optional - for admin display only)
+    -- Contact (Updated for 2 Mobiles + 1 Landline)
     email VARCHAR(100),
-    mobile_no VARCHAR(20),
+    mobile_no_1 VARCHAR(20),
+    mobile_no_2 VARCHAR(20),
+    landline_no VARCHAR(20),
     address VARCHAR(255),
     city VARCHAR(50),
     district VARCHAR(50),
@@ -48,6 +50,7 @@ CREATE TABLE clinics (
     settings JSON DEFAULT NULL,
     -- Example: {"currency": "LKR", "invoicePrefix": "CC", "timezone": "Asia/Colombo"}
     clinic_secret varchar(20),
+
     -- Soft Delete
     is_deleted BOOLEAN DEFAULT FALSE,
 
@@ -55,7 +58,7 @@ CREATE TABLE clinics (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-	UNIQUE KEY uk_clinic_code (clinic_code),
+    UNIQUE KEY uk_clinic_code (clinic_code),
     INDEX idx_subdomain (subdomain),
     INDEX idx_plan_code (plan_code),
     INDEX idx_status (status, is_deleted)

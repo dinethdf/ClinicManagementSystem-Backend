@@ -1,10 +1,14 @@
 package com.dinethdf.ClinicManagementSystem.Service.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicUpdateDTO;
+
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.PlanChangeDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
-
 import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,27 +30,111 @@ public class ClinicServiceImpl implements ClinicService {
         this.clinicRepository = clinicRepository;
     }
 
+
+    @Override
+    public ClinicResponseDTO getCurrentClinicDetails() {
+        return ClinicResponseDTO.fromEntity(getCurrentClinicEntity());
+    }
+
+    /**
+     * Update Basic Info (Name, Address, Mobile)
+     */
+    public ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request) {
+        Clinic clinic = getCurrentClinicEntity();
+
+        // Partial Update: Only update if value is provided
+        if (request.getName() != null) clinic.setName(request.getName());
+
+        // --- UPDATED CONTACT FIELDS ---
+        if (request.getMobileNo1() != null) clinic.setMobileNo1(request.getMobileNo1());
+        if (request.getMobileNo2() != null) clinic.setMobileNo2(request.getMobileNo2());
+        if (request.getLandlineNo() != null) clinic.setLandlineNo(request.getLandlineNo());
+
+        if (request.getAddress() != null) clinic.setAddress(request.getAddress());
+        if (request.getCity() != null) clinic.setCity(request.getCity());
+        if (request.getDistrict() != null) clinic.setDistrict(request.getDistrict());
+        if (request.getLogoUrl() != null) clinic.setLogoUrl(request.getLogoUrl());
+
+        Clinic updated = clinicRepository.save(clinic);
+        return ClinicResponseDTO.fromEntity(updated);
+    }
+
+    public ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request) {
+        Clinic clinic = getCurrentClinicEntity();
+
+        // Get existing settings or create new if null
+        ClinicSettings settings = clinic.getSettings();
+        if (settings == null) settings = new ClinicSettings();
+
+        // Update JSON Fields
+        if (request.getCurrency() != null) settings.setCurrency(request.getCurrency());
+        if (request.getTimezone() != null) settings.setTimezone(request.getTimezone());
+        if (request.getInvoicePrefix() != null) settings.setInvoicePrefix(request.getInvoicePrefix());
+        if (request.getLanguage() != null) settings.setLanguage(request.getLanguage());
+        if (request.getTaxRate() != null) settings.setTaxRate(request.getTaxRate());
+        if (request.getMultiCurrency() != null) settings.setMultiCurrency(request.getMultiCurrency());
+        if (request.getSecondaryLanguage() != null) settings.setSecondaryLanguage(request.getSecondaryLanguage());
+
+        clinic.setSettings(settings); // Re-set to ensure dirty check triggers
+        Clinic updated = clinicRepository.save(clinic);
+        return ClinicResponseDTO.fromEntity(updated);
+    }
+
+    /**
+     * Update Subscription Plan
+     */
+    public ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request) {
+        Clinic clinic = getCurrentClinicEntity();
+
+        String newPlan = request.getNewPlanCode();
+        if (newPlan == null || newPlan.isEmpty()) {
+            throw new ValidationException("Plan code is required", "INVALID_PLAN");
+        }
+
+        clinic.setPlanCode(newPlan);
+
+        // Logic: If moving from TRIAL to a paid plan, activate it
+        if (!"TRIAL".equals(clinic.getStatus().name())) {
+            clinic.setStatus(Clinic.ClinicStatus.ACTIVE);
+        }
+
+        Clinic updated = clinicRepository.save(clinic);
+        return ClinicResponseDTO.fromEntity(updated);
+    }
+
+    // Helper to get current clinic safely
+    private Clinic getCurrentClinicEntity() {
+        Integer clinicId = TenantContext.getCurrentTenant();
+        if (clinicId == null) {
+            throw new ValidationException("No Clinic ID found in context", "AUTH_ERROR");
+        }
+        return clinicRepository.findById(clinicId)
+                .orElseThrow(() -> new ValidationException("Current Clinic not found", "CLINIC_NOT_FOUND"));
+    }
+
+    // =================================================================================
+    //  SECTION 2: ADMIN / SYSTEM METHODS (Requires ID or Code)
+    // =================================================================================
+
     @Override
     public Clinic createClinic(Clinic clinic) {
-        // 1. Validation: Check if subdomain is unique
         if (clinicRepository.existsBySubdomain(clinic.getSubdomain())) {
             throw new RuntimeException("Subdomain '" + clinic.getSubdomain() + "' is already taken.");
         }
 
-        // 2. Generate Clinic Code (UUID) if not provided
         if (clinic.getClinicCode() == null || clinic.getClinicCode().isEmpty()) {
             clinic.setClinicCode(UUID.randomUUID().toString());
         }
 
-        // 3. Set Defaults if missing
+        // Set Defaults if missing
         if (clinic.getSettings() == null) {
-            clinic.setSettings(new ClinicSettings()); // Uses defaults defined in POJO
+            clinic.setSettings(new ClinicSettings());
         }
         if (clinic.getStatus() == null) {
             clinic.setStatus(Clinic.ClinicStatus.TRIAL);
         }
 
-        // 4. Set Trial Logic (e.g., Default 14 days if not set)
+        // Set Trial Logic
         if (clinic.getTrialEndsAt() == null && clinic.getStatus() == Clinic.ClinicStatus.TRIAL) {
             clinic.setTrialEndsAt(LocalDateTime.now().plusDays(14));
         }
@@ -77,12 +165,18 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public Clinic updateClinic(String clinicCode, Clinic clinicDetails) {
+        // Find by code (Admin context)
         Clinic existingClinic = clinicRepository.findByClinicCodeAndDeletedFalse(clinicCode)
                 .orElseThrow(() -> new RuntimeException("Clinic not found with code: " + clinicCode));
 
         // Update basic fields
         existingClinic.setName(clinicDetails.getName());
-        existingClinic.setMobileNo(clinicDetails.getMobileNo());
+
+        // --- UPDATED CONTACT FIELDS (Admin Side) ---
+        existingClinic.setMobileNo1(clinicDetails.getMobileNo1());
+        existingClinic.setMobileNo2(clinicDetails.getMobileNo2());
+        existingClinic.setLandlineNo(clinicDetails.getLandlineNo());
+
         existingClinic.setAddress(clinicDetails.getAddress());
         existingClinic.setCity(clinicDetails.getCity());
         existingClinic.setDistrict(clinicDetails.getDistrict());
@@ -97,7 +191,6 @@ public class ClinicServiceImpl implements ClinicService {
         }
 
         // Update Settings (Merge or Replace logic)
-        // Here we replace, but you could implement logic to merge specific keys
         if (clinicDetails.getSettings() != null) {
             existingClinic.setSettings(clinicDetails.getSettings());
         }

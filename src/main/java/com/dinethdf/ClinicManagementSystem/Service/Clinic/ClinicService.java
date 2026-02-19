@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 
 import java.util.List;
@@ -12,6 +13,8 @@ public interface ClinicService {
     List<Clinic> getAllClinics();
 
     Clinic getClinicById(Integer id);
+
+    ClinicResponseDTO getCurrentClinicDetails();
 
     Optional<Clinic> getClinicByCode(String clinicCode);
 

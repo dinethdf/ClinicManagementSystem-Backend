@@ -78,7 +78,10 @@ public class PatientAuthService {
     public JwtAuthenticationResponse patientSignIn(LoginRequest request){
 
         try {
-            // 1. Create Token with Clinic ID
+
+            Clinic loginClinic = resolveClinic(request);
+            Integer clinicId = loginClinic.getId();
+
             CustomAuthToken authToken = new CustomAuthToken(
                     request.getUsername(),
                     request.getPassword(),
@@ -132,6 +135,19 @@ public class PatientAuthService {
         }
     }
 
+    private Clinic resolveClinic(LoginRequest request) {
+
+        if (request.getClinicId() != null) {
+            return clinicService.getClinicById(request.getClinicId());
+        }
+
+        if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
+            return clinicService.getClinicBySubdomain(request.getSubdomain())
+                    .orElseThrow(() -> new ValidationException("Clinic not found for subdomain: " + request.getSubdomain(), "INVALID_SUBDOMAIN"));
+        }
+
+        throw new ValidationException("Either Clinic ID or Subdomain is required for login", "MISSING_TENANT_INFO");
+    }
 
     /*
      * UPDATED REFRESH TOKEN LOGIC FOR MULTI-TENANCY
