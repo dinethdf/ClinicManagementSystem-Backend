@@ -11,6 +11,17 @@ public class PatientPrincipal implements UserDetails {
 
     private PatientAuth patientAuth;
 
+    private String planCode;
+
+
+    public String getPlanCode() {
+        return planCode;
+    }
+
+    public void setPlanCode(String planCode) {
+        this.planCode = planCode;
+    }
+
     public PatientPrincipal(PatientAuth patientAuth) {
         this.patientAuth = patientAuth;
     }

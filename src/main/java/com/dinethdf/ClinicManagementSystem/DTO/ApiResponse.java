@@ -14,16 +14,12 @@ public class ApiResponse<T> {
     private String message;
     private T data;
 
-    /**
-     * Creates a successful response.
-     */
+
     public static <T> ApiResponse<T> success(T data, String message) {
         return new ApiResponse<>(true, message, data);
     }
 
-    /**
-     * Creates an error response with no data.
-     */
+
     public static <T> ApiResponse<T> error(String message) {
         return new ApiResponse<>(false, message, null);
     }

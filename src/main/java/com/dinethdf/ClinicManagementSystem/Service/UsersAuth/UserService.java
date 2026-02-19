@@ -4,17 +4,20 @@ import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDt
 import com.dinethdf.ClinicManagementSystem.DTO.Doctor.DoctorDetailsDto;
 import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.UserRepo;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // NEW: Context Handling
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+import com.dinethdf.ClinicManagementSystem.util.EncryptionUtil;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,6 +48,12 @@ public class UserService {
     UserDetailsService userDetailsService;
 
     @Autowired
+    ClinicService clinicService;
+
+    @Autowired
+    EncryptionUtil encryptionUtil;
+
+    @Autowired
     ClinicStaffService clinicStaffService;
 
     @Autowired
@@ -70,12 +79,15 @@ public class UserService {
     public JwtAuthenticationResponse signIn(LoginRequest request){
 
         try {
-            // 1. Create Token with Clinic ID
+            // 1. SMART RESOLUTION: Get Clinic Entity (by ID or Subdomain)
+            Clinic loginClinic = resolveClinic(request);
+            Integer clinicId = loginClinic.getId();
+
             CustomAuthToken authToken = new CustomAuthToken(
                     request.getUsername(),
                     request.getPassword(),
                     request.getLoginType(),
-                    request.getClinicId() // Pass Clinic ID to Auth Provider
+                    clinicId
             );
 
             // 2. Authenticate
@@ -91,7 +103,11 @@ public class UserService {
 
             if (auth.isAuthenticated()) {
 
-                var jwt = jwtService.generateUserToken(user.getUsername(), user.getRole().getName(), user.getUserDetailsId(), user.getClinicId());
+                Clinic clinic = clinicService.getClinicById(user.getClinicId());
+
+                var jwt = jwtService.generateUserToken(user.getUsername(), user.getRole().getName(),
+                        user.getUserDetailsId(), user.getClinicId(),
+                        encryptionUtil.encryptClinicPlane(clinic.getPlanCode()), clinic.getClinicCode());
 
 
                 jwtAuthenticationResponse.setAccessToken(jwt);
@@ -131,6 +147,20 @@ public class UserService {
             // Often thrown if clinicId is null
             throw new ValidationException("Invalid Login Request Data", "INVALID_REQUEST");
         }
+    }
+
+    private Clinic resolveClinic(LoginRequest request) {
+
+        if (request.getClinicId() != null) {
+            return clinicService.getClinicById(request.getClinicId());
+        }
+
+        if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
+            return clinicService.getClinicBySubdomain(request.getSubdomain())
+                    .orElseThrow(() -> new ValidationException("Clinic not found for subdomain: " + request.getSubdomain(), "INVALID_SUBDOMAIN"));
+        }
+
+        throw new ValidationException("Either Clinic ID or Subdomain is required for login", "MISSING_TENANT_INFO");
     }
 
 

@@ -10,20 +10,25 @@ import java.util.Collections;
 public class UserPrincipal implements UserDetails {
 
     private final UserAuth userAuth;
+    private String planCode;
+
     public UserPrincipal(UserAuth userAuth) {
         this.userAuth = userAuth;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return Collections.singleton(new SimpleGrantedAuthority(Role.ADMIN.name()));
          return Collections.singleton(new SimpleGrantedAuthority(userAuth.getRole().getName()));
     }
 
 
-//    public String getName() {
-//        return user.getName();
-//    }
+    public String getPlanCode() {
+        return planCode;
+    }
+
+    public void setPlanCode(String planCode) {
+        this.planCode = planCode;
+    }
 
     public UserRole getRole() {
         return userAuth.getRole();
@@ -66,4 +71,14 @@ public class UserPrincipal implements UserDetails {
     public boolean isEnabled() {
         return userAuth.getEnable();
     }
+
+    @Override
+    public String toString() {
+        return "UserPrincipal{" +
+                "userAuth=" + userAuth +
+                ", planCode='" + planCode + '\'' +
+                '}';
+    }
+
+
 }

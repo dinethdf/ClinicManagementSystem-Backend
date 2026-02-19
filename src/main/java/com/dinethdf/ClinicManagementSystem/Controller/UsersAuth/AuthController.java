@@ -34,16 +34,13 @@ public class AuthController {
     @PostMapping("userSignIn")
     public ResponseEntity<JwtAuthenticationResponse> signIn (@RequestBody LoginRequest request){
         // Security check
-        if (request.getClinicId() == null) {
-            throw new IllegalArgumentException("Clinic ID is required for login");
+        if (request.getClinicId() == null && request.getSubdomain()== null) {
+            throw new IllegalArgumentException("Clinic ID or Code is required for login");
         }
         return ResponseEntity.ok(userService.signIn(request));
     }
 
-    /**
-     * Patient Login
-     * Request body must include: username, password, loginType="PATIENT", clinicId
-     */
+
     @PostMapping("patientSignIn")
     public ResponseEntity<JwtAuthenticationResponse> patientSignIn (@RequestBody LoginRequest request){
         if (request.getClinicId() == null) {

@@ -1,6 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
-
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
@@ -30,18 +30,22 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//  Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraWxsIiwiaWF0IjoxNzIzMTgzNzExLCJleHAiOjE3MjMxODM4MTl9.5nf7dRzKRiuGurN2B9dHh_M5xiu73ZzWPr6rbhOTTHs
         String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
         String role = null;
         Integer clinicId = null;
+        String planCode = null;
+        String currency = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             username = jwtService.extractUserName(token);
             role = jwtService.extractUserRole(token);
             clinicId = jwtService.extractClinicId(token);
+
+            planCode = jwtService.extractPlaneCode(token);
+
 
             if (clinicId != null) {
                 TenantContext.setCurrentTenant(clinicId);
@@ -57,11 +61,15 @@ public class JwtFilter extends OncePerRequestFilter {
                 userDetails = context.getBean(UserDetailsService.class).loadUserByUsername(username);
             }
 
-
             if (jwtService.validateToken(token, userDetails)) {
+
+                if (userDetails instanceof UserPrincipal) {
+                    UserPrincipal principal = (UserPrincipal) userDetails;
+                    principal.setPlanCode(planCode);
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource()
-                        .buildDetails(request));
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
@@ -69,9 +77,7 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            // CRITICAL: Clean up thread local to prevent leaks
             TenantContext.clear();
         }
-
     }
 }
