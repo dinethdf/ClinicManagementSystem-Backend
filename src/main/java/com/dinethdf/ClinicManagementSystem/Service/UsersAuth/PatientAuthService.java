@@ -6,16 +6,19 @@ import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
 import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
 import com.dinethdf.ClinicManagementSystem.Model.AuthModels.RefreshTokenRequest;
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientPrincipal;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Repo.UsersAuth.PatientRepo;
 
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // Required for context handling
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
+import com.dinethdf.ClinicManagementSystem.util.EncryptionUtil;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +54,12 @@ public class PatientAuthService {
     PatientService patientService;
 
     @Autowired
+    ClinicService clinicService;
+
+    @Autowired
+    EncryptionUtil encryptionUtil;
+
+    @Autowired
     private MessageSourceUtil messageSourceUtil;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
@@ -69,7 +78,10 @@ public class PatientAuthService {
     public JwtAuthenticationResponse patientSignIn(LoginRequest request){
 
         try {
-            // 1. Create Token with Clinic ID
+
+            Clinic loginClinic = resolveClinic(request);
+            Integer clinicId = loginClinic.getId();
+
             CustomAuthToken authToken = new CustomAuthToken(
                     request.getUsername(),
                     request.getPassword(),
@@ -89,7 +101,13 @@ public class PatientAuthService {
             JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
 
             if (auth.isAuthenticated()) {
-                var jwt = jwtService.generatePatientToken(patient.getUsername(), patient.getRole().getName(), patient.getPatientDetailsId(), patient.getClinicId());
+
+                Clinic clinic = clinicService.getClinicById(patient.getClinicId());
+
+
+                var jwt = jwtService.generatePatientToken(patient.getUsername(), patient.getRole().getName(),
+                        patient.getPatientDetailsId(), patient.getClinicId(),
+                        encryptionUtil.encryptClinicPlane(clinic.getPlanCode()), clinic.getClinicCode());
 
                 jwtAuthenticationResponse.setAccessToken(jwt);
                 jwtAuthenticationResponse.setRefreshToken("refreshToken");
@@ -117,6 +135,19 @@ public class PatientAuthService {
         }
     }
 
+    private Clinic resolveClinic(LoginRequest request) {
+
+        if (request.getClinicId() != null) {
+            return clinicService.getClinicById(request.getClinicId());
+        }
+
+        if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
+            return clinicService.getClinicBySubdomain(request.getSubdomain())
+                    .orElseThrow(() -> new ValidationException("Clinic not found for subdomain: " + request.getSubdomain(), "INVALID_SUBDOMAIN"));
+        }
+
+        throw new ValidationException("Either Clinic ID or Subdomain is required for login", "MISSING_TENANT_INFO");
+    }
 
     /*
      * UPDATED REFRESH TOKEN LOGIC FOR MULTI-TENANCY
