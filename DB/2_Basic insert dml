@@ -81,11 +81,12 @@ VALUES (
 -- That's it! Everything else is in code.
 
 -- 2. Master Roles
-INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF');
+INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF'), (6, 'SUPERADMIN');
 
 -- 3. Users (Linked to Clinic 1)
 -- Note: clinic_id = 1 added to all auth records
 INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`) VALUES
+(1, '$2a$12$Z/h2MTBuOrefYxbKkQGhcOxc5in8vvq0JY0yyxUnCncw8uL7HQQNm', 'dineth@superadmin.com', '1', '6'),
 (1, '$2a$12$Z/h2MTBuOrefYxbKkQGhcOxc5in8vvq0JY0yyxUnCncw8uL7HQQNm', 'dineth@admin.com', '1', '1'),
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@user.com', '1', '2'),
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test2@user.com', '1', '2'),
