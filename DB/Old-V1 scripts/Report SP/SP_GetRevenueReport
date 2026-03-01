@@ -13,6 +13,7 @@ BEGIN
         p.id AS payment_id,
         p.paymentTimestamp,
         p.invoice_id,
+
         -- Determine the Source (Appointment vs Lab)
         CASE
             WHEN a.id IS NOT NULL THEN 'APPOINTMENT'
@@ -23,17 +24,25 @@ BEGIN
         -- Get the specific Reference ID
         COALESCE(a.id, l.id) AS reference_id,
 
-        -- Payment Details
-        p.paymentMethod,
+        -- [NEW FIX] Payment Details fetched from Lookup Tables
+        pml.displayName AS paymentMethod,
         p.transactionId,
         p.amountPaid, -- Positive for income, negative for refunds
-        p.paymentStatus
+        psl.code AS paymentStatus
 
     FROM
         payments p
+
+    -- [NEW FIX] Join the normalized lookup tables
+    INNER JOIN
+        payment_status_lookup psl ON p.paymentStatusId = psl.id
+    LEFT JOIN
+        payment_method_lookup pml ON p.paymentMethodId = pml.id
+
     -- Try to match with Appointments
     LEFT JOIN
         appointments a ON p.invoice_id = a.invoice_id
+
     -- Try to match with Lab Requests
     LEFT JOIN
         patient_lab_requests l ON p.invoice_id = l.invoice_id
@@ -45,8 +54,8 @@ BEGIN
         -- 2. Date Range Filter
         AND p.paymentTimestamp BETWEEN p_startDate AND p_endDate
 
-        -- 3. Filter only completed/refunded transactions
-        AND p.paymentStatus IN ('COMPLETED', 'REFUNDED')
+        -- 3. Filter only completed/refunded transactions (Using lookup code)
+        AND psl.code IN ('COMPLETED', 'REFUNDED')
 
         -- 4. Dynamic Revenue Type Filter
         AND (
@@ -61,5 +70,12 @@ END$$
 
 DELIMITER ;
 
--- Expectation: Should only see the $500 row. Should NOT see the $9000 row.
+-- ==========================================
+-- TEST EXAMPLES
+-- ==========================================
+
+-- Expectation: Should only see completed or refunded payments for clinic 1.
 CALL sp_GetRevenueReport(1, '2025-01-01', '2027-12-31', 'ALL');
+
+-- Expectation: Only see Lab Test revenue for clinic 1
+CALL sp_GetRevenueReport(1, '2025-01-01', '2027-12-31', 'LAB_TEST');

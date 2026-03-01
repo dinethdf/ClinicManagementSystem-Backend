@@ -21,12 +21,11 @@ BEGIN
         MIN(ds.scheduleDate) AS FirstScheduleDate,
         MAX(ds.scheduleDate) AS LastScheduleDate,
 
-        -- 3. Appointment Counts
-        -- (Using COUNT() here is safe now because the duplicates are removed by the Subquery below)
+        -- 3. Appointment Counts (Updated to use Lookup Table)
         COUNT(appt.id) AS TotalAppointments,
-        SUM(CASE WHEN appt.status = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedAppointments,
-        SUM(CASE WHEN appt.status = 'BOOKED' THEN 1 ELSE 0 END) AS BookedAppointments,
-        SUM(CASE WHEN appt.status = 'NOSHOW' THEN 1 ELSE 0 END) AS NoShowAppointments,
+        SUM(CASE WHEN asl.code = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedAppointments,
+        SUM(CASE WHEN asl.code = 'BOOKED' THEN 1 ELSE 0 END) AS BookedAppointments,
+        SUM(CASE WHEN asl.code = 'NOSHOW' THEN 1 ELSE 0 END) AS NoShowAppointments,
 
         -- 4. Doctor Financials
         COALESCE(SUM(ds.doctorFee), 0) AS TotalBaseDoctorFee,
@@ -45,7 +44,7 @@ BEGIN
         (COALESCE(SUM(ds.clinicFee), 0) + COALESCE(SUM(ItemAgg.ClinicDiscount), 0)) AS NetClinicProfit,
 
         -- 6. Total Revenue (Doctor Net + Clinic Net)
-        -- Note: This IGNORES 'OTHER_DISCOUNT' entirely, as requested.
+        -- Note: This IGNORES 'OTHER_DISCOUNT' entirely.
         (
             COALESCE(SUM(ds.doctorFee + ds.clinicFee), 0) +
             COALESCE(SUM(ItemAgg.TotalTrackedDiscount), 0)
@@ -69,15 +68,18 @@ BEGIN
     -- Join Appointments
     JOIN appointments appt ON ds.id = appt.doctor_schedule_id
         AND appt.clinic_id = p_clinic_id
-        AND appt.status != 'CANCELLED'
+
+    -- [ NEW FIX FOR NORMALIZATION ] -------------------------------------------
+    -- Join to Lookup Table instead of querying dropped ENUM column
+    JOIN appointment_status_lookup asl ON appt.statusId = asl.id
+        AND asl.code != 'CANCELLED'
+    -- -------------------------------------------------------------------------
 
     -- Join Invoices
     LEFT JOIN invoices inv ON appt.invoice_id = inv.id
         AND inv.clinic_id = p_clinic_id
 
-    -- [[ THE FIX ]] -----------------------------------------------------------
-    -- Subquery to pre-calculate discounts per invoice.
-    -- This prevents the "3 vs 4" duplicate row error.
+    -- Subquery to pre-calculate discounts per invoice (Prevents row duplication)
     LEFT JOIN (
         SELECT
             ii.invoice_id,
@@ -91,7 +93,7 @@ BEGIN
             -- Total for Revenue Calculation (Excludes OTHER_DISCOUNT)
             SUM(CASE
                 WHEN it.typeName IN ('DOCTOR_DISCOUNT', 'CLINIC_DISCOUNT') THEN ii.amount
-                ELSE 0 -- <--- 'OTHER_DISCOUNT' is ignored here
+                ELSE 0
             END) AS TotalTrackedDiscount
 
         FROM invoice_items ii
@@ -99,7 +101,6 @@ BEGIN
         WHERE ii.clinic_id = p_clinic_id
         GROUP BY ii.invoice_id
     ) AS ItemAgg ON inv.id = ItemAgg.invoice_id
-    -- -------------------------------------------------------------------------
 
     WHERE
         d.clinic_id = p_clinic_id

@@ -31,22 +31,22 @@ VALUES (
 INSERT INTO clinics
     (name, clinic_code, subdomain, email, mobile_no_1, mobile_no_2, landline_no, city, plan_code, status, subscription_ends_at, settings)
 VALUES (
-    'Health Plus Clinic',
-    'my-clinic-12345ww',
-    'healthplus',
-    'contact@healthplus.lk',
-    '+94777654321',
-    '+94771112222',  -- Second mobile added
-    NULL,
-    'Galle',
-    'PLAN_PRO',
+    'New Senara',
+    'new-senara-2026',
+    'newsenara',
+    'wijethunga.senarachannel@gmail.com',
+    '070 1 127 127',
+    null,  -- Second mobile added
+   '0452 271 271',
+    'Kahawatta',
+    'PLAN_ENTERPRISE',
     'ACTIVE',
     DATE_ADD(NOW(), INTERVAL 365 DAY),
     JSON_OBJECT(
         'currency', 'LKR',
         'timezone', 'Asia/Colombo',
-        'invoicePrefix', 'HP',
-        'taxRate', 8,
+        'invoicePrefix', 'NS',
+        'taxRate', 0,
         'language', 'en'
     )
 );
