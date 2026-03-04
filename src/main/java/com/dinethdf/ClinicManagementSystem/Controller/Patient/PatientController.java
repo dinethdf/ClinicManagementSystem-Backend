@@ -123,6 +123,13 @@ public class PatientController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
+    @PostMapping("details/temp-staff")
+    public ResponseEntity<ApiResponse<Patient>> saveTempPatientDetailsByStaff(@RequestBody Patient patient){
+        ApiResponse<Patient> response = patientServiceImpl.registerTempPatientByStaff(patient);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF')")
     @PostMapping("details/staff")
     public ResponseEntity<ApiResponse<Patient>> savePatientDetailsByStaff(@RequestBody Patient patient){
         ApiResponse<Patient> response = patientServiceImpl.registerPatientByStaff(patient);
