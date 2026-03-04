@@ -69,6 +69,9 @@ public class Patient extends CommonUserDetails {
     @Column(name = "insurance_id")
     private Integer insuranceId;
 
+    @Column(name = "isTemp", nullable = false)
+    private Boolean isTemp = false;
+
     // --- Helper methods ---
     public int getAge() {
         if (getDob() == null) return 0;

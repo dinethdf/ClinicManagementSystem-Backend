@@ -275,6 +275,60 @@ public class PatientServiceImpl implements PatientService {
 
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<Patient> registerTempPatientByStaff(Patient patient) {
+
+        patientValidator.validateTempPatientRegister(patient);
+
+        try {
+            patient.setClinicId(TenantContext.getCurrentTenant());
+
+            if (patient.getNic() != null && patient.getNic().trim().isEmpty()) {
+                patient.setNic(null);
+            }
+            if (patient.getEmail() != null && patient.getEmail().trim().isEmpty()) {
+                patient.setEmail(null);
+            }
+            if (patient.getAddress() != null && patient.getAddress().trim().isEmpty()) {
+                patient.setAddress(null);
+            }
+
+            if (patient.getDob() == null) {
+                patient.setDob(LocalDate.now());
+            }
+            if (patient.getFullName() == null || patient.getFullName().trim().isEmpty()) {
+                patient.setFullName(patient.getFirstName() + " " + patient.getLastName());
+            }
+
+            // 4. Default Settings
+            patient.setPatientNo(null);
+            patient.setIsActive(true);
+            patient.setIsApproved(true);
+            patient.setIsTemp(true);
+
+            // 5. Initial Save
+            Patient savedPatient = patientDetailsRepo.save(patient);
+
+            // 6. Generate Patient No and Update
+            String patientNo = generatePatientNo(savedPatient.getId());
+            savedPatient.setPatientNo(patientNo);
+
+            return ApiResponse.success(
+                    patientDetailsRepo.save(savedPatient),
+                    "Temporary patient registered successfully"
+            );
+
+        } catch (DataIntegrityViolationException e) {
+            String rootCauseMessage = e.getMostSpecificCause().getMessage();
+            handleDataIntegrityViolation(rootCauseMessage);
+            throw new ValidationException("Database Error", "Duplicate_Entry", null, HttpStatus.BAD_REQUEST);
+        } catch (Exception e){
+            System.out.println("Exception Level Error: " + e.getMessage());
+            throw new ValidationException("Server Error while registering temp patient", "SERVER_ERROR", null, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @Transactional
     public ApiResponse<Patient> registerPatientPublic(Patient patient) {
 
@@ -424,6 +478,10 @@ public class PatientServiceImpl implements PatientService {
 
             // Other
             existingPatient.setProfileImg(patientFromRequest.getProfileImg());
+
+            if (existingPatient.getIsTemp() != null && existingPatient.getIsTemp()) {
+                existingPatient.setIsTemp(false);
+            }
 
             Patient savedPatient = patientDetailsRepo.save(existingPatient);
             return ApiResponse.success(
