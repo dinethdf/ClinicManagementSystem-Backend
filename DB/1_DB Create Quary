@@ -693,3 +693,6 @@ CREATE TABLE patient_lab_requests (
     CONSTRAINT fk_lab_req_appt FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT,
     CONSTRAINT fk_lab_req_type FOREIGN KEY (lab_test_type_id) REFERENCES lab_test_types(id)
 ) ENGINE=InnoDB;
+
+
+ALTER TABLE patient ADD COLUMN isTemp TINYINT(1) NOT NULL DEFAULT 0 AFTER isActive;

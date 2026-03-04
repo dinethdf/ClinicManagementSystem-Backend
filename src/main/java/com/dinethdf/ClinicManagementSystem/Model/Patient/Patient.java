@@ -69,6 +69,9 @@ public class Patient extends CommonUserDetails {
     @Column(name = "insurance_id")
     private Integer insuranceId;
 
+    @Column(name = "isTemp", nullable = false)
+    private Boolean isTemp = false;
+
     // --- Helper methods ---
     public int getAge() {
         if (getDob() == null) return 0;
@@ -89,8 +92,12 @@ public class Patient extends CommonUserDetails {
     @PrePersist
     @PreUpdate
     private void sanitizeData() {
-        if (this.bloodGroup != null && this.bloodGroup.trim().isEmpty()) {
-            this.bloodGroup = null;
-        }
+        if (this.bloodGroup != null && this.bloodGroup.trim().isEmpty()) this.bloodGroup = null;
+        if (this.getNic() != null && this.getNic().trim().isEmpty()) this.setNic(null);
+        if (this.getEmail() != null && this.getEmail().trim().isEmpty()) this.setEmail(null);
+        if (this.landNo != null && this.landNo.trim().isEmpty()) this.landNo = null;
+        if (this.getAddress() != null && this.getAddress().trim().isEmpty()) this.setAddress(null);
+        if (this.emergencyContactMobile != null && this.emergencyContactMobile.trim().isEmpty()) this.emergencyContactMobile = null;
+        if (this.emergencyContactEmail != null && this.emergencyContactEmail.trim().isEmpty()) this.emergencyContactEmail = null;
     }
 }

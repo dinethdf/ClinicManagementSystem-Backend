@@ -139,5 +139,31 @@ public class PatientValidator {
             }
         }
     }
+
+    public void validateTempPatientRegister(Patient patient) {
+
+        if (patient.getFirstName() == null || patient.getFirstName().trim().length() < 3) {
+            throw new ValidationException("First name must be at least 3 characters.", "FIRSTNAME_INVALID", null, HttpStatus.BAD_REQUEST);
+        }
+
+        if (patient.getLastName() == null || patient.getLastName().trim().length() < 3) {
+            throw new ValidationException("Last name must be at least 3 characters.", "LASTNAME_INVALID", null, HttpStatus.BAD_REQUEST);
+        }
+
+        if (patient.getGender() == null) {
+            throw new ValidationException("Gender is required.", "GENDER_EMPTY", null, HttpStatus.BAD_REQUEST);
+        }
+
+        if (patient.getMobileNo() == null || !patient.getMobileNo().matches("^(?:0)?(7[0-9]{8})$|^\\d{10}$")) {
+            throw new ValidationException("Valid 10-digit mobile number is required.", "MOBILENO_INVALID", null, HttpStatus.BAD_REQUEST);
+        }
+
+        if (patient.getDob() != null && patient.getDob().isAfter(LocalDate.now())) {
+            throw new ValidationException("Date of Birth cannot be in the future.", "INVALID_DOB", null, HttpStatus.BAD_REQUEST);
+        }
+        if (patient.getNic() != null && !patient.getNic().trim().isEmpty() && patient.getNic().length() < 9) {
+            throw new ValidationException("NIC must be at least 9 characters.", "NIC_INVALID", null, HttpStatus.BAD_REQUEST);
+        }
+    }
 }
 

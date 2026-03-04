@@ -43,6 +43,9 @@ public interface PatientService {
      * Add patient details by staff/admin
      */
     ApiResponse<Patient> registerPatientByStaff(Patient requestDto);
+
+    ApiResponse<Patient> registerTempPatientByStaff(Patient patient);
+
     /**
      * Update patient details by staff/admin
      */
