@@ -450,6 +450,9 @@ public class PatientServiceImpl implements PatientService {
             existingPatient.setFullName(patientFromRequest.getFullName()); // Assuming this can be updated
             existingPatient.setDob(patientFromRequest.getDob());
 
+            existingPatient.setGuardian(patientFromRequest.getGuardian());
+            existingPatient.setRelationshipToGuardian(patientFromRequest.getRelationshipToGuardian());
+
             // Attributes (Enums/Integers)
             existingPatient.setEthnicity(patientFromRequest.getEthnicity());
             existingPatient.setGender(patientFromRequest.getGender());
@@ -458,8 +461,21 @@ public class PatientServiceImpl implements PatientService {
             existingPatient.setHeight(patientFromRequest.getHeight());
             existingPatient.setWeight(patientFromRequest.getWeight());
 
-            if (!existingPatient.isDependent()){
-                // Contact & Address
+            // ✅ FIX 2: Use if/else for cleaner logic
+            if (existingPatient.isDependent()) {
+                existingPatient.setNic(null);      // Throws away the "" from FE
+                existingPatient.setAddress(null);  // Throws away the "45 Lake Road" from FE
+                existingPatient.setCity(null);
+                existingPatient.setDistrict(null);
+                existingPatient.setEmail(null);
+                existingPatient.setLandNo(null);
+
+                // Safe check to inherit guardian mobile
+                if (existingPatient.getGuardian() != null && existingPatient.getGuardian().getMobileNo() != null) {
+                    existingPatient.setMobileNo(existingPatient.getGuardian().getMobileNo());
+                }
+            } else {
+                // Contact & Address for normal patients
                 existingPatient.setNic(patientFromRequest.getNic());
                 existingPatient.setAddress(patientFromRequest.getAddress());
                 existingPatient.setCity(patientFromRequest.getCity());
@@ -468,7 +484,6 @@ public class PatientServiceImpl implements PatientService {
                 existingPatient.setMobileNo(patientFromRequest.getMobileNo());
                 existingPatient.setLandNo(patientFromRequest.getLandNo());
             }
-
 
             // Emergency Contact
             existingPatient.setEmergencyContactName(patientFromRequest.getEmergencyContactName());
@@ -483,9 +498,11 @@ public class PatientServiceImpl implements PatientService {
                 existingPatient.setIsTemp(false);
             }
 
+            // ✅ FIX 3: Removed the double save() call
             Patient savedPatient = patientDetailsRepo.save(existingPatient);
+
             return ApiResponse.success(
-                    patientDetailsRepo.save(savedPatient),
+                    savedPatient,
                     messageSourceUtil.getMessage("patient.update.success")
             );
 
