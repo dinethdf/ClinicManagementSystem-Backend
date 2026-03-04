@@ -103,9 +103,14 @@ WHERE email = 'dineth@admin.com';
 INSERT INTO `userAuth` (`clinic_id`, `password`, `email`, `isEnable`, `role`, `detailsId`) VALUES
 (1, '$2a$12$WrwKqV6/IEkh0rIyLS9Xm.5uQ4N7/pm0M.P80whu/lExwvVwhui3K', 'test1@doctor.com', '1', '3', 1);
 
-INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district, 
-							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy ) 
-			VALUES ( 1, 1, 1, 'Dineth', 'Dilshan', 'D. Dilshan', 1, '2000-01-12', '809934567V', 'admin@clinic.com', '0711234567', '123, Galle Road', 'Colombo', 'Colombo',
+INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district,
+							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy )
+			VALUES ( 1, 1, 1, 'Dineth', 'Dilshan', 'D. Dilshan', 1, '2000-01-12', '809934522V', 'admin@clinic.com', '0711234567', '123, Galle Road', 'Colombo', 'Colombo',
+								NOW(),'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin', 'ACTIVE', 1, NOW(), 'Super Admin' );
+
+INSERT INTO clinic_staff ( id, clinic_id, auth_id, firstName, lastName, nameWithInitials, gender, dob, nic, email, mobileNo, address, city, district,
+							joinDate, profileImg, designation, status, isApproved, createdDate, createdBy )
+			VALUES ( 2, 1, 1, 'Admin', 'Senara', 'New Senara Admin', 1, '1998-01-12', '809934567V', 'admin@senara.com', '0711234567', '123, Kahawatta', 'Kahawatta', 'Rathnapura',
 								NOW(),'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'admin', 'ACTIVE', 1, NOW(), 'Super Admin' );
 
 -- 4. Specializations (Global)
