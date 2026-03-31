@@ -277,7 +277,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         ClinicStaffResponseDto staff = clinicStaffService.getStaffById(staffId);
 
-        String refundMethod = (cancelDTO.getRefundMethod() != null) ? cancelDTO.getRefundMethod() : "ORIGINAL_METHOD";
+        String refundMethod = (cancelDTO.getRefundMethod() != null) ? cancelDTO.getRefundMethod() : "CASH";
 
         Map<String, Object> result = appointmentRepo.sp_CancelAppointment(
                 TenantContext.getCurrentTenant(),

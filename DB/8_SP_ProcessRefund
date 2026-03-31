@@ -7,6 +7,7 @@ CREATE PROCEDURE sp_ProcessRefund(
     IN p_invoice_id INT,
     IN p_refund_amount DECIMAL(10,2),
     IN p_refund_category VARCHAR(20), -- 'DOCTOR' or 'CLINIC'
+    IN p_refund_method VARCHAR(20),   -- NEW: 'CASH', 'CARD', 'ORIGINAL_METHOD'
     IN p_reason VARCHAR(255),
     IN p_authorized_by VARCHAR(50),
     IN p_created_by VARCHAR(50),
@@ -20,6 +21,7 @@ proc_label: BEGIN
     DECLARE v_current_amount_paid DECIMAL(10, 2);
     DECLARE v_refund_item_type_id INT; -- Will hold ID 4 or 5
     DECLARE v_refunded_status_id INT;
+    DECLARE v_payment_method_id INT;   -- Holds the ID for CASH/CARD
     DECLARE v_now DATETIME;
 
     -- Error Handling
@@ -69,6 +71,12 @@ proc_label: BEGIN
 
     SELECT id INTO v_refunded_status_id FROM payment_status_lookup WHERE code = 'REFUNDED' LIMIT 1;
 
+    -- Lookup Payment Method ID safely (Fallback to CASH if not found)
+    SELECT id INTO v_payment_method_id FROM payment_method_lookup WHERE code = p_refund_method LIMIT 1;
+    IF v_payment_method_id IS NULL THEN
+        SELECT id INTO v_payment_method_id FROM payment_method_lookup WHERE code = 'CASH' LIMIT 1;
+    END IF;
+
     -- 3. Step A: Apply Negative Line Item
     -- This maps the refund to the specific Discount Type (Doctor vs Clinic)
     INSERT INTO invoice_items (
@@ -89,11 +97,11 @@ proc_label: BEGIN
     ) VALUES (
         p_clinic_id, p_invoice_id,
         (p_refund_amount * -1), -- Negative Payment
-        (SELECT id FROM payment_method_lookup WHERE code = 'CASH' LIMIT 1),
+        v_payment_method_id,    -- ID of the selected method (CASH, CARD, etc.)
         v_refunded_status_id,
         (SELECT id FROM payment_location_lookup WHERE code = 'CLINIC_COUNTER' LIMIT 1),
         p_authorized_by,
-        CONCAT('REF-', UUID_SHORT()),
+        CONCAT('RFD-', UUID_SHORT()),
         v_now, v_now, p_created_by
     );
 
@@ -110,11 +118,12 @@ proc_label: BEGIN
     WHERE id = p_invoice_id AND clinic_id = p_clinic_id;
 
     -- 6. Audit
+    -- Concatenated the method into the reason for better historical tracking
     INSERT INTO payment_audit_log (
         clinic_id, payment_id, invoice_id, actionType, newStatus, newAmount, reason, actionBy, actionDate
     ) VALUES (
         p_clinic_id, o_refund_id, p_invoice_id, 'REFUNDED', 'REFUNDED', p_refund_amount,
-        CONCAT(p_refund_category, ': ', p_reason), p_created_by, v_now
+        CONCAT(p_refund_category, ' (', p_refund_method, '): ', p_reason), p_created_by, v_now
     );
 
     SET o_status_message = 'REFUND_SUCCESS';

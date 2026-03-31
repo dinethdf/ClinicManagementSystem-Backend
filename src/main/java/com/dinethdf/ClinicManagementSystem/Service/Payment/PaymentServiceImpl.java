@@ -130,31 +130,40 @@ public class PaymentServiceImpl implements PaymentService {
         // --- 2. LOGIC ---
         String category = refundDTO.getRefundCategory().trim().toUpperCase();
 
-        Integer clinicId = TenantContext.getCurrentTenant();
-        String createdBy = "admin_user";
+        // Default to CASH if not provided
+        String method = refundDTO.getRefundMethod() != null ? refundDTO.getRefundMethod().trim().toUpperCase() : "CASH";
 
+        Integer clinicId = TenantContext.getCurrentTenant();
+        String createdBy = "admin_user"; // Or fetch from Auth context
+
+        // 3. Call DB Procedure
         Map<String, Object> spResult = paymentRepo.sp_ProcessRefund(
                 clinicId,
                 refundDTO.getInvoiceId(),
                 refundDTO.getAmount(),
                 category,
+                method, // NEW: Pass the method to the SP
                 refundDTO.getReason(),
                 refundDTO.getAuthorizedBy(),
                 createdBy
         );
 
-        // 4. Handle Result
+        // 4. Handle Result & Errors
         String statusMessage = (String) spResult.get("o_status_message");
 
         if (!"REFUND_SUCCESS".equals(statusMessage)) {
-            throw new ValidationException(
-                    "Refund Failed: " + statusMessage,
-                    "REFUND_ERROR",
+            // Map specific DB errors to user-friendly messages
+            String displayMessage = "Failed to process refund.";
+            if ("ERROR_INVOICE_NOT_FOUND".equals(statusMessage)) displayMessage = "Invoice not found.";
+            if ("ERROR_REFUND_EXCEEDS_PAYMENT".equals(statusMessage)) displayMessage = "Refund amount cannot exceed the total amount paid.";
+            if ("ERROR_INVALID_REFUND_CATEGORY".equals(statusMessage)) displayMessage = "Invalid refund category.";
+
+            throw new ValidationException( // Assuming you have a custom ValidationException/ApiError class
+                    displayMessage,
+                    statusMessage, // Error Code
                     HttpStatus.BAD_REQUEST
             );
         }
-
-        // ... existing error handling ...
     }
 
     @Transactional(readOnly = true)

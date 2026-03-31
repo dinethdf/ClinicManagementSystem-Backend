@@ -1,10 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.*;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientAuth;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserRole;
@@ -21,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class PatientServiceImpl implements PatientService {
@@ -44,6 +43,9 @@ public class PatientServiceImpl implements PatientService {
 
     @Autowired
     PatientValidator patientValidator;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public List<Patient> getAllPatients() {
@@ -170,59 +172,6 @@ public class PatientServiceImpl implements PatientService {
             );
         }
     }
-
-//    public Page<PatientListDTO> getPatientList(String search, Pageable pageable) {
-//        Specification<Patient> spec = (root, query, cb) -> {
-//            List<Predicate> predicates = new ArrayList<>();
-//
-//            // Multi-Tenant Filter
-//            predicates.add(cb.equal(root.get("clinicId"), TenantContext.getCurrentTenant()));
-//
-////            predicates.add(cb.isTrue(root.get("isActive")));
-//
-//            if (StringUtils.hasText(search)) {
-//                String searchLower = search.toLowerCase().trim();
-//                List<Predicate> searchPredicates = new ArrayList<>();
-//
-//                try {
-//                    Long searchId = Long.parseLong(search);
-//                    searchPredicates.add(cb.equal(root.get("id"), searchId));
-//                } catch (NumberFormatException ignored) {
-//
-//                }
-//
-//                searchPredicates.add(cb.like(cb.lower(root.get("fullName")), "%" + searchLower + "%"));
-//
-//                searchPredicates.add(cb.like(cb.lower(root.get("patientNo")), "%" + searchLower + "%"));
-//
-//                searchPredicates.add(cb.like(cb.lower(root.get("nic")), "%" + searchLower + "%"));
-//
-//                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
-//            }
-//
-//            return cb.and(predicates.toArray(new Predicate[0]));
-//        };
-//
-//
-//        Page<Patient> patients = patientDetailsRepo.findAll(spec, pageable);
-//
-//        return patients.map(this::convertToPatientListDTO);
-//    }
-//
-//    private PatientListDTO convertToPatientListDTO(Patient patient) {
-//
-//        return new PatientListDTO(
-//                patient.getId(),
-//                patient.getPatientNo(),
-//                patient.getFirstName(),
-//                patient.getLastName(),
-//                patient.getMobileNo(),
-//                patient.getNic(),
-//                patient.getGender(),
-//                patient.getAge(), // Your helper method in Patient entity
-//                patient.getIsActive()
-//        );
-//    }
 
     @Override
     @Transactional
@@ -376,54 +325,6 @@ public class PatientServiceImpl implements PatientService {
 
     }
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-
-    @Transactional
-    public void createPatientLogin(Long patientId) {
-        Integer clinicId = TenantContext.getCurrentTenant();
-
-        Patient patient = patientDetailsRepo.findById(patientId).orElseThrow(
-                () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
-        // 2. Validate Email
-        if (patient.getEmail() == null || patient.getEmail().trim().isEmpty()) {
-            throw new ValidationException("Patient does not have an email address. Please update patient profile first.", "EMAIL_REQUIRED", HttpStatus.BAD_REQUEST);
-        }
-
-        // 3. Check if Login already exists
-        if (patientAuthRepo.findByEmailAndClinicId(patient.getEmail(), clinicId) != null) {
-            throw new ValidationException("Login account already exists for this patient.", "ACCOUNT_EXISTS", HttpStatus.BAD_REQUEST);
-        }
-
-        // 4. Generate 5-Digit Temp Password
-        String tempPassword = String.valueOf((int) (Math.random() * 90000) + 10000); // 10000 to 99999
-
-        // 5. Create Patient Auth Entity
-        PatientAuth newAuth = new PatientAuth();
-        newAuth.setClinicId(clinicId);
-        newAuth.setEmail(patient.getEmail());
-        newAuth.setPassword(encoder.encode(tempPassword)); // Hash it
-        newAuth.setEnable(true); // Active by default
-        newAuth.setIsTempCredential(true);
-
-        UserRole patientRole = new UserRole();
-        patientRole.setId(4);
-        newAuth.setRole(patientRole);
-        newAuth.setDetailsId(patient.getId());
-
-        patientAuthRepo.save(newAuth);
-
-//        patient.set
-
-        // 6. Send Email
-        String subject = "Welcome to CureGuard - Your Login Details";
-        String htmlContent = "<h3>Welcome " + patient.getFirstName() + "!</h3>" +
-                "<p>Your patient portal account has been created.</p>" +
-                "<p><b>Username:</b> " + patient.getEmail() + "</p>" +
-                "<p><b>Temporary Password:</b> <span style='font-size: 16px; font-weight: bold; color: blue;'>" + tempPassword + "</span></p>" +
-                "<p>Please log in and change your password immediately.</p>";
-
-        emailService.sendHtmlEmail(patient.getEmail(), subject, htmlContent);
-    }
 
     @Override
     public ApiResponse<Patient> updatePatientByStaff(Integer id, Patient patientFromRequest) {
@@ -710,6 +611,144 @@ public class PatientServiceImpl implements PatientService {
                 searchValue.trim(),
                 TenantContext.getCurrentTenant()
         );
+    }
+
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+
+    @Override
+    public PatientLoginStatusDTO getPatientLoginStatus(Long patientId) {
+        Patient patient = validateAndGetPatient(patientId);
+
+        boolean emailOnFile = (patient.getEmail() != null && !patient.getEmail().trim().isEmpty());
+
+        // Check if PatientAuth exists
+        Optional<PatientAuth> authOpt = patientAuthRepo.findByDetailsIdAndClinicId(
+                patientId, TenantContext.getCurrentTenant()
+        );
+
+        if (authOpt.isPresent()) {
+            PatientAuth auth = authOpt.get();
+            String status = (auth.getEnable() != null && auth.getEnable()) ? "ACTIVE" : "DISABLED";
+            return new PatientLoginStatusDTO(true, emailOnFile, status);
+        }
+
+        return new PatientLoginStatusDTO(false, emailOnFile, null);
+    }
+
+    @Transactional
+    public void createPatientLogin(Long patientId) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        Patient patient = patientDetailsRepo.findById(patientId).orElseThrow(
+                () ->  new ValidationException(messageSourceUtil.getMessage("patient.not.found"),"PATIENT_NOT_FOUND"));
+        // 2. Validate Email
+        if (patient.getEmail() == null || patient.getEmail().trim().isEmpty()) {
+            throw new ValidationException("Patient does not have an email address. Please update patient profile first.", "EMAIL_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+
+        // 3. Check if Login already exists
+        if (patientAuthRepo.findByEmailAndClinicId(patient.getEmail(), clinicId) != null) {
+            throw new ValidationException("Login account already exists for this patient.", "ACCOUNT_EXISTS", HttpStatus.BAD_REQUEST);
+        }
+
+        // 4. Generate 5-Digit Temp Password
+        String tempPassword = String.valueOf((int) (Math.random() * 90000) + 10000); // 10000 to 99999
+
+        // 5. Create Patient Auth Entity
+        PatientAuth newAuth = new PatientAuth();
+        newAuth.setClinicId(clinicId);
+        newAuth.setEmail(patient.getEmail());
+        newAuth.setPassword(encoder.encode(tempPassword)); // Hash it
+        newAuth.setEnable(true); // Active by default
+        newAuth.setIsTempCredential(true);
+
+        UserRole patientRole = new UserRole();
+        patientRole.setId(4);
+        newAuth.setRole(patientRole);
+        newAuth.setDetailsId(patient.getId());
+
+        patientAuthRepo.save(newAuth);
+
+        String subject = "Welcome to CureGuard - Your Login Details";
+        String htmlContent = "<h3>Welcome " + patient.getFirstName() + "!</h3>" +
+                "<p>Your patient portal account has been created.</p>" +
+                "<p><b>Username:</b> " + patient.getEmail() + "</p>" +
+                "<p><b>Temporary Password:</b> <span style='font-size: 16px; font-weight: bold; color: blue;'>" + tempPassword + "</span></p>" +
+                "<p>Please log in and change your password immediately.</p>";
+
+        emailService.sendHtmlEmail(patient.getEmail(), subject, htmlContent);
+
+    }
+
+    // --- 3. TRIGGER PASSWORD RESET ---
+    @Transactional
+    @Override
+    public void triggerPasswordReset(Long patientId) {
+        Patient patient = validateAndGetPatient(patientId);
+
+        PatientAuth auth = patientAuthRepo.findByDetailsIdAndClinicId(
+                patientId, TenantContext.getCurrentTenant()
+        ).orElseThrow(() -> new ValidationException("Patient does not have a login account.", "NO_LOGIN", HttpStatus.BAD_REQUEST));
+
+        String newTempPassword = generateRandomPassword();
+        auth.setPassword(passwordEncoder.encode(newTempPassword));
+        auth.setIsTempCredential(true);
+
+        patientAuthRepo.save(auth);
+
+        String subject = "CureGuard - Password Reset Request";
+        String htmlContent = "<h3>Hello " + patient.getFirstName() + ",</h3>" +
+                "<p>A password reset was requested for your patient portal account.</p>" +
+                "<p><b>Username:</b> " + auth.getEmail() + "</p>" +
+                "<p><b>New Temporary Password:</b> <span style='font-size: 16px; font-weight: bold; color: blue;'>" + newTempPassword + "</span></p>" +
+                "<p>Please log in with this temporary password. You will be prompted to create a new, secure password immediately after logging in.</p>";
+
+        emailService.sendHtmlEmail(auth.getEmail(), subject, htmlContent);
+    }
+
+    // --- 4. TOGGLE LOGIN STATUS ---
+    @Transactional
+    @Override
+    public void togglePatientLoginStatus(Long patientId, String action) {
+        Patient patient = validateAndGetPatient(patientId);
+
+        PatientAuth auth = patientAuthRepo.findByDetailsIdAndClinicId(
+                patientId, TenantContext.getCurrentTenant()
+        ).orElseThrow(() -> new ValidationException("Patient does not have a login account.", "NO_LOGIN", HttpStatus.BAD_REQUEST));
+
+        if ("enable".equalsIgnoreCase(action)) {
+            auth.setEnable(true);
+        } else if ("disable".equalsIgnoreCase(action)) {
+            auth.setEnable(false);
+        } else {
+            throw new ValidationException("Invalid action. Use 'enable' or 'disable'.", "INVALID_ACTION", HttpStatus.BAD_REQUEST);
+        }
+
+        patientAuthRepo.save(auth);
+    }
+
+    // --- HELPER: Validate Tenant Access ---
+    private Patient validateAndGetPatient(Long patientId) {
+        Patient patient = patientDetailsRepo.findById(patientId)
+                .orElseThrow(() -> new ValidationException(messageSourceUtil.getMessage("patient.not.found"), "NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (!Objects.equals(patient.getClinicId(), TenantContext.getCurrentTenant())) {
+            throw new ValidationException(messageSourceUtil.getMessage("patient.not.found"), "NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+        return patient;
+    }
+
+    // --- HELPER: Generate Temp Password ---
+    private String generateRandomPassword() {
+        // Simple random 8 char generator (alphanumeric)
+        int length = 8;
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            int index = (int) (Math.random() * chars.length());
+            sb.append(chars.charAt(index));
+        }
+        return sb.toString();
     }
 
     private String generatePatientNo(Long id) {

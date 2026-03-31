@@ -19,7 +19,7 @@ public class PatientAuth {
     private Boolean isTempCredential;
 
     @Column(name = "clinic_id", nullable = false)
-    private Integer clinicId; // <--- ADD THIS
+    private Integer clinicId;
 
     public Integer getClinicId() { return clinicId; }
     public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
