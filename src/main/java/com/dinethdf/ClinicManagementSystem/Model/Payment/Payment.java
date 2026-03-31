@@ -46,7 +46,8 @@ import java.time.LocalDateTime;
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_clinic_id", type = Integer.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_invoice_id", type = Long.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_amount", type = BigDecimal.class),
-                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_category", type = String.class), // <--- Added
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_category", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_refund_method", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_reason", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_authorized_by", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_created_by", type = String.class),

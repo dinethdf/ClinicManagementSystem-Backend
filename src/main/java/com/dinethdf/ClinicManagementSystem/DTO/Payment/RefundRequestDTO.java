@@ -9,5 +9,6 @@ public class RefundRequestDTO {
     private BigDecimal amount;
     private String reason;
     private String authorizedBy;
-    private String refundCategory; // "DOCTOR" or "CLINIC"
+    private String refundCategory;
+    private String refundMethod; // NEW FIELD
 }
