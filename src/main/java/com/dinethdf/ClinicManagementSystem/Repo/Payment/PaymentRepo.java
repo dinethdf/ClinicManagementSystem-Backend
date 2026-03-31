@@ -35,6 +35,7 @@ public interface PaymentRepo extends JpaRepository<Payment, Long> {
             @Param("p_invoice_id") Long invoiceId,
             @Param("p_refund_amount") BigDecimal refundAmount,
             @Param("p_refund_category") String refundCategory,
+            @Param("p_refund_method") String refundMethod,
             @Param("p_reason") String reason,
             @Param("p_authorized_by") String authorizedBy,
             @Param("p_created_by") String createdBy

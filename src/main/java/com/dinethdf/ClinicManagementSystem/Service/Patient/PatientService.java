@@ -2,10 +2,7 @@ package com.dinethdf.ClinicManagementSystem.Service.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.DTO.ClinicStaff.ClinicStaffResponseDto;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.*;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -68,4 +65,15 @@ public interface PatientService {
     Long findExistingPatientIdByNic(String nic);
 
     List<PatientResponseDTO> checkPatientExistence(String searchValue);
+
+    // --- 1. GET LOGIN STATUS ---
+    PatientLoginStatusDTO getPatientLoginStatus(Long patientId);
+
+    // --- 3. TRIGGER PASSWORD RESET ---
+    @Transactional
+    void triggerPasswordReset(Long patientId);
+
+    // --- 4. TOGGLE LOGIN STATUS ---
+    @Transactional
+    void togglePatientLoginStatus(Long patientId, String action);
 }

@@ -66,12 +66,12 @@ public class PatientValidator {
             if (patient.getAddress() == null || patient.getAddress().length() < 5) {
                 throw new ValidationException("Address must be at least 5 characters.", "ADDRESS_INVALID", null, HttpStatus.BAD_REQUEST);
             }
-            if (patient.getCity() == null || patient.getCity().trim().isEmpty()) {
-                throw new ValidationException("City is required.", "CITY_REQUIRED", null, HttpStatus.BAD_REQUEST);
-            }
-            if (patient.getDistrict() == null || patient.getDistrict().trim().isEmpty()) {
-                throw new ValidationException("District is required.", "DISTRICT_REQUIRED", null, HttpStatus.BAD_REQUEST);
-            }
+//            if (patient.getCity() == null || patient.getCity().trim().isEmpty()) {
+//                throw new ValidationException("City is required.", "CITY_REQUIRED", null, HttpStatus.BAD_REQUEST);
+//            }
+//            if (patient.getDistrict() == null || patient.getDistrict().trim().isEmpty()) {
+//                throw new ValidationException("District is required.", "DISTRICT_REQUIRED", null, HttpStatus.BAD_REQUEST);
+//            }
         }
     }
 

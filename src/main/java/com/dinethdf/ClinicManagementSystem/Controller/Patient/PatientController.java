@@ -1,10 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Patient;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.GuardianResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientListDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Patient.PatientSimpleResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Patient.*;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
@@ -176,6 +173,41 @@ public class PatientController {
         ));
     }
 
+
+    // 1. Get Login Status
+    @GetMapping("/{patientId}/login-status")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<PatientLoginStatusDTO>> getLoginStatus(@PathVariable Long patientId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                patientServiceImpl.getPatientLoginStatus(patientId),
+                "Status retrieved successfully"
+        ));
+    }
+
+    // 3. Trigger Password Reset
+    @PostMapping("/{patientId}/password-reset")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<String>> triggerPasswordReset(@PathVariable Long patientId) {
+        patientServiceImpl.triggerPasswordReset(patientId);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password reset link has been sent to the patient's email.",
+                "SUCCESS"
+        ));
+    }
+
+    // 4. Toggle Login Status (Enable/Disable)
+    @PostMapping("/{patientId}/toggle-login")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<String>> toggleLoginStatus(
+            @PathVariable Long patientId,
+            @RequestParam String action) { // action = "enable" or "disable"
+
+        patientServiceImpl.togglePatientLoginStatus(patientId, action);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Patient login has been " + action + "d.",
+                "SUCCESS"
+        ));
+    }
 //    @PreAuthorize("hasAnyAuthority('PATIENT')")
 //    @PostMapping("details/self")
 //    public ResponseEntity<ApiResponse<PatientDetails>> savePatientDetailsBySelf(@RequestBody PatientDetails patientDetails){
