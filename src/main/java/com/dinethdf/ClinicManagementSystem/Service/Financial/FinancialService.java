@@ -32,20 +32,50 @@ public class FinancialService {
     }
 
     private ScheduleFinancialDTO mapToDTO(ScheduleFinancialProjection proj) {
-        return new ScheduleFinancialDTO(
-                proj.getAppointmentID(),
-                proj.getQueueNo(),
-                proj.getPatientName(),
-                proj.getPatientMobile(),
-                proj.getInvoiceID(),
-                proj.getPaymentStatus(),
-                proj.getBaseDoctorFee(),
-                proj.getBaseClinicFee(),
-                proj.getDoctorDiscountAmount(),
-                proj.getNetDoctorPayout(),
-                proj.getClinicDiscountAmount(),
-                proj.getNetClinicProfit(),
-                proj.getTotalPaidByPatient()
-        );
+        return ScheduleFinancialDTO.builder()
+                // 1. Appointment & Patient Details
+                .appointmentId(proj.getAppointmentID())
+                .queueNo(proj.getQueueNo())
+                .patientName(proj.getPatientName())
+                .patientMobile(proj.getPatientMobile())
+                .invoiceId(proj.getInvoiceID())
+
+                // 2. Status Information
+                .paymentStatus(proj.getPaymentStatus())
+                .paymentStatusCode(proj.getPaymentStatusCode())
+                .paymentStatusColor(proj.getPaymentStatusColor())
+                .appointmentStatus(proj.getAppointmentStatus())
+                .appointmentStatusCode(proj.getAppointmentStatusCode())
+                .appointmentStatusColor(proj.getAppointmentStatusColor())
+
+                // 3. Base Fees
+                .baseDoctorFee(proj.getBaseDoctorFee())
+                .baseClinicFee(proj.getBaseClinicFee())
+
+                // 4. Doctor Side Calculations
+                .doctorDiscountAmount(proj.getDoctorDiscountAmount())
+                .netDoctorPayout(proj.getNetDoctorPayout())
+
+                // 5. Clinic Side Calculations
+                .clinicDiscountAmount(proj.getClinicDiscountAmount())
+                .netClinicProfit(proj.getNetClinicProfit())
+
+                // 6. Total Bill & Payment Tracking
+                .subtotalAmount(proj.getSubtotalAmount())
+                .totalDiscount(proj.getTotalDiscount())
+                .totalPaidByPatient(proj.getTotalPaidByPatient())
+                .amountPaid(proj.getAmountPaid())
+                .balanceRemaining(proj.getBalanceRemaining())
+                .paymentDueDate(proj.getPaymentDueDate())
+                .paymentPercentage(proj.getPaymentPercentage())
+
+                // 7. Last Payment Details
+                .lastPaymentMethod(proj.getLastPaymentMethod())
+                .lastPaymentMethodCode(proj.getLastPaymentMethodCode())
+                .lastPaymentLocation(proj.getLastPaymentLocation())
+                .lastPaymentDate(proj.getLastPaymentDate())
+                .totalPayments(proj.getTotalPayments())
+
+                .build();
     }
 }

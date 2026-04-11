@@ -21,6 +21,9 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
 
+    @Query("SELECT a FROM Appointment a WHERE a.doctorSchedule.id = :scheduleId AND a.status.code = 'ONGOING' AND a.clinicId = :clinicId")
+    List<Appointment> findOngoingAppointmentsForSchedule(@Param("scheduleId") Long scheduleId, @Param("clinicId") Integer clinicId);
+
     @Procedure(name = "Appointment.spBookAppointment")
     Map<String, Object> sp_BookAppointment(
             @Param("p_clinic_id") Integer clinicId,

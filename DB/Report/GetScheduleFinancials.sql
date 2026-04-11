@@ -15,6 +15,7 @@ BEGIN
         p.mobileNo AS PatientMobile,
         inv.id AS InvoiceID,
 
+        -- Payment status
         inv_status.displayName AS PaymentStatus,
         inv_status.code AS PaymentStatusCode,
         inv_status.colorCode AS PaymentStatusColor,
@@ -24,7 +25,7 @@ BEGIN
         appt_status.code AS AppointmentStatusCode,
         appt_status.colorCode AS AppointmentStatusColor,
 
-        -- 2. Base Fees (Zeroed out if cancelled so it doesn't mess up frontend totals)
+        -- 2. Base Fees (Zeroed if cancelled)
         CASE WHEN appt_status.code = 'CANCELLED' THEN 0 ELSE ds.doctorFee END AS BaseDoctorFee,
         CASE WHEN appt_status.code = 'CANCELLED' THEN 0 ELSE ds.clinicFee END AS BaseClinicFee,
 
@@ -55,7 +56,7 @@ BEGIN
             ELSE 0
         END AS PaymentPercentage,
 
-        -- 6. Last Payment Details (Includes Refunds now)
+        -- 6. Last Payment Details
         LastPayment.LastPaymentMethod,
         LastPayment.LastPaymentMethodCode,
         LastPayment.LastPaymentLocation,
@@ -79,7 +80,7 @@ BEGIN
     LEFT JOIN invoice_items ii ON inv.id = ii.invoice_id AND ii.clinic_id = p_clinic_id
     LEFT JOIN item_types it ON ii.item_type_id = it.id
 
-    -- [ARCHITECT FIX]: Lightning fast window function for latest payment/refund data
+    -- [ARCHITECT FIX 1]: Pre-Filter the Last Payment Window Function
     LEFT JOIN (
         SELECT
             pay.invoice_id,
@@ -93,13 +94,18 @@ BEGIN
         INNER JOIN payment_status_lookup ps ON pay.paymentStatusId = ps.id
         LEFT JOIN payment_method_lookup pm ON pay.paymentMethodId = pm.id
         LEFT JOIN payment_location_lookup pl ON pay.paymentLocationId = pl.id
-        WHERE pay.clinic_id = p_clinic_id AND ps.code IN ('COMPLETED', 'REFUNDED')
+        WHERE pay.clinic_id = p_clinic_id
+          AND ps.code IN ('COMPLETED', 'REFUNDED')
+          -- PRE-FILTER: Only look at payments for THIS schedule's invoices
+          AND pay.invoice_id IN (
+              SELECT invoice_id FROM appointments
+              WHERE doctor_schedule_id = input_schedule_id AND clinic_id = p_clinic_id AND invoice_id IS NOT NULL
+          )
     ) AS LastPayment ON inv.id = LastPayment.invoice_id AND LastPayment.rn = 1
 
     WHERE
         appt.doctor_schedule_id = input_schedule_id
         AND appt.clinic_id = p_clinic_id
-        -- The "!= 'CANCELLED'" filter is fully removed here.
 
     GROUP BY
         appt.id, appt.queuePosition, p.firstName, p.lastName, p.mobileNo, inv.id,
