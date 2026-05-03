@@ -81,7 +81,7 @@ VALUES (
 -- That's it! Everything else is in code.
 
 -- 2. Master Roles
-INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'USER'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF'), (6, 'SUPERADMIN');
+INSERT INTO user_role (id, name) VALUES (1, 'ADMIN'), (2, 'CO-ADMIN'), (3, 'DOCTOR'), (4, 'PATIENT'), (5, 'STAFF'),(6, 'RECEPTION'),(7, 'NURSE'), (8, 'SUPER-ADMIN');
 
 -- 3. Users (Linked to Clinic 1)
 -- Note: clinic_id = 1 added to all auth records

@@ -10,9 +10,22 @@ import java.util.Collections;
 public class PatientPrincipal implements UserDetails {
 
     private PatientAuth patientAuth;
-
     private String planCode;
 
+    // ✅ ADDED - new fields
+    private String username;
+    private String role;
+    private Integer clinicId;
+    private Long patientDetailsId;
+
+    // ✅ ADDED - empty constructor for JWT flow
+    public PatientPrincipal() {}
+
+    // ✅ ADDED - setters for new fields
+    public void setUsername(String username) { this.username = username; }
+    public void setRole(String role) { this.role = role; }
+    public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
+    public void setPatientDetailsId(Long patientDetailsId) { this.patientDetailsId = patientDetailsId; }
 
     public String getPlanCode() {
         return planCode;
@@ -28,12 +41,12 @@ public class PatientPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return Collections.singleton(new SimpleGrantedAuthority(Role.ADMIN.name()));
-         return Collections.singleton(new SimpleGrantedAuthority(patientAuth.getRole().getName()));
+        // ✅ CHANGED - handle both cases
+        String roleName = (patientAuth != null) ? patientAuth.getRole().getName() : this.role;
+        return Collections.singleton(new SimpleGrantedAuthority(roleName));
     }
 
-
-//    public String getName() {
+    //    public String getName() {
 //        return user.getName();
 //    }
 //
@@ -42,17 +55,17 @@ public class PatientPrincipal implements UserDetails {
     }
 
     public Integer getClinicId() {
-        return patientAuth.getClinicId();
+        return (patientAuth != null) ? patientAuth.getClinicId() : this.clinicId; // ✅ CHANGED
     }
 
     @Override
     public String getPassword() {
-        return patientAuth.getPassword();
+        return (patientAuth != null) ? patientAuth.getPassword() : null; // ✅ CHANGED
     }
 
     @Override
     public String getUsername() {
-        return patientAuth.getEmail();
+        return (patientAuth != null) ? patientAuth.getEmail() : this.username; // ✅ CHANGED
     }
 
     @Override
@@ -61,7 +74,7 @@ public class PatientPrincipal implements UserDetails {
     }
 
     public Long getPatientDetailsId() {
-        return patientAuth.getDetailsId();
+        return (patientAuth != null) ? patientAuth.getDetailsId() : this.patientDetailsId; // ✅ CHANGED
     }
 
     @Override
@@ -76,6 +89,6 @@ public class PatientPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return patientAuth.getEnable();
+        return (patientAuth != null) ? patientAuth.getEnable() : true; // ✅ CHANGED
     }
 }

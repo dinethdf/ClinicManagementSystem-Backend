@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.config.AuthConfig;
 
+import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientPrincipal;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
@@ -53,22 +54,35 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails;
 
-            if ("PATIENT".equals(role)) {
-                userDetails = context.getBean(PatientDetailsService.class).loadUserByUsername(username);
-            } else {
-                userDetails = context.getBean(UserDetailsService.class).loadUserByUsername(username);
-            }
+            if (jwtService.isRouteValidateToken(token)) {
 
-            if (jwtService.validateToken(token, userDetails)) {
+                Long detailsId = jwtService.extractUserDetailsId(token);
 
-                if (userDetails instanceof UserPrincipal) {
-                    UserPrincipal principal = (UserPrincipal) userDetails;
-                    principal.setPlanCode(planCode);
+                UserDetails principal;
+
+                if ("PATIENT".equals(role)) {
+                    PatientPrincipal patient = new PatientPrincipal();
+                    patient.setUsername(username);
+                    patient.setRole(role);
+                    patient.setClinicId(clinicId);
+                    patient.setPatientDetailsId(detailsId);
+                    patient.setPlanCode(planCode);
+                    principal = patient;
+                } else {
+                    UserPrincipal user = new UserPrincipal();
+                    user.setUsername(username);
+                    user.setRole(role);
+                    user.setClinicId(clinicId);
+                    user.setUserDetailsId(detailsId);
+                    user.setPlanCode(planCode);
+                    principal = user;
                 }
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                principal, null, principal.getAuthorities()
+                        );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

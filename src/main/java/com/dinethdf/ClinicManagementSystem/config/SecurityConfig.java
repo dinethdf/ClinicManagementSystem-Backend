@@ -64,6 +64,7 @@ public class SecurityConfig {
                          .requestMatchers("/api/patient/**").hasAnyAuthority("ADMIN", "USER", "PATIENT", "STAFF", "DOCTOR")
 
                          .requestMatchers("/api/auth/staff/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                         .requestMatchers("/api/roles/**").hasAnyAuthority("ADMIN", "SUPER-ADMIN")
                          .requestMatchers("/api/auth/patient/**").hasAnyAuthority("PATIENT")
                          .requestMatchers("/api/staff/**").hasAnyAuthority("ADMIN")
                          .requestMatchers("/api/doctor/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
@@ -88,6 +89,8 @@ public class SecurityConfig {
                          .requestMatchers("/api/queue/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
 
                          .requestMatchers("/api/clinic/info/**").authenticated()
+                         .requestMatchers("/api/clinic/settings/**").hasAnyAuthority("ADMIN")
+
                  )
                  .httpBasic(Customizer.withDefaults())
                  .sessionManagement(session ->

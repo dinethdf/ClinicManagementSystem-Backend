@@ -11,6 +11,8 @@ import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -30,6 +36,45 @@ public class ClinicServiceImpl implements ClinicService {
         this.clinicRepository = clinicRepository;
     }
 
+    @Cacheable(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    public String getCurrentEncryptedSecrets() {
+        Clinic clinic = getCurrentClinicEntity();
+
+        // This automatically decrypts the NEW column using the AES converter
+        return clinic.getEncryptedSecrets();
+    }
+
+    @CacheEvict(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    public void updateEncryptedSecrets(Map<String, String> incomingSecrets) {
+        Clinic clinic = getCurrentClinicEntity();
+
+        // 1. Get the current secrets (This string is automatically decrypted by your Converter)
+        String existingSecretsJson = clinic.getEncryptedSecrets();
+
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> mergedSecrets = new HashMap<>();
+
+        try {
+            // 2. If secrets already exist, parse them into our Map
+            if (existingSecretsJson != null && !existingSecretsJson.trim().isEmpty()) {
+                mergedSecrets = mapper.readValue(existingSecretsJson, new TypeReference<Map<String, String>>() {});
+            }
+
+            // 3. MERGE THE DATA!
+            // .putAll() will add brand new keys, and overwrite existing keys with the same name.
+            mergedSecrets.putAll(incomingSecrets);
+
+            // 4. Convert the merged map back to a plain JSON string
+            String finalJsonString = mapper.writeValueAsString(mergedSecrets);
+
+            // 5. Save it! (Hibernate will automatically encrypt finalJsonString before it hits MySQL)
+            clinic.setEncryptedSecrets(finalJsonString);
+            clinicRepository.save(clinic);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to merge secure vault data", e);
+        }
+    }
 
     @Override
     public ClinicResponseDTO getCurrentClinicDetails() {
