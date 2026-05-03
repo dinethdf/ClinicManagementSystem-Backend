@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-
 
 @Service
 public class EmailService {
@@ -16,45 +15,89 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendOtpEmail(String toEmail, String otp) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("your-email@gmail.com"); // Configure in properties
-            message.setTo(toEmail);
-            message.setSubject("CureGuard Verification Code");
-            message.setText("Your verification code is: " + otp + "\n\nThis code expires in 3 minutes.");
+    private static final int MAX_RETRIES = 3;
 
-            mailSender.send(message);
-            System.out.println("Email sent to " + toEmail);
-        } catch (Exception e) {
-            System.err.println("Failed to send email: " + e.getMessage());
+    @Async("emailTaskExecutor")
+    public void sendOtpEmail(String toEmail, String otp) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom("your-email@gmail.com");
+                message.setTo(toEmail);
+                message.setSubject("CureGuard Verification Code");
+                message.setText("Your verification code is: " + otp
+                        + "\n\nThis code expires in 3 minutes."
+                        + "\n\nDo not share this code with anyone.");
+                mailSender.send(message);
+
+                System.out.println("OTP Email sent to " + toEmail);
+                return; // ✅ Success — exit
+
+            } catch (Exception e) {
+                System.err.println("OTP email attempt " + attempt
+                        + " failed for " + toEmail + " : " + e.getMessage());
+
+                if (attempt == MAX_RETRIES) {
+                    System.err.println("All retries failed for OTP email: " + toEmail);
+                }
+            }
         }
     }
 
+    @Async("emailTaskExecutor")
     public void sendHtmlEmail(String to, String subject, String htmlContent) {
-        try {
-            // 1. Create a MIME message
-            MimeMessage message = mailSender.createMimeMessage();
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            // 2. Create the helper.
-            // The 'true' flag indicates multipart (needed for HTML)
-            // "UTF-8" ensures symbols like currency (£) or emojis display correctly
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setFrom("your-email@gmail.com");
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(htmlContent, true); // true = HTML
 
-            helper.setTo(to);
-            helper.setSubject(subject);
+                mailSender.send(message);
 
-            // 3. Set the content to HTML
-            helper.setText(htmlContent, true);
+                System.out.println("HTML Email sent to " + to);
+                return; // ✅ Success — exit
 
-            // 4. Send
-            mailSender.send(message);
+            } catch (MessagingException e) {
+                System.err.println("HTML email attempt " + attempt
+                        + " failed for " + to + " : " + e.getMessage());
 
-        } catch (MessagingException e) {
-            // Handle the error (log it)
-            System.err.println("Failed to send HTML email to " + to);
-            e.printStackTrace();
-            // Optional: Throw a custom exception if you want the transaction to rollback
+                if (attempt == MAX_RETRIES) {
+                    System.err.println("All retries failed for HTML email: " + to);
+                }
+            }
+        }
+    }
+
+// Add this method to your existing EmailService.java
+// This is called when we are ALREADY in a background thread (@Async)
+// So we don't need @Async again — just send directly
+
+    public void sendHtmlEmailSync(String to, String subject, String htmlContent) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+                helper.setFrom("your-email@gmail.com");
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(htmlContent, true);
+
+                mailSender.send(message);
+                System.out.println("HTML Email sent to " + to);
+                return; // ✅ Success
+
+            } catch (MessagingException e) {
+                System.err.println("HTML email attempt " + attempt
+                        + " failed for " + to + " : " + e.getMessage());
+                if (attempt == MAX_RETRIES) {
+                    System.err.println("All retries failed for HTML email: " + to);
+                }
+            }
         }
     }
 }

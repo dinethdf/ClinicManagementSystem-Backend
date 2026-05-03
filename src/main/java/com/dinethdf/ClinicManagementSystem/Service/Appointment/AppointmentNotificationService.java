@@ -5,11 +5,11 @@ import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
 
 @Service
 public class AppointmentNotificationService {
@@ -20,51 +20,50 @@ public class AppointmentNotificationService {
     @Autowired
     private EmailService emailService;
 
+    @Async("emailTaskExecutor")
     @Transactional(readOnly = true)
-    public void sendBookingConfirmation(Long appointmentId, String recipientEmail) {
+    public void sendBookingConfirmation(Long appointmentId, String recipientEmail, Integer clinicId) {
 
-        // 1. Fetch details
-        AppointmentFullDetailsDTO details = appointmentRepo.findAppointmentFullDetails(appointmentId, TenantContext.getCurrentTenant())
-                .orElse(null);
+        // Set tenant inside this thread — safe because clinicId passed as parameter
+        TenantContext.setCurrentTenant(clinicId);
 
-        if (details == null) {
-            System.err.println("Error: Could not find appointment details for  : " + appointmentId);
-            return;
+        try {
+            // 1. Fetch details
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Error: Could not find appointment details for: " + appointmentId);
+                return;
+            }
+
+            // 2. Calculate Fees
+            BigDecimal doctorFee = details.getDoctorFee() != null ? details.getDoctorFee() : BigDecimal.ZERO;
+            BigDecimal clinicFee = details.getClinicFee() != null ? details.getClinicFee() : BigDecimal.ZERO;
+            BigDecimal totalFee = doctorFee.add(clinicFee);
+
+            // 3. Format Date/Time
+            String formattedDate = details.getScheduleDate().toString();
+            String formattedTime = details.getStartTime() + " - " + details.getEndTime();
+
+            // 4. Generate HTML
+            String emailBody = generateHtmlTemplate(details, formattedDate, formattedTime, doctorFee, clinicFee, totalFee);
+
+            // 5. Send — emailService.sendHtmlEmail is also @Async
+            // But since we are already in a background thread, call directly
+            // to avoid double-async confusion
+            emailService.sendHtmlEmailSync(recipientEmail, "Booking Confirmation - CureGuard", emailBody);
+
+            System.out.println("Confirmation email sent to " + recipientEmail);
+
+        } finally {
+            TenantContext.clear(); // ✅ Always clear tenant after done
         }
-
-        // 2. Calculate Fees
-        BigDecimal doctorFee = details.getDoctorFee() != null ? details.getDoctorFee() : BigDecimal.ZERO;
-        BigDecimal clinicFee = details.getClinicFee() != null ? details.getClinicFee() : BigDecimal.ZERO;
-        BigDecimal totalFee = doctorFee.add(clinicFee);
-
-        // 3. Format Dates/Times for display
-        // Assuming details.getScheduleDate() is a LocalDate or Date.
-        // Adjust formatting pattern as needed.
-        String formattedDate = details.getScheduleDate().toString();
-        String formattedTime = details.getStartTime() + " - " + details.getEndTime();
-
-        // 4. Generate HTML Body
-        String emailBody = generateHtmlTemplate(details, formattedDate, formattedTime, doctorFee, clinicFee, totalFee);
-
-        // 5. Send Email
-        // NOTE: Ensure your emailService.sendOtpEmail implementation sets "isHtml" to true!
-        emailService.sendHtmlEmail(
-                recipientEmail,
-                "Booking Confirmation - CureGuard",
-                emailBody
-        );
-
-        System.out.println("Confirmation email sent to " + recipientEmail);
     }
 
     private String generateHtmlTemplate(AppointmentFullDetailsDTO details, String date, String time,
                                         BigDecimal doctorFee, BigDecimal clinicFee, BigDecimal totalFee) {
-
-        // Colors extracted from your image:
-        // Dark Blue: #003366 (Header text)
-        // Table Header Blue: #0f4c81
-        // Light Blue Background: #eef6ff (Totals section)
-
         return String.format("""
             <!DOCTYPE html>
             <html>
@@ -75,26 +74,20 @@ public class AppointmentNotificationService {
                     .header { text-align: center; margin-bottom: 30px; }
                     .header h1 { color: #003366; margin: 0; font-size: 28px; letter-spacing: 1px; }
                     .contact-info { text-align: center; color: #666; font-size: 12px; margin-top: 10px; }
-                    /* Grid for Details */
                     .details-grid { width: 100%%; margin-bottom: 30px; }
                     .details-grid td { vertical-align: top; padding-bottom: 10px; }
                     .label { font-weight: bold; color: #003366; font-size: 14px; margin-bottom: 5px; display: block;}
                     .value { color: #333; font-size: 14px; line-height: 1.5; }
-
                     .section-title { color: #003366; font-size: 18px; font-weight: bold; text-transform: uppercase; text-align: right; margin-bottom: 15px;}
-
-                    /* Fee Table */
                     .fee-table { width: 100%%; border-collapse: collapse; margin-top: 20px; }
                     .fee-table th { background-color: #0f4c81; color: #ffffff; padding: 12px; text-align: left; font-size: 14px; }
                     .fee-table td { padding: 12px; border-bottom: 1px solid #eee; color: #333; font-size: 14px; }
                     .total-row td { background-color: #eef6ff; font-weight: bold; color: #003366; border-top: 2px solid #0f4c81; }
-
                     .footer { margin-top: 40px; font-size: 12px; color: #888; text-align: center; line-height: 1.6; }
                 </style>
             </head>
             <body>
                 <div class="container">
-
                     <div class="header">
                         <img src="https://cdn-icons-png.flaticon.com/512/3063/3063176.png" width="50" alt="Logo" style="margin-bottom: 10px;">
                         <h1>CureGuard Medical Center</h1>
@@ -103,7 +96,6 @@ public class AppointmentNotificationService {
                         </div>
                         <hr style="border: 0; border-top: 2px solid #aecfea; margin-top: 20px;">
                     </div>
-
                     <table class="details-grid">
                         <tr>
                             <td width="60%%">
@@ -126,7 +118,6 @@ public class AppointmentNotificationService {
                             </td>
                         </tr>
                     </table>
-
                     <table class="fee-table">
                         <thead>
                             <tr>
@@ -152,27 +143,22 @@ public class AppointmentNotificationService {
                             </tr>
                         </tbody>
                     </table>
-
                     <div class="footer">
                         <p><strong>Important Note:</strong> Please arrive 15 minutes prior to your scheduled time.<br>
                         Bring this email or your reference ID #%d to the reception desk.</p>
                         <p>Thank you for trusting CureGuard with your health.</p>
                     </div>
-
                 </div>
             </body>
             </html>
             """,
-                date,
-                time,
+                date, time,
                 details.getQueuePosition(),
                 details.getDoctorName(),
                 details.getSpecialization(),
                 details.getId(),
                 details.getPatientName(),
-                doctorFee,
-                clinicFee,
-                totalFee,
+                doctorFee, clinicFee, totalFee,
                 details.getId()
         );
     }
