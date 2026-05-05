@@ -23,7 +23,9 @@ public class CacheConfig {
     // 2. The Manager Bean: Connects Caffeine to Spring Boot's @Cacheable system
     @Bean
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("clinicSecretsCache");
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager(
+                "clinicSecretsCache",
+                "clinicDetailsCache");
         caffeineCacheManager.setCaffeine(caffeine);
         return caffeineCacheManager;
     }

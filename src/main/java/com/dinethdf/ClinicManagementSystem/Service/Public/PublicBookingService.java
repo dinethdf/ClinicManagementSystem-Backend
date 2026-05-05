@@ -144,6 +144,14 @@ public class PublicBookingService {
             );
         }
 
+        if (request.getMobileNo() != null && !request.getMobileNo().isEmpty()) {
+            appointmentNotificationService.sendBookingSms(
+                    newAppointmentId,
+                    request.getMobileNo(),
+                    clinicId
+            );
+        }
+
         return ApiResponse.success(
                 newAppointmentId,
                 "Appointment booked successfully."
