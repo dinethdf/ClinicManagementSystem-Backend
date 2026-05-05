@@ -9,8 +9,10 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "payments", indexes = {
-        @Index(name = "idx_payment_clinic", columnList = "clinic_id"),
-        @Index(name = "idx_payment_status", columnList = "paymentStatusId")
+        @Index(name = "idx_status_lookup", columnList = "clinic_id, paymentStatusId"),
+        @Index(name = "idx_received_by_staff", columnList = "clinic_id, receivedByStaffId"),
+        @Index(name = "idx_payment_gateway", columnList = "paymentGateway, paymentStatusId"),
+        @Index(name = "idx_expires_lookup", columnList = "expiresAt, paymentStatusId")
 })
 @NamedStoredProcedureQuery(
         name = "Payment.sp_AppointmentPaymentProcess",

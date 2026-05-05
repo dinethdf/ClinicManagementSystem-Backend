@@ -125,6 +125,11 @@ public class JWTService {
         return extractClaim(token, claims -> claims.get("planeCode", String.class)); // custom claim
     }
 
+    // ✅ ADD this one method — everything else stays the same
+    public Long extractUserDetailsId(String token) {
+        return extractClaim(token, claims -> claims.get("userDetailsId", Long.class));
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
         final Claims claims = extractAllClaims(token);
         return claimResolver.apply(claims);

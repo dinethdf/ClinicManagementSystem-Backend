@@ -11,7 +11,6 @@ import com.dinethdf.ClinicManagementSystem.Service.Otp.OtpService;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
-import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,8 +34,6 @@ public class PublicBookingService {
     @Autowired
     private OtpService otpService;
 
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private AppointmentNotificationService appointmentNotificationService;
@@ -140,25 +137,11 @@ public class PublicBookingService {
         System.out.println("email send Confirm " + request.getEmail());
 
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            System.out.println("Initiating email thread for: " + request.getEmail());
-
-            // Start background thread
-            new Thread(() -> {
-                try {
-                    TenantContext.setCurrentTenant(clinicId);
-
-                    Thread.sleep(2000); // Wait for DB commit
-                    appointmentNotificationService.sendBookingConfirmation(newAppointmentId, request.getEmail());
-
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Email thread interrupted");
-                } catch (Exception e) {
-                    System.err.println("Failed to send confirmation email: " + e.getMessage());
-                } finally {
-                    TenantContext.clear();
-                }
-            }).start();
+            appointmentNotificationService.sendBookingConfirmation(
+                    newAppointmentId,
+                    request.getEmail(),
+                    clinicId              // ← Pass clinicId directly, no TenantContext leak
+            );
         }
 
         return ApiResponse.success(

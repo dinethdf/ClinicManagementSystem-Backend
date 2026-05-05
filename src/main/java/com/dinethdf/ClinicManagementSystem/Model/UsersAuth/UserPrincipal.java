@@ -9,8 +9,23 @@ import java.util.Collections;
 
 public class UserPrincipal implements UserDetails {
 
-    private final UserAuth userAuth;
+    private UserAuth userAuth; // ✅ CHANGED - removed final
     private String planCode;
+
+    // ✅ ADDED - empty constructor for JWT flow
+    public UserPrincipal() {}
+
+    // ✅ ADDED - new fields
+    private String username;
+    private String role;
+    private Integer clinicId;
+    private Long userDetailsId;
+
+    // ✅ ADDED - setters for new fields
+    public void setUsername(String username) { this.username = username; }
+    public void setRole(String role) { this.role = role; }
+    public void setClinicId(Integer clinicId) { this.clinicId = clinicId; }
+    public void setUserDetailsId(Long userDetailsId) { this.userDetailsId = userDetailsId; }
 
     public UserPrincipal(UserAuth userAuth) {
         this.userAuth = userAuth;
@@ -18,9 +33,10 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-         return Collections.singleton(new SimpleGrantedAuthority(userAuth.getRole().getName()));
+        // ✅ CHANGED - handle both cases
+        String roleName = (userAuth != null) ? userAuth.getRole().getName() : this.role;
+        return Collections.singleton(new SimpleGrantedAuthority(roleName));
     }
-
 
     public String getPlanCode() {
         return planCode;
@@ -35,21 +51,22 @@ public class UserPrincipal implements UserDetails {
     }
 
     public Integer getClinicId() {
-        return userAuth.getClinicId();
+        // ✅ CHANGED - handle both cases
+        return (userAuth != null) ? userAuth.getClinicId() : this.clinicId;
     }
 
     @Override
     public String getPassword() {
-        return userAuth.getPassword();
+        return (userAuth != null) ? userAuth.getPassword() : null; // ✅ CHANGED
     }
 
     @Override
     public String getUsername() {
-        return userAuth.getEmail();
+        return (userAuth != null) ? userAuth.getEmail() : this.username; // ✅ CHANGED
     }
 
     public Long getUserDetailsId() {
-        return userAuth.getDetailsId();
+        return (userAuth != null) ? userAuth.getDetailsId() : this.userDetailsId; // ✅ CHANGED
     }
 
     @Override
@@ -69,7 +86,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return userAuth.getEnable();
+        return (userAuth != null) ? userAuth.getEnable() : true; // ✅ CHANGED
     }
 
     @Override
@@ -79,6 +96,4 @@ public class UserPrincipal implements UserDetails {
                 ", planCode='" + planCode + '\'' +
                 '}';
     }
-
-
 }
