@@ -1489,6 +1489,11 @@ ALTER TABLE doctorSchedule
 DROP COLUMN status,
 DROP COLUMN payoutStatus;
 
+-- Ensure these indexes exist to make the report run in milliseconds
+CREATE INDEX idx_perf_appt_schedule ON appointments(clinic_id, doctor_schedule_id, invoice_id);
+CREATE INDEX idx_perf_pay_invoice ON payments(clinic_id, invoice_id, paymentStatusId);
+CREATE INDEX idx_perf_items_invoice ON invoice_items(clinic_id, invoice_id, item_type_id);
+
 -- ==================================================================================
 -- END OF MIGRATION
 -- ==================================================================================

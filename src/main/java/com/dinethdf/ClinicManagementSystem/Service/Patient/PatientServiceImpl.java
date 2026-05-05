@@ -49,8 +49,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public List<Patient> getAllPatients() {
-        // Note: For strict multi-tenancy, rely on getPatientList or ensure Hibernate Filter is enabled
-        return patientDetailsRepo.findAll();
+        // Scoped to current tenant — never returns patients from other clinics
+        return patientDetailsRepo.findByClinicId(TenantContext.getCurrentTenant());
     }
 
     @Override

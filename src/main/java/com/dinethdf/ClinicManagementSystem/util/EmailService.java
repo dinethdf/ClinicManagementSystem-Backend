@@ -3,6 +3,7 @@ package com.dinethdf.ClinicManagementSystem.util;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,6 +16,9 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     private static final int MAX_RETRIES = 3;
 
     @Async("emailTaskExecutor")
@@ -22,7 +26,7 @@ public class EmailService {
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setFrom("your-email@gmail.com");
+                message.setFrom(fromEmail);
                 message.setTo(toEmail);
                 message.setSubject("CureGuard Verification Code");
                 message.setText("Your verification code is: " + otp
@@ -51,7 +55,7 @@ public class EmailService {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-                helper.setFrom("your-email@gmail.com");
+                helper.setFrom(fromEmail);
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(htmlContent, true); // true = HTML
@@ -82,7 +86,7 @@ public class EmailService {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-                helper.setFrom("your-email@gmail.com");
+                helper.setFrom(fromEmail);
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(htmlContent, true);
