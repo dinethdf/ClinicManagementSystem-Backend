@@ -75,6 +75,14 @@ public class PatientPortalBookingService {
             );
         }
 
+        if (patient.getMobileNo() != null && !patient.getMobileNo().isEmpty()) {
+            appointmentNotificationService.sendBookingSms(
+                    newAppointmentId,
+                    patient.getMobileNo(),
+                    clinicId
+            );
+        }
+
         return ApiResponse.success(
                 newAppointmentId,
                 "Appointment booked successfully."

@@ -1,9 +1,12 @@
 package com.dinethdf.ClinicManagementSystem.Service.Appointment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentFullDetailsDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
+import com.dinethdf.ClinicManagementSystem.util.SmsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,12 @@ public class AppointmentNotificationService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SmsService smsService;
+
+    @Autowired
+    private ClinicService clinicService;
 
     @Async("emailTaskExecutor")
     @Transactional(readOnly = true)
@@ -50,15 +59,61 @@ public class AppointmentNotificationService {
             // 4. Generate HTML
             String emailBody = generateHtmlTemplate(details, formattedDate, formattedTime, doctorFee, clinicFee, totalFee);
 
-            // 5. Send — emailService.sendHtmlEmail is also @Async
-            // But since we are already in a background thread, call directly
-            // to avoid double-async confusion
+            // 5. Send — already in background thread, call sync version directly
             emailService.sendHtmlEmailSync(recipientEmail, "Booking Confirmation - CureGuard", emailBody);
 
             System.out.println("Confirmation email sent to " + recipientEmail);
 
         } finally {
             TenantContext.clear(); // ✅ Always clear tenant after done
+        }
+    }
+
+    @Async("emailTaskExecutor")
+    @Transactional(readOnly = true)
+    public void sendBookingSms(Long appointmentId, String mobileNo, Integer clinicId) {
+        if (mobileNo == null || mobileNo.isEmpty()) return;
+
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            // 1. Fetch cached clinic details — reads from clinicDetailsCache, no DB hit
+            ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+            if (clinic == null) return;
+
+            String gateway = clinic.getAppointmentBookedSmsGateway() != null
+                    ? clinic.getAppointmentBookedSmsGateway()
+                    : SmsService.SMS_GATEWAY;
+
+            if (SmsService.SMS_NONE.equalsIgnoreCase(gateway)) {
+                return;
+            }
+
+            // 2. Fetch appointment details
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Error: Could not find appointment details for SMS: " + appointmentId);
+                return;
+            }
+
+            // 3. Format SMS message
+            String message = String.format(
+                    "CureGuard: Your appointment is booked. Ref #%d. Dr. %s on %s at %s. Queue #%d.",
+                    details.getId(),
+                    details.getDoctorName(),
+                    details.getScheduleDate().toString(),
+                    details.getStartTime(),
+                    details.getQueuePosition()
+            );
+
+            // 4. Send SMS via dynamic gateway
+            smsService.sendDynamicSms(mobileNo, message, gateway);
+            System.out.println("Booking SMS sent to " + mobileNo);
+
+        } finally {
+            TenantContext.clear();
         }
     }
 

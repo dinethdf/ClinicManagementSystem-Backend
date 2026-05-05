@@ -24,6 +24,10 @@ public class ClinicResponseDTO {
     private String subscriptionPlan;
     private LocalDate expiryDate;
 
+    private String appointmentBookedSmsGateway;
+    private String appointmentConfirmSmsGateway;
+    private String otpSmsGateway;
+
     // ✅ STATIC MAPPER UPDATED
     public static ClinicResponseDTO fromEntity(Clinic clinic) {
         ClinicResponseDTO dto = new ClinicResponseDTO();
@@ -45,6 +49,13 @@ public class ClinicResponseDTO {
         // Handle Enums & Plan Codes
         dto.setStatus(clinic.getStatus().name());
         dto.setSubscriptionPlan(clinic.getPlanCode());
+
+        // Handle Settings
+        if (clinic.getSettings() != null) {
+            dto.setAppointmentBookedSmsGateway(clinic.getSettings().getAppointmentBookedSmsGateway());
+            dto.setAppointmentConfirmSmsGateway(clinic.getSettings().getAppointmentConfirmSmsGateway());
+            dto.setOtpSmsGateway(clinic.getSettings().getOtpSmsGateway());
+        }
 
         // Handle Date Conversion
         if (clinic.getSubscriptionEndsAt() != null) {
