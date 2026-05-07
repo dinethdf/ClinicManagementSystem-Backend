@@ -35,8 +35,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentMapper appointmentMapper;
     private final MessageSourceUtil messageSourceUtil;
     private final ClinicStaffService clinicStaffService;
-
     private final QueueService queueService;
+    private final AppointmentNotificationService notificationService;
 
     @Override
     public AppointmentResponseDTO createAppointment(AppointmentCreateDTO createDTO, String createBy) {
@@ -294,19 +294,34 @@ public class AppointmentServiceImpl implements AppointmentService {
         BigDecimal refundAmount = (BigDecimal) result.get("o_refund_amount");
         Boolean isSuccess = (Boolean) result.get("o_is_success");
 
-        // 3. Handle Firebase Sync (Only if Success)
+        // 3. Handle Firebase Sync + Patient Notifications (Only if Success)
         if (Boolean.TRUE.equals(isSuccess)) {
+            Integer clinicId = TenantContext.getCurrentTenant();
+
             try {
                 Appointment appt = appointmentRepo.findById(appointmentId).orElse(null);
                 if (appt != null) {
+                    // Firebase queue sync
                     queueService.cancelAppointment(
-                            Long.valueOf(TenantContext.getCurrentTenant()),
+                            Long.valueOf(clinicId),
                             appt.getDoctorSchedule().getId(),
                             appt.getQueuePosition()
                     );
+
+                    // Async Email notification to patient
+                    String patientEmail = appt.getPatient().getEmail();
+                    if (patientEmail != null && !patientEmail.isEmpty()) {
+                        notificationService.sendCancellationNotification(appointmentId, patientEmail, clinicId);
+                    }
+
+                    // Async SMS notification to patient
+                    String patientMobile = appt.getPatient().getMobileNo();
+                    if (patientMobile != null && !patientMobile.isEmpty()) {
+                        notificationService.sendCancellationSms(appointmentId, patientMobile, clinicId);
+                    }
                 }
             } catch (Exception e) {
-                System.err.println("Firebase Sync Failed: " + e.getMessage());
+                System.err.println("Post-cancellation notification failed: " + e.getMessage());
             }
         }
 

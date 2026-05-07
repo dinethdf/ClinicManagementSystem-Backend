@@ -38,9 +38,12 @@ public class CacheTestController {
         Map<String, Object> status = new HashMap<>();
         status.put("tenantId", tenantId == null ? "NULL (No Tenant)" : tenantId);
 
-        // Check both caches we implemented
+        // Check all three caches
         status.put("clinicDetailsCache", isKeyInCache("clinicDetailsCache", tenantId));
         status.put("clinicSecretsCache", isKeyInCache("clinicSecretsCache", tenantId));
+        // systemConfigCache uses composite keys e.g. "1:SMS_OTP_ENABLED"
+        status.put("systemConfigCache:SMS_OTP_ENABLED",  isKeyInCache("systemConfigCache", tenantId == null ? null : tenantId + ":SMS_OTP_ENABLED"));
+        status.put("systemConfigCache:EMAIL_OTP_ENABLED", isKeyInCache("systemConfigCache", tenantId == null ? null : tenantId + ":EMAIL_OTP_ENABLED"));
 
         return ResponseEntity.ok(ApiResponse.success(status, "Cache status checked successfully"));
     }
