@@ -12,6 +12,7 @@ import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +38,9 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Cacheable(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @Override
     public String getCurrentEncryptedSecrets() {
         Clinic clinic = getCurrentClinicEntity();
-
-        // This automatically decrypts the NEW column using the AES converter
         return clinic.getEncryptedSecrets();
     }
 
@@ -48,7 +48,8 @@ public class ClinicServiceImpl implements ClinicService {
     public void updateEncryptedSecrets(Map<String, String> incomingSecrets) {
         Clinic clinic = getCurrentClinicEntity();
 
-        // 1. Get the current secrets (This string is automatically decrypted by your Converter)
+        // 1. Get the current secrets (This string is automatically decrypted by your
+        // Converter)
         String existingSecretsJson = clinic.getEncryptedSecrets();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -57,17 +58,20 @@ public class ClinicServiceImpl implements ClinicService {
         try {
             // 2. If secrets already exist, parse them into our Map
             if (existingSecretsJson != null && !existingSecretsJson.trim().isEmpty()) {
-                mergedSecrets = mapper.readValue(existingSecretsJson, new TypeReference<Map<String, String>>() {});
+                mergedSecrets = mapper.readValue(existingSecretsJson, new TypeReference<Map<String, String>>() {
+                });
             }
 
             // 3. MERGE THE DATA!
-            // .putAll() will add brand new keys, and overwrite existing keys with the same name.
+            // .putAll() will add brand new keys, and overwrite existing keys with the same
+            // name.
             mergedSecrets.putAll(incomingSecrets);
 
             // 4. Convert the merged map back to a plain JSON string
             String finalJsonString = mapper.writeValueAsString(mergedSecrets);
 
-            // 5. Save it! (Hibernate will automatically encrypt finalJsonString before it hits MySQL)
+            // 5. Save it! (Hibernate will automatically encrypt finalJsonString before it
+            // hits MySQL)
             clinic.setEncryptedSecrets(finalJsonString);
             clinicRepository.save(clinic);
 
@@ -76,49 +80,71 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
+    @Cacheable(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     @Override
     public ClinicResponseDTO getCurrentClinicDetails() {
         return ClinicResponseDTO.fromEntity(getCurrentClinicEntity());
     }
 
-    /**
-     * Update Basic Info (Name, Address, Mobile)
-     */
+    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     public ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
         // Partial Update: Only update if value is provided
-        if (request.getName() != null) clinic.setName(request.getName());
+        if (request.getName() != null)
+            clinic.setName(request.getName());
 
         // --- UPDATED CONTACT FIELDS ---
-        if (request.getMobileNo1() != null) clinic.setMobileNo1(request.getMobileNo1());
-        if (request.getMobileNo2() != null) clinic.setMobileNo2(request.getMobileNo2());
-        if (request.getLandlineNo() != null) clinic.setLandlineNo(request.getLandlineNo());
+        if (request.getMobileNo1() != null)
+            clinic.setMobileNo1(request.getMobileNo1());
+        if (request.getMobileNo2() != null)
+            clinic.setMobileNo2(request.getMobileNo2());
+        if (request.getLandlineNo() != null)
+            clinic.setLandlineNo(request.getLandlineNo());
 
-        if (request.getAddress() != null) clinic.setAddress(request.getAddress());
-        if (request.getCity() != null) clinic.setCity(request.getCity());
-        if (request.getDistrict() != null) clinic.setDistrict(request.getDistrict());
-        if (request.getLogoUrl() != null) clinic.setLogoUrl(request.getLogoUrl());
+        if (request.getAddress() != null)
+            clinic.setAddress(request.getAddress());
+        if (request.getCity() != null)
+            clinic.setCity(request.getCity());
+        if (request.getDistrict() != null)
+            clinic.setDistrict(request.getDistrict());
+        if (request.getLogoUrl() != null)
+            clinic.setLogoUrl(request.getLogoUrl());
 
         Clinic updated = clinicRepository.save(clinic);
         return ClinicResponseDTO.fromEntity(updated);
     }
 
+    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     public ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request) {
         Clinic clinic = getCurrentClinicEntity();
 
         // Get existing settings or create new if null
         ClinicSettings settings = clinic.getSettings();
-        if (settings == null) settings = new ClinicSettings();
+        if (settings == null)
+            settings = new ClinicSettings();
 
         // Update JSON Fields
-        if (request.getCurrency() != null) settings.setCurrency(request.getCurrency());
-        if (request.getTimezone() != null) settings.setTimezone(request.getTimezone());
-        if (request.getInvoicePrefix() != null) settings.setInvoicePrefix(request.getInvoicePrefix());
-        if (request.getLanguage() != null) settings.setLanguage(request.getLanguage());
-        if (request.getTaxRate() != null) settings.setTaxRate(request.getTaxRate());
-        if (request.getMultiCurrency() != null) settings.setMultiCurrency(request.getMultiCurrency());
-        if (request.getSecondaryLanguage() != null) settings.setSecondaryLanguage(request.getSecondaryLanguage());
+        if (request.getCurrency() != null)
+            settings.setCurrency(request.getCurrency());
+        if (request.getTimezone() != null)
+            settings.setTimezone(request.getTimezone());
+        if (request.getInvoicePrefix() != null)
+            settings.setInvoicePrefix(request.getInvoicePrefix());
+        if (request.getLanguage() != null)
+            settings.setLanguage(request.getLanguage());
+        if (request.getTaxRate() != null)
+            settings.setTaxRate(request.getTaxRate());
+        if (request.getMultiCurrency() != null)
+            settings.setMultiCurrency(request.getMultiCurrency());
+        if (request.getSecondaryLanguage() != null)
+            settings.setSecondaryLanguage(request.getSecondaryLanguage());
+        if (request.getAppointmentBookedSmsGateway() != null)
+            settings.setAppointmentBookedSmsGateway(request.getAppointmentBookedSmsGateway());
+        if (request.getAppointmentConfirmSmsGateway() != null)
+            settings.setAppointmentConfirmSmsGateway(request.getAppointmentConfirmSmsGateway());
+        if (request.getOtpSmsGateway() != null)
+            settings.setOtpSmsGateway(request.getOtpSmsGateway());
 
         clinic.setSettings(settings); // Re-set to ensure dirty check triggers
         Clinic updated = clinicRepository.save(clinic);
@@ -128,6 +154,7 @@ public class ClinicServiceImpl implements ClinicService {
     /**
      * Update Subscription Plan
      */
+    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     public ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -158,7 +185,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     // =================================================================================
-    //  SECTION 2: ADMIN / SYSTEM METHODS (Requires ID or Code)
+    // SECTION 2: ADMIN / SYSTEM METHODS (Requires ID or Code)
     // =================================================================================
 
     @Override

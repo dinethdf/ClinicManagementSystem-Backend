@@ -16,6 +16,9 @@ public class ClinicSettings {
     private Boolean multiCurrency;       // true / false
     private String language;             // en
     private String secondaryLanguage;    // si
+    private String appointmentBookedSmsGateway;  // SMS_GATEWAY, SMS_APP, NONE
+    private String appointmentConfirmSmsGateway; // SMS_GATEWAY, SMS_APP, NONE
+    private String otpSmsGateway;                // SMS_GATEWAY, SMS_APP, NONE
 
     // Optional: sensible defaults
     public static ClinicSettings defaultSettings() {
@@ -26,7 +29,10 @@ public class ClinicSettings {
                 0,
                 false,
                 "en",
-                null
+                null,
+                "SMS_GATEWAY",
+                "SMS_GATEWAY",
+                "SMS_GATEWAY"
         );
     }
 }

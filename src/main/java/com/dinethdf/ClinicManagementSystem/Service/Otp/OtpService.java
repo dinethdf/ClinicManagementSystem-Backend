@@ -1,7 +1,9 @@
 package com.dinethdf.ClinicManagementSystem.Service.Otp;
 
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Otp.OtpVerification;
 import com.dinethdf.ClinicManagementSystem.Repo.Otp.OtpRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.Service.SystemConfig.SystemConfigService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // <--- Import Context
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
@@ -23,6 +25,7 @@ public class OtpService {
     @Autowired private EmailService emailService;
     @Autowired private MobileFormatUtil mobileFormatUtil;
     @Autowired private SystemConfigService configService;
+    @Autowired private ClinicService clinicService;
 
     // Send OTP (Handles SMS limit + Email + Config)
     public String sendOtp(String rawMobile, String email) {
@@ -68,7 +71,11 @@ public class OtpService {
         if (smsEnabled) {
             if (entity.getDailySmsCount() < 2) {
                 String message = "CureGuard Verification Code: " + otp;
-                boolean success = smsService.sendDetailsSms(mobile, message);
+                
+                ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+                String gateway = clinic.getOtpSmsGateway() != null ? clinic.getOtpSmsGateway() : com.dinethdf.ClinicManagementSystem.util.SmsService.SMS_GATEWAY;
+
+                boolean success = smsService.sendDynamicSms(mobile, message, gateway);
 
                 if (success) {
                     entity.setDailySmsCount(entity.getDailySmsCount() + 1);
@@ -88,17 +95,23 @@ public class OtpService {
             emailSent = true;
         }
 
+        // 7. Only save OTP to DB if at least one delivery method succeeded
+        //    If we save even on failure, the user gets "Active OTP already exists" on retry
+        if (!smsSent && !emailSent) {
+            // Nothing was delivered — do NOT persist the OTP
+            if (reachMaxSms) {
+                return "Daily SMS limit reached. Please try again tomorrow or contact support.";
+            }
+            return "OTP delivery failed. Please check your SMS/Email configuration and try again.";
+        }
+
         otpRepository.save(entity);
 
-        // 7. Construct Response Message
+        // 8. Construct Response Message
         if (smsSent && emailSent) return "OTP sent to Mobile and Email.";
         if (smsSent) return "OTP sent to Mobile.";
         if (emailSent && reachMaxSms) return "Unable to send SMS (limit reached). OTP sent to your email instead.";
         if (emailSent) return "OTP sent to Email.";
-
-        if (smsEnabled && entity.getDailySmsCount() >= 2) {
-            return "Daily SMS limit reached. Please try again tomorrow or contact support.";
-        }
 
         return "OTP processing failed (Check system config).";
     }

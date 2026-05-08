@@ -14,6 +14,8 @@ public interface ClinicService {
 
     Clinic getClinicById(Integer id);
 
+    String getCurrentEncryptedSecrets();
+
     ClinicResponseDTO getCurrentClinicDetails();
 
     Optional<Clinic> getClinicByCode(String clinicCode);
