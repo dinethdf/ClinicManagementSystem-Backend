@@ -8,4 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface UserRepo extends JpaRepository<UserAuth, Integer> {
 
     UserAuth findByEmailAndClinicId(String email, Integer clinicId);
+
+    // 🚀 NEW: Find by the Staff/Details ID
+    UserAuth findByDetailsIdAndClinicId(Long detailsId, Integer clinicId);
 }

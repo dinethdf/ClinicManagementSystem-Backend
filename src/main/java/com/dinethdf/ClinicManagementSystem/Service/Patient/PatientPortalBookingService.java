@@ -67,23 +67,20 @@ public class PatientPortalBookingService {
 
         Long newAppointmentId = ((Number) newIdObj).longValue();
 
-        // 4. Send Email Notification (Async)
-        // We use the patient's email fetched from the DB
         if (patient.getEmail() != null && !patient.getEmail().isEmpty()) {
-            new Thread(() -> {
-                try {
-                    // CRITICAL: Manually set Tenant Context for the new thread
-                    TenantContext.setCurrentTenant(clinicId);
+            appointmentNotificationService.sendBookingConfirmation(
+                    newAppointmentId,
+                    patient.getEmail(),
+                    clinicId
+            );
+        }
 
-                    Thread.sleep(2000); // Wait for DB transaction to commit
-                    appointmentNotificationService.sendBookingConfirmation(newAppointmentId, patient.getEmail());
-
-                } catch (Exception e) {
-                    System.err.println("Failed to send confirmation email: " + e.getMessage());
-                } finally {
-                    TenantContext.clear();
-                }
-            }).start();
+        if (patient.getMobileNo() != null && !patient.getMobileNo().isEmpty()) {
+            appointmentNotificationService.sendBookingSms(
+                    newAppointmentId,
+                    patient.getMobileNo(),
+                    clinicId
+            );
         }
 
         return ApiResponse.success(

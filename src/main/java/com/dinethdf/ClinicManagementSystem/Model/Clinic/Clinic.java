@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.util.AESEncryptorConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,11 +69,21 @@ public class Clinic {
     @JdbcTypeCode(SqlTypes.JSON)
     private ClinicSettings settings;
 
+    @Column(name = "clinic_secret", length = 20)
+    private String clinicSecret;
+
     @Column(name = "is_deleted")
     private boolean deleted = false;
 
-    @Column(name = "clinic_secret", length = 20)
-    private String clinicSecret;
+    @Column(name = "encrypted_secrets", columnDefinition = "TEXT")
+    @Convert(converter = AESEncryptorConverter.class)
+    private String encryptedSecrets;
+
+    public String getClinicSecret() { return clinicSecret; }
+    public void setClinicSecret(String clinicSecret) { this.clinicSecret = clinicSecret; }
+
+    public String getEncryptedSecrets() { return encryptedSecrets; }
+    public void setEncryptedSecrets(String encryptedSecrets) { this.encryptedSecrets = encryptedSecrets; }
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -20,6 +20,9 @@ import java.util.Optional;
 @Repository
 public interface PatientDetailsRepo extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
 
+    // Tenant-scoped full list — used by getAllPatients() to prevent cross-tenant leaks
+    List<Patient> findByClinicId(Integer clinicId);
+
     long countByGuardian(Patient guardian);
 
     @Query("""

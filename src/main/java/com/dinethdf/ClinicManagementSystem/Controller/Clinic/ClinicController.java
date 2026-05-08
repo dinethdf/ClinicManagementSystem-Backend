@@ -6,10 +6,15 @@ import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicUpdateDTO;
 import com.dinethdf.ClinicManagementSystem.DTO.Clinic.PlanChangeDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
 import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clinic/info")
@@ -18,7 +23,9 @@ public class ClinicController {
 
     private final ClinicServiceImpl clinicService;
 
-    // 1. GET Clinic Details
+    private final CacheManager cacheManager;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @GetMapping("/details")
     public ResponseEntity<ApiResponse<ClinicResponseDTO>> getClinicDetails() {
         return ResponseEntity.ok(
@@ -29,9 +36,8 @@ public class ClinicController {
         );
     }
 
-    // 2. UPDATE Basic Info (Name, Address, Mobile, etc.)
     @PutMapping("/update")
-    @PreAuthorize("hasAuthority('ADMIN')") // Only Clinic Admin
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<ClinicResponseDTO>> updateClinicInfo(@RequestBody ClinicUpdateDTO request) {
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -41,7 +47,6 @@ public class ClinicController {
         );
     }
 
-    // 3. UPDATE Settings (Currency, Timezone, Language)
     @PutMapping("/settings")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<ClinicResponseDTO>> updateClinicSettings(@RequestBody ClinicSettings request) {
@@ -53,7 +58,6 @@ public class ClinicController {
         );
     }
 
-    // 4. UPDATE Subscription Plan
     @PutMapping("/subscription")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<ClinicResponseDTO>> updateSubscription(@RequestBody PlanChangeDTO request) {
@@ -63,5 +67,21 @@ public class ClinicController {
                         "Subscription plan updated successfully"
                 )
         );
+    }
+
+    @GetMapping("/secrets")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> getSecrets() {
+        String decryptedSecrets = clinicService.getCurrentEncryptedSecrets();
+        return ResponseEntity.ok(ApiResponse.success(decryptedSecrets, "Secrets fetched successfully"));
+    }
+
+    @PutMapping("/secrets")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> updateSecrets(@RequestBody Map<String, String> secretsPayload) {
+
+        clinicService.updateEncryptedSecrets(secretsPayload);
+
+        return ResponseEntity.ok(ApiResponse.success("Secrets securely merged and saved", "SUCCESS"));
     }
 }
