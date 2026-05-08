@@ -117,6 +117,136 @@ public class AppointmentNotificationService {
         }
     }
 
+    @Async("emailTaskExecutor")
+    @Transactional(readOnly = true)
+    public void sendCancellationNotification(Long appointmentId, String recipientEmail, Integer clinicId) {
+
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Cancellation email error: appointment not found: " + appointmentId);
+                return;
+            }
+
+            String emailBody = generateCancellationHtml(details);
+            emailService.sendHtmlEmailSync(recipientEmail, "Appointment Cancelled - CureGuard", emailBody);
+            System.out.println("Cancellation email sent to " + recipientEmail);
+
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Async("emailTaskExecutor")
+    @Transactional(readOnly = true)
+    public void sendCancellationSms(Long appointmentId, String mobileNo, Integer clinicId) {
+        if (mobileNo == null || mobileNo.isEmpty()) return;
+
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+            if (clinic == null) return;
+
+            // Re-use appointmentConfirmSmsGateway for cancellation notices
+            String gateway = clinic.getAppointmentConfirmSmsGateway() != null
+                    ? clinic.getAppointmentConfirmSmsGateway()
+                    : SmsService.SMS_GATEWAY;
+
+            if (SmsService.SMS_NONE.equalsIgnoreCase(gateway)) return;
+
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Cancellation SMS error: appointment not found: " + appointmentId);
+                return;
+            }
+
+            String message = String.format(
+                    "CureGuard: Your appointment Ref #%d with Dr. %s on %s has been CANCELLED. Contact us for rebooking.",
+                    details.getId(),
+                    details.getDoctorName(),
+                    details.getScheduleDate().toString()
+            );
+
+            smsService.sendDynamicSms(mobileNo, message, gateway);
+            System.out.println("Cancellation SMS sent to " + mobileNo);
+
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private String generateCancellationHtml(AppointmentFullDetailsDTO details) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+                    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .header h1 { color: #003366; margin: 0; font-size: 28px; }
+                    .contact-info { text-align: center; color: #666; font-size: 12px; margin-top: 10px; }
+                    .cancelled-badge { text-align: center; margin: 20px 0; }
+                    .cancelled-badge span { background-color: #ffe0e0; color: #c0392b; font-size: 18px; font-weight: bold; padding: 10px 24px; border-radius: 20px; display: inline-block; }
+                    .details-box { background-color: #f9f9f9; border-left: 4px solid #c0392b; padding: 20px; border-radius: 4px; margin: 20px 0; }
+                    .details-box p { margin: 6px 0; color: #333; font-size: 14px; }
+                    .details-box strong { color: #003366; }
+                    .footer { margin-top: 40px; font-size: 12px; color: #888; text-align: center; line-height: 1.6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3063/3063176.png" width="50" alt="Logo" style="margin-bottom: 10px;">
+                        <h1>CureGuard Medical Center</h1>
+                        <div class="contact-info">
+                            \ud83d\udccd 123 Pelmadulla, Rathnapura City &nbsp;|&nbsp; \ud83d\udcde +94 452 274 222 &nbsp;|&nbsp; \u2709\ufe0f support@cureguard.com
+                        </div>
+                        <hr style="border: 0; border-top: 2px solid #aecfea; margin-top: 20px;">
+                    </div>
+                    <div class="cancelled-badge">
+                        <span>\u274c Appointment Cancelled</span>
+                    </div>
+                    <p style="text-align:center; color:#555; font-size:15px;">
+                        We're sorry to inform you that the following appointment has been <strong>cancelled</strong>.
+                    </p>
+                    <div class="details-box">
+                        <p><strong>Reference ID:</strong> #%d</p>
+                        <p><strong>Patient:</strong> %s</p>
+                        <p><strong>Doctor:</strong> %s</p>
+                        <p><strong>Specialization:</strong> %s</p>
+                        <p><strong>Date:</strong> %s</p>
+                        <p><strong>Time:</strong> %s - %s</p>
+                        <p><strong>Queue No:</strong> #%d</p>
+                    </div>
+                    <p style="text-align:center; color:#555; font-size:14px;">
+                        If you believe this is an error or would like to rebook, please contact us directly.
+                    </p>
+                    <div class="footer">
+                        <p>Thank you for trusting CureGuard with your health.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """,
+                details.getId(),
+                details.getPatientName(),
+                details.getDoctorName(),
+                details.getSpecialization(),
+                details.getScheduleDate().toString(),
+                details.getStartTime(),
+                details.getEndTime(),
+                details.getQueuePosition()
+        );
+    }
+
     private String generateHtmlTemplate(AppointmentFullDetailsDTO details, String date, String time,
                                         BigDecimal doctorFee, BigDecimal clinicFee, BigDecimal totalFee) {
         return String.format("""

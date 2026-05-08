@@ -24,8 +24,10 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager(
-                "clinicSecretsCache",
-                "clinicDetailsCache");
+                "clinicSecretsCache",    // Clinic AES-encrypted secrets (smsAppApiKey, etc.)
+                "clinicDetailsCache",    // Clinic name, settings, SMS gateway config
+                "systemConfigCache"      // Per-clinic feature flags (SMS_OTP_ENABLED, EMAIL_OTP_ENABLED)
+        );
         caffeineCacheManager.setCaffeine(caffeine);
         return caffeineCacheManager;
     }
