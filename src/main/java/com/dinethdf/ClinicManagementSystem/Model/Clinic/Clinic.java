@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.util.AESEncryptorConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -78,6 +79,17 @@ public class Clinic {
     @Column(name = "encrypted_secrets", columnDefinition = "TEXT")
     @Convert(converter = AESEncryptorConverter.class)
     private String encryptedSecrets;
+
+    /**
+     * Controls how this clinic's data is stored:
+     *   SHARED → uses clinicmsystem (existing shared DB, table-level isolation via clinic_id)
+     *   SCHEMA → uses its own dedicated database: clinic_{clinicCode}
+     *
+     * Defaults to SHARED — all existing clinics continue working without any change.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tenant_mode", nullable = false, length = 10)
+    private TenantSchemaMode tenantMode = TenantSchemaMode.SHARED;
 
     public String getClinicSecret() { return clinicSecret; }
     public void setClinicSecret(String clinicSecret) { this.clinicSecret = clinicSecret; }

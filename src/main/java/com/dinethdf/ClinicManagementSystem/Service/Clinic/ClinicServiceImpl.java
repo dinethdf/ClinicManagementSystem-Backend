@@ -285,4 +285,4 @@ public class ClinicServiceImpl implements ClinicService {
     public boolean isSubdomainTaken(String subdomain) {
         return clinicRepository.existsBySubdomain(subdomain);
     }
-}
+}
