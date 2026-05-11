@@ -195,6 +195,8 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public Clinic createClinic(Clinic clinic) {
+        clinic.setId(null); // Prevent ID injection
+
         if (clinicRepository.existsBySubdomain(clinic.getSubdomain())) {
             throw new RuntimeException("Subdomain '" + clinic.getSubdomain() + "' is already taken.");
         }
