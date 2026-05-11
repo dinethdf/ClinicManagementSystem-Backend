@@ -25,8 +25,8 @@ Phase 4 — Request Resolution ✅ DONE
 - [x] 4.3 Create TenantResolutionFilter.java
 - [x] 4.4 Register filters in SecurityConfig.java
 
-Phase 5 — Cache + Verify ⏳ PENDING
-- [ ] 5.1 Update CacheConfig.java — schema-prefixed keys
+Phase 5 — Cache + Verify 🟡 PENDING MANUAL TESTING
+- [x] 5.1 Update CacheConfig.java — schema-prefixed keys
 - [ ] 5.2 Manual: Create master DB + first tenant schema
 - [ ] 5.3 Smoke test SHARED mode
 - [ ] 5.4 Smoke test SCHEMA mode

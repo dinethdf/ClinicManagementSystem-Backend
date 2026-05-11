@@ -1,11 +1,14 @@
 package com.dinethdf.ClinicManagementSystem.config;
 
+import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,5 +33,21 @@ public class CacheConfig {
         );
         caffeineCacheManager.setCaffeine(caffeine);
         return caffeineCacheManager;
+    }
+
+    /**
+     * Custom Key Generator for Multi-Tenancy.
+     * Generates keys like: "tenantCode:methodName:param1,param2"
+     * Usage: @Cacheable(value = "myCache", keyGenerator = "tenantKeyGenerator")
+     */
+    @Bean("tenantKeyGenerator")
+    public KeyGenerator tenantKeyGenerator() {
+        return (target, method, params) -> {
+            String tenantCode = TenantContext.getCurrentTenantCode();
+            if (tenantCode == null) {
+                tenantCode = "GLOBAL";
+            }
+            return tenantCode + ":" + method.getName() + ":" + StringUtils.arrayToCommaDelimitedString(params);
+        };
     }
 }

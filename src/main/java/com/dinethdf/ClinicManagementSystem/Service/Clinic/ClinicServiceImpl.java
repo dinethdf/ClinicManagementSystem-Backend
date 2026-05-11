@@ -42,14 +42,14 @@ public class ClinicServiceImpl implements ClinicService {
         this.clinicRoutingRegistry = clinicRoutingRegistry;
     }
 
-    @Cacheable(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @Cacheable(value = "clinicSecretsCache", keyGenerator = "tenantKeyGenerator")
     @Override
     public String getCurrentEncryptedSecrets() {
         Clinic clinic = getCurrentClinicEntity();
         return clinic.getEncryptedSecrets();
     }
 
-    @CacheEvict(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CacheEvict(value = "clinicSecretsCache", keyGenerator = "tenantKeyGenerator")
     public void updateEncryptedSecrets(Map<String, String> incomingSecrets) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -85,13 +85,13 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    @Cacheable(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @Cacheable(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
     @Override
     public ClinicResponseDTO getCurrentClinicDetails() {
         return ClinicResponseDTO.fromEntity(getCurrentClinicEntity());
     }
 
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -120,7 +120,7 @@ public class ClinicServiceImpl implements ClinicService {
         return ClinicResponseDTO.fromEntity(updated);
     }
 
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -159,7 +159,7 @@ public class ClinicServiceImpl implements ClinicService {
     /**
      * Update Subscription Plan
      */
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
     public ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
