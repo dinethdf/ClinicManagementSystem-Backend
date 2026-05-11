@@ -1,12 +1,10 @@
 package com.dinethdf.ClinicManagementSystem.Model.Clinic;
 
-import com.dinethdf.ClinicManagementSystem.Model.AuditWrapper;
 import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.util.AESEncryptorConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -16,10 +14,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "clinics")
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Clinic extends AuditWrapper {
+public class Clinic {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -100,14 +97,24 @@ public class Clinic extends AuditWrapper {
     public String getEncryptedSecrets() { return encryptedSecrets; }
     public void setEncryptedSecrets(String encryptedSecrets) { this.encryptedSecrets = encryptedSecrets; }
 
-    @Override
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
-    public void prePersist() {
-        super.prePersist();
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
         this.registeredAt = LocalDateTime.now();
         if (this.settings == null) {
             this.settings = new ClinicSettings();
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public enum ClinicStatus {

@@ -37,15 +37,8 @@ CREATE TABLE IF NOT EXISTS clinics (
     status       ENUM('TRIAL','ACTIVE','SUSPENDED','EXPIRED','CANCELLED') DEFAULT 'TRIAL',
     plan_code    VARCHAR(50)  NOT NULL DEFAULT 'PLAN_BASIC',
     is_deleted   BOOLEAN DEFAULT FALSE,
-    
-    -- Audit fields matching AuditWrapper convention
-    createdDate  DATETIME     NOT NULL,
-    createdBy    VARCHAR(100) NOT NULL DEFAULT 'System',
-    updatedDate  DATETIME,
-    updatedBy    VARCHAR(100),
-    isApproved   BOOLEAN      NOT NULL DEFAULT FALSE,
-    approvedDate DATETIME,
-    approvedBy   VARCHAR(100),
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     UNIQUE KEY  uk_clinic_code (clinic_code),
     UNIQUE KEY  uk_subdomain   (subdomain),
@@ -58,7 +51,7 @@ CREATE TABLE IF NOT EXISTS clinics (
 --         (So ClinicRoutingRegistry can find them at startup)
 -- ─────────────────────────────────────────────────────────────────────────────────
 INSERT INTO clinicmsystem_master.clinics
-    (clinic_code, name, subdomain, schema_name, tenant_mode, status, plan_code, createdDate, createdBy)
+    (clinic_code, name, subdomain, schema_name, tenant_mode, status, plan_code, created_at)
 SELECT
     clinic_code,
     name,
@@ -67,8 +60,7 @@ SELECT
     'SHARED'    AS tenant_mode,
     status,
     plan_code,
-    created_at,                    -- Map from legacy created_at to createdDate
-    'Migration'                    -- Set a default creator for mirrored rows
+    created_at
 FROM clinicmsystem.clinics
 WHERE is_deleted = FALSE;
 
