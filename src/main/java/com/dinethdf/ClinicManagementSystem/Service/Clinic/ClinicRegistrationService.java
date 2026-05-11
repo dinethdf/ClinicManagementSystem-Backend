@@ -6,6 +6,8 @@ import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
 import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingRegistry;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class ClinicRegistrationService {
 
     private final ClinicRepository clinicRepository;
+    private final ClinicRoutingRegistry clinicRoutingRegistry;
     // private final UserAuthRepository userAuthRepository;
     // private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -61,6 +64,18 @@ public class ClinicRegistrationService {
 
         // Save Clinic first to get the ID
         clinic = clinicRepository.save(clinic);
+
+        // --- MULTI-TENANT: Add to Routing Registry dynamically ---
+        // Public registration defaults to SHARED mode for now.
+        clinicRoutingRegistry.registerNewClinic(
+                clinic.getId(),
+                clinic.getClinicCode(),
+                clinic.getName(),
+                clinic.getSubdomain(),
+                "shared",
+                false,
+                clinic.getPlanCode()
+        );
 
 
         // 3. CREATE ADMIN USER (Linked to this Clinic)

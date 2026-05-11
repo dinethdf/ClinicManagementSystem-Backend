@@ -93,4 +93,33 @@ public class ClinicRoutingRegistry {
             logger.info("Registered new clinic routing info for code: {}", info.getClinicCode());
         }
     }
+
+    /**
+     * Persists a new clinic routing record to the master database AND updates the cache.
+     */
+    public void registerNewClinic(Integer clinicId, String code, String name, String subdomain, 
+                                  String schemaName, boolean isSchemaMode, String planCode) {
+        
+        String sql = "INSERT INTO clinics (id, clinic_code, name, subdomain, schema_name, tenant_mode, plan_code) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        try {
+            masterJdbcTemplate.update(sql, 
+                clinicId, 
+                code, 
+                name, 
+                subdomain, 
+                schemaName, 
+                isSchemaMode ? "SCHEMA" : "SHARED",
+                planCode
+            );
+            
+            ClinicRoutingInfo info = new ClinicRoutingInfo(clinicId, code, subdomain, schemaName, isSchemaMode);
+            register(info);
+            
+        } catch (Exception e) {
+            logger.error("Failed to persist new clinic to master database!", e);
+            throw new RuntimeException("Master registry update failed", e);
+        }
+    }
 }

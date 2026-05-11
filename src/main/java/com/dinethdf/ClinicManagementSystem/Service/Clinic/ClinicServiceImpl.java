@@ -219,18 +219,19 @@ public class ClinicServiceImpl implements ClinicService {
         Clinic savedClinic = clinicRepository.save(clinic);
 
         // --- MULTI-TENANT: Add to Routing Registry dynamically ---
-        String schemaName = (savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA) 
-                ? "clinic_" + savedClinic.getClinicCode().replace("-", "") 
+        String schemaName = (savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA)
+                ? "clinic_" + savedClinic.getClinicCode().replace("-", "")
                 : "shared";
-                
-        ClinicRoutingInfo routingInfo = new ClinicRoutingInfo(
+
+        clinicRoutingRegistry.registerNewClinic(
                 savedClinic.getId(),
                 savedClinic.getClinicCode(),
+                savedClinic.getName(),
                 savedClinic.getSubdomain(),
                 schemaName,
-                savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA
+                savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA,
+                savedClinic.getPlanCode()
         );
-        clinicRoutingRegistry.register(routingInfo);
 
         return savedClinic;
     }
