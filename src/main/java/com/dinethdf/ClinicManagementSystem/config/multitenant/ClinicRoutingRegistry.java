@@ -100,8 +100,8 @@ public class ClinicRoutingRegistry {
     public void registerNewClinic(Integer clinicId, String code, String name, String subdomain, 
                                   String schemaName, boolean isSchemaMode, String planCode) {
         
-        String sql = "INSERT INTO clinics (id, clinic_code, name, subdomain, schema_name, tenant_mode, plan_code) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO clinics (id, clinic_code, name, subdomain, schema_name, tenant_mode, plan_code, createdDate, createdBy) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try {
             masterJdbcTemplate.update(sql, 
@@ -111,7 +111,9 @@ public class ClinicRoutingRegistry {
                 subdomain, 
                 schemaName, 
                 isSchemaMode ? "SCHEMA" : "SHARED",
-                planCode
+                planCode,
+                java.time.LocalDateTime.now(),
+                "System"
             );
             
             ClinicRoutingInfo info = new ClinicRoutingInfo(clinicId, code, subdomain, schemaName, isSchemaMode);
