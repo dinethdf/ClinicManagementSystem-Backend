@@ -91,7 +91,11 @@ public class UserService {
             );
 
             // 2. Authenticate
+
+
+            System.out.println(":asdasdasdasdasd");
             Authentication auth = authManager.authenticate(authToken);
+            System.out.println(auth);
             UserPrincipal user = (UserPrincipal) auth.getPrincipal();
 
             System.out.println("Authenticated: " + auth.isAuthenticated());

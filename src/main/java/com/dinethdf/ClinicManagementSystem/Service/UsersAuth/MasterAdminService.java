@@ -32,7 +32,6 @@ public class MasterAdminService {
         String sql = "SELECT id, username, password, email, is_active FROM clinicmsystem_master.super_admins WHERE email = ?";
         List<Map<String, Object>> results = masterJdbcTemplate.queryForList(sql, request.getUsername());
 
-        System.out.println(results);
         if (results.isEmpty()) {
             throw new ValidationException("Invalid Master Credentials", "true");
         }
