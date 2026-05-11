@@ -9,9 +9,9 @@ Phase 1 — Foundation ✅ DONE
 - [x] 1.6 SQL: ALTER TABLE clinics ADD COLUMN tenant_mode (Script executed)
 - [x] 1.7 SQL: Create clinicmsystem_master DB + clinics table (Script executed)
 
-Phase 2 — In-Memory Registry 🟡 IN PROGRESS
+Phase 2 — In-Memory Registry ✅ DONE
 - [x] 2.1 Create ClinicRoutingRegistry.java — @PostConstruct HashMap loader ✅
-- [ ] 2.2 Wire registry.register() into ClinicServiceImpl.createClinic() ⏳ PENDING
+- [x] 2.2 Wire registry.register() into ClinicServiceImpl.createClinic() ✅
 
 Phase 3 — Routing Infrastructure ✅ DONE
 - [x] 3.1 Create MasterDataSourceConfig.java ✅
@@ -19,11 +19,11 @@ Phase 3 — Routing Infrastructure ✅ DONE
 - [x] 3.3 Create TenantRoutingDataSource.java (Dynamic Router) ✅
 - [x] 3.4 Wire TenantRoutingDataSource as @Primary for JPA ✅
 
-Phase 4 — Request Resolution ⏳ PENDING
-- [ ] 4.1 Add extractClinicCode() to JWTService.java
-- [ ] 4.2 Update JwtFilter.java — set schema from clinicCode
-- [ ] 4.3 Create TenantResolutionFilter.java
-- [ ] 4.4 Register filters in SecurityConfig.java
+Phase 4 — Request Resolution ✅ DONE
+- [x] 4.1 Add extractClinicCode() to JWTService.java
+- [x] 4.2 Update JwtFilter.java — set schema from clinicCode
+- [x] 4.3 Create TenantResolutionFilter.java
+- [x] 4.4 Register filters in SecurityConfig.java
 
 Phase 5 — Cache + Verify ⏳ PENDING
 - [ ] 5.1 Update CacheConfig.java — schema-prefixed keys

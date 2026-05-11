@@ -6,6 +6,8 @@ import com.dinethdf.ClinicManagementSystem.Service.AuthService.JWTService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.PatientDetailsService;
 import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.UserDetailsService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingInfo;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +29,9 @@ public class JwtFilter extends OncePerRequestFilter {
     private JWTService jwtService;
 
     @Autowired
+    private ClinicRoutingRegistry clinicRoutingRegistry;
+
+    @Autowired
     ApplicationContext context;
 
     @Override
@@ -36,6 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String username = null;
         String role = null;
         Integer clinicId = null;
+        String clinicCode = null;
         String planCode = null;
         String currency = null;
 
@@ -44,11 +50,18 @@ public class JwtFilter extends OncePerRequestFilter {
             username = jwtService.extractUserName(token);
             role = jwtService.extractUserRole(token);
             clinicId = jwtService.extractClinicId(token);
-
+            clinicCode = jwtService.extractClinicCode(token);
             planCode = jwtService.extractPlaneCode(token);
 
-
-            if (clinicId != null) {
+            if (clinicId != null && clinicCode != null) {
+                // Look up routing info to get the correct schema
+                ClinicRoutingInfo routingInfo = clinicRoutingRegistry.getByCode(clinicCode);
+                String schemaName = (routingInfo != null) ? routingInfo.getSchemaName() : "shared";
+                
+                // Set the FULL context for the dynamic router
+                TenantContext.setFromRoutingInfo(clinicId, clinicCode, schemaName);
+            } else if (clinicId != null) {
+                // Fallback for older tokens without clinicCode
                 TenantContext.setCurrentTenant(clinicId);
             }
         }

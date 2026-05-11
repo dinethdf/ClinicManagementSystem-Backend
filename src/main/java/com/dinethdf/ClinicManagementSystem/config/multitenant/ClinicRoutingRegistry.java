@@ -81,4 +81,16 @@ public class ClinicRoutingRegistry {
     public Map<String, ClinicRoutingInfo> getAll() {
         return codeToInfoMap;
     }
+
+    /**
+     * Dynamically registers a newly created clinic into the in-memory cache.
+     * Called when an Admin creates a new clinic.
+     */
+    public void register(ClinicRoutingInfo info) {
+        if (info != null && info.getClinicCode() != null && info.getSubdomain() != null) {
+            codeToInfoMap.put(info.getClinicCode(), info);
+            subdomainToInfoMap.put(info.getSubdomain(), info);
+            logger.info("Registered new clinic routing info for code: {}", info.getClinicCode());
+        }
+    }
 }

@@ -9,6 +9,9 @@ import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
 import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingInfo;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingRegistry;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,10 +34,12 @@ import java.util.Map;
 public class ClinicServiceImpl implements ClinicService {
 
     private final ClinicRepository clinicRepository;
+    private final ClinicRoutingRegistry clinicRoutingRegistry;
 
     @Autowired
-    public ClinicServiceImpl(ClinicRepository clinicRepository) {
+    public ClinicServiceImpl(ClinicRepository clinicRepository, ClinicRoutingRegistry clinicRoutingRegistry) {
         this.clinicRepository = clinicRepository;
+        this.clinicRoutingRegistry = clinicRoutingRegistry;
     }
 
     @Cacheable(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
@@ -211,7 +216,23 @@ public class ClinicServiceImpl implements ClinicService {
             clinic.setTrialEndsAt(LocalDateTime.now().plusDays(14));
         }
 
-        return clinicRepository.save(clinic);
+        Clinic savedClinic = clinicRepository.save(clinic);
+
+        // --- MULTI-TENANT: Add to Routing Registry dynamically ---
+        String schemaName = (savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA) 
+                ? "clinic_" + savedClinic.getClinicCode().replace("-", "") 
+                : "shared";
+                
+        ClinicRoutingInfo routingInfo = new ClinicRoutingInfo(
+                savedClinic.getId(),
+                savedClinic.getClinicCode(),
+                savedClinic.getSubdomain(),
+                schemaName,
+                savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA
+        );
+        clinicRoutingRegistry.register(routingInfo);
+
+        return savedClinic;
     }
 
     @Override

@@ -121,6 +121,10 @@ public class JWTService {
         return extractClaim(token, claims -> claims.get("clinicId", Integer.class)); // custom claim
     }
 
+    public String extractClinicCode(String token) {
+        return extractClaim(token, claims -> claims.get("clinicCode", String.class)); // custom claim
+    }
+
     public String extractPlaneCode(String token) {
         return extractClaim(token, claims -> claims.get("planeCode", String.class)); // custom claim
     }
