@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("register", "login", "signIn", "refresh", "patientSignIn", "validate-token")
                         .permitAll()
+                        .requestMatchers("/api/admin/clinics/login").permitAll()
                         // .anyRequest().authenticated()
                         .requestMatchers("/userSignIn", "/patientSignIn").permitAll()
 

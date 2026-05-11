@@ -3,6 +3,9 @@ package com.dinethdf.ClinicManagementSystem.Controller.Clinic;
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicServiceImpl;
+import com.dinethdf.ClinicManagementSystem.DTO.LoginRequest;
+import com.dinethdf.ClinicManagementSystem.Model.AuthModels.JwtAuthenticationResponse;
+import com.dinethdf.ClinicManagementSystem.Service.UsersAuth.MasterAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +23,12 @@ import java.util.List;
 public class SuperAdminClinicController {
 
     private final ClinicServiceImpl clinicService;
+    private final MasterAdminService masterAdminService;
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<JwtAuthenticationResponse>> systemLogin(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(masterAdminService.systemLogin(request), "Master login successful"));
+    }
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('SUPER-ADMIN')")

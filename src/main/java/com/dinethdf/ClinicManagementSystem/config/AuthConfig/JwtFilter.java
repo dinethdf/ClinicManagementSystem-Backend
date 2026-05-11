@@ -53,7 +53,10 @@ public class JwtFilter extends OncePerRequestFilter {
             clinicCode = jwtService.extractClinicCode(token);
             planCode = jwtService.extractPlaneCode(token);
 
-            if (clinicId != null && clinicCode != null) {
+            if (clinicId != null && clinicId == -1) {
+                // SYSTEM-LEVEL Master Admin Context
+                TenantContext.setFromRoutingInfo(-1, "MASTER", "shared");
+            } else if (clinicId != null && clinicCode != null) {
                 // Look up routing info to get the correct schema
                 ClinicRoutingInfo routingInfo = clinicRoutingRegistry.getByCode(clinicCode);
                 String schemaName = (routingInfo != null) ? routingInfo.getSchemaName() : "shared";
