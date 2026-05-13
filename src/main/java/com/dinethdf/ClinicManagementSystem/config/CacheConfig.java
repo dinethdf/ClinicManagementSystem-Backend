@@ -27,10 +27,8 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager(
-                "clinicSecretsCache",    // Clinic AES-encrypted secrets (smsAppApiKey, etc.)
-                "clinicDetailsCache",    // Clinic name, settings, SMS gateway config
                 "systemConfigCache",     // Per-clinic feature flags (SMS_OTP_ENABLED, EMAIL_OTP_ENABLED)
-                "clinicByIdCache"        // Clinic entity by ID — used by login flow & JWT generation
+                "clinicByIdCache"        // Main Clinic entity cache (Source of truth)
         );
         caffeineCacheManager.setCaffeine(caffeine);
         return caffeineCacheManager;
@@ -50,5 +48,14 @@ public class CacheConfig {
             }
             return tenantCode + ":" + method.getName() + ":" + StringUtils.arrayToCommaDelimitedString(params);
         };
+    }
+
+    /**
+     * Just returns the current Clinic ID as the key.
+     * Perfect for clinicByIdCache eviction.
+     */
+    @Bean("tenantIdKeyGenerator")
+    public KeyGenerator tenantIdKeyGenerator() {
+        return (target, method, params) -> TenantContext.getCurrentTenant();
     }
 }

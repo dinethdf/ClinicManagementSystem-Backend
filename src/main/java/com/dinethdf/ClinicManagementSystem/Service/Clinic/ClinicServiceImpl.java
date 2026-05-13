@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,19 +38,22 @@ public class ClinicServiceImpl implements ClinicService {
     private final ClinicRoutingRegistry clinicRoutingRegistry;
 
     @Autowired
+    @Lazy
+    private ClinicService self;
+
+    @Autowired
     public ClinicServiceImpl(ClinicRepository clinicRepository, ClinicRoutingRegistry clinicRoutingRegistry) {
         this.clinicRepository = clinicRepository;
         this.clinicRoutingRegistry = clinicRoutingRegistry;
     }
 
-    @Cacheable(value = "clinicSecretsCache", keyGenerator = "tenantKeyGenerator")
     @Override
     public String getCurrentEncryptedSecrets() {
-        Clinic clinic = getCurrentClinicEntity();
+        Clinic clinic = self.getClinicById(TenantContext.getCurrentTenant());
         return clinic.getEncryptedSecrets();
     }
 
-    @CacheEvict(value = "clinicSecretsCache", keyGenerator = "tenantKeyGenerator")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public void updateEncryptedSecrets(Map<String, String> incomingSecrets) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -85,13 +89,12 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    @Cacheable(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
     @Override
     public ClinicResponseDTO getCurrentClinicDetails() {
-        return ClinicResponseDTO.fromEntity(getCurrentClinicEntity());
+        return ClinicResponseDTO.fromEntity(self.getClinicById(TenantContext.getCurrentTenant()));
     }
 
-    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -120,7 +123,7 @@ public class ClinicServiceImpl implements ClinicService {
         return ClinicResponseDTO.fromEntity(updated);
     }
 
-    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -159,7 +162,7 @@ public class ClinicServiceImpl implements ClinicService {
     /**
      * Update Subscription Plan
      */
-    @CachePut(value = "clinicDetailsCache", keyGenerator = "tenantKeyGenerator")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -261,6 +264,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @CacheEvict(value = "clinicByIdCache", allEntries = true) // Admin update: clear all to be safe
     public Clinic updateClinic(String clinicCode, Clinic clinicDetails) {
         // Find by code (Admin context)
         Clinic existingClinic = clinicRepository.findByClinicCodeAndDeletedFalse(clinicCode)
@@ -296,6 +300,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @CacheEvict(value = "clinicByIdCache", allEntries = true) // Safer to clear all since we only have clinicCode here
     public void deleteClinic(String clinicCode) {
         Clinic clinic = clinicRepository.findByClinicCode(clinicCode)
                 .orElseThrow(() -> new RuntimeException("Clinic not found"));
@@ -310,4 +315,4 @@ public class ClinicServiceImpl implements ClinicService {
     public boolean isSubdomainTaken(String subdomain) {
         return clinicRepository.existsBySubdomain(subdomain);
     }
-}
+}
