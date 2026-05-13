@@ -29,7 +29,8 @@ public class CacheConfig {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager(
                 "clinicSecretsCache",    // Clinic AES-encrypted secrets (smsAppApiKey, etc.)
                 "clinicDetailsCache",    // Clinic name, settings, SMS gateway config
-                "systemConfigCache"      // Per-clinic feature flags (SMS_OTP_ENABLED, EMAIL_OTP_ENABLED)
+                "systemConfigCache",     // Per-clinic feature flags (SMS_OTP_ENABLED, EMAIL_OTP_ENABLED)
+                "clinicByIdCache"        // Clinic entity by ID — used by login flow & JWT generation
         );
         caffeineCacheManager.setCaffeine(caffeine);
         return caffeineCacheManager;

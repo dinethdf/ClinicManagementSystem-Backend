@@ -244,6 +244,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @Cacheable(value = "clinicByIdCache", key = "#id")
     public Clinic getClinicById(Integer id) {
         return clinicRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("Clinic not found with ID: " + id, "CLINIC_NOT_FOUND"));
