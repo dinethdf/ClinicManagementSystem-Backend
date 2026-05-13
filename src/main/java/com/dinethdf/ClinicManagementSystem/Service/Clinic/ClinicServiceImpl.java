@@ -120,7 +120,7 @@ public class ClinicServiceImpl implements ClinicService {
             clinic.setLogoUrl(request.getLogoUrl());
 
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
     @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
@@ -156,7 +156,7 @@ public class ClinicServiceImpl implements ClinicService {
 
         clinic.setSettings(settings); // Re-set to ensure dirty check triggers
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
     /**
@@ -179,7 +179,7 @@ public class ClinicServiceImpl implements ClinicService {
         }
 
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
     // Helper to get current clinic safely
