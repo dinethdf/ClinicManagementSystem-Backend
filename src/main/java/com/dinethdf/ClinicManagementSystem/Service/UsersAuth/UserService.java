@@ -180,9 +180,7 @@ public class UserService {
         clinic.setSchemaName(info.getSchemaName());
         clinic.setTenantMode(info.isSchemaMode() ? TenantSchemaMode.SCHEMA : TenantSchemaMode.SHARED);
         
-        // We might need planCode for the JWT later - let's fetch it from the registry if we add it there,
-        // or just use a default for now. 
-        clinic.setPlanCode("PLAN_STANDARD"); 
+        clinic.setPlanCode(info.getPlanCode());
 
         return clinic;
     }

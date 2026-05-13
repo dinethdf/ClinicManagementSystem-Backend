@@ -45,7 +45,7 @@ public class ClinicRoutingRegistry {
     public void refreshRegistry() {
         logger.info("Refreshing Clinic Routing Registry from Master Database...");
         
-        String sql = "SELECT id, clinic_code, subdomain, schema_name, tenant_mode FROM tenant_registry WHERE is_deleted = FALSE";
+        String sql = "SELECT id, clinic_code, subdomain, schema_name, tenant_mode, plan_code FROM tenant_registry WHERE is_deleted = FALSE";
 
         try {
             masterJdbcTemplate.query(sql, (rs) -> {
@@ -54,8 +54,9 @@ public class ClinicRoutingRegistry {
                 String subdomain = rs.getString("subdomain");
                 String schemaName = rs.getString("schema_name");
                 boolean isSchemaMode = "SCHEMA".equalsIgnoreCase(rs.getString("tenant_mode"));
+                String planCode = rs.getString("plan_code");
 
-                ClinicRoutingInfo info = new ClinicRoutingInfo(id, code, subdomain, schemaName, isSchemaMode);
+                ClinicRoutingInfo info = new ClinicRoutingInfo(id, code, subdomain, schemaName, isSchemaMode, planCode);
                 
                 codeToInfoMap.put(code, info);
                 subdomainToInfoMap.put(subdomain, info);
@@ -96,6 +97,7 @@ public class ClinicRoutingRegistry {
         if (info != null && info.getClinicCode() != null && info.getSubdomain() != null) {
             codeToInfoMap.put(info.getClinicCode(), info);
             subdomainToInfoMap.put(info.getSubdomain(), info);
+            idToInfoMap.put(info.getClinicId(), info);
             logger.info("Registered new clinic routing info for code: {}", info.getClinicCode());
         }
     }
@@ -121,7 +123,7 @@ public class ClinicRoutingRegistry {
                 java.time.LocalDateTime.now()
             );
             
-            ClinicRoutingInfo info = new ClinicRoutingInfo(clinicId, code, subdomain, schemaName, isSchemaMode);
+            ClinicRoutingInfo info = new ClinicRoutingInfo(clinicId, code, subdomain, schemaName, isSchemaMode, planCode);
             register(info);
             
         } catch (Exception e) {
