@@ -91,6 +91,9 @@ public class Clinic {
     @Column(name = "tenant_mode", nullable = false, length = 10)
     private TenantSchemaMode tenantMode = TenantSchemaMode.SHARED;
 
+    @Column(name = "schema_name", length = 50)
+    private String schemaName;
+
     public String getClinicSecret() { return clinicSecret; }
     public void setClinicSecret(String clinicSecret) { this.clinicSecret = clinicSecret; }
 
