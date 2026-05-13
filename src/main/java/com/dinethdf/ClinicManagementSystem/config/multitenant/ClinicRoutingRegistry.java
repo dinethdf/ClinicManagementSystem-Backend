@@ -45,7 +45,7 @@ public class ClinicRoutingRegistry {
     public void refreshRegistry() {
         logger.info("Refreshing Clinic Routing Registry from Master Database...");
         
-        String sql = "SELECT id, clinic_code, subdomain, schema_name, tenant_mode FROM clinics WHERE is_deleted = FALSE";
+        String sql = "SELECT id, clinic_code, subdomain, schema_name, tenant_mode FROM tenant_registry WHERE is_deleted = FALSE";
 
         try {
             masterJdbcTemplate.query(sql, (rs) -> {
@@ -106,7 +106,7 @@ public class ClinicRoutingRegistry {
     public void registerNewClinic(Integer clinicId, String code, String name, String subdomain, 
                                   String schemaName, boolean isSchemaMode, String planCode) {
         
-        String sql = "INSERT INTO clinics (id, clinic_code, name, subdomain, schema_name, tenant_mode, plan_code, created_at) " +
+        String sql = "INSERT INTO tenant_registry (id, clinic_code, name, subdomain, schema_name, tenant_mode, plan_code, created_at) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
         try {

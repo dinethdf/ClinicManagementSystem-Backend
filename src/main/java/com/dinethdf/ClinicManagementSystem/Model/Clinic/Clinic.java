@@ -81,17 +81,14 @@ public class Clinic {
     private String encryptedSecrets;
 
     /**
-     * Controls how this clinic's data is stored:
-     *   SHARED → uses clinicmsystem (existing shared DB, table-level isolation via clinic_id)
-     *   SCHEMA → uses its own dedicated database: clinic_{clinicCode}
-     *
-     * Defaults to SHARED — all existing clinics continue working without any change.
+     * Routing-only fields — populated in-memory during login from ClinicRoutingRegistry.
+     * These columns exist only in the master tenant_registry table, NOT in the shared/private
+     * clinics table, so @Transient tells JPA to never include them in SQL.
      */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tenant_mode", nullable = false, length = 10)
+    @Transient
     private TenantSchemaMode tenantMode = TenantSchemaMode.SHARED;
 
-    @Column(name = "schema_name", length = 50)
+    @Transient
     private String schemaName;
 
     public String getClinicSecret() { return clinicSecret; }
