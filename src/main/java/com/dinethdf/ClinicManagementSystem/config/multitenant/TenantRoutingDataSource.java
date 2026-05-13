@@ -43,13 +43,17 @@ public class TenantRoutingDataSource extends AbstractRoutingDataSource {
     protected DataSource determineTargetDataSource() {
         String schemaName = TenantContext.getCurrentSchema();
         
+        System.out.println("ROUTER DEBUG: determineTargetDataSource called. Current Schema: " + schemaName);
+        
         // Safety check + legacy support: route to shared database
         if (schemaName == null || "shared".equalsIgnoreCase(schemaName)) {
+            System.out.println("ROUTER DEBUG: Routing to DEFAULT (shared)");
             // This will use the default target data source configured in RoutingDataSourceConfig
             return super.determineTargetDataSource();
         }
 
         // It's a SCHEMA mode clinic: fetch or create its dedicated connection pool
+        System.out.println("ROUTER DEBUG: Routing to ISOLATED schema: " + schemaName);
         logger.debug("Routing database query to schema: {}", schemaName);
         return poolManager.getDataSource(schemaName);
     }

@@ -25,6 +25,7 @@ public class ClinicRoutingRegistry {
     // Maps to allow fast lookup by either clinicCode or subdomain
     private final Map<String, ClinicRoutingInfo> codeToInfoMap = new ConcurrentHashMap<>();
     private final Map<String, ClinicRoutingInfo> subdomainToInfoMap = new ConcurrentHashMap<>();
+    private final Map<Integer, ClinicRoutingInfo> idToInfoMap = new ConcurrentHashMap<>();
 
     private final JdbcTemplate masterJdbcTemplate;
 
@@ -58,6 +59,7 @@ public class ClinicRoutingRegistry {
                 
                 codeToInfoMap.put(code, info);
                 subdomainToInfoMap.put(subdomain, info);
+                idToInfoMap.put(id, info);
             });
 
             logger.info("Successfully loaded {} clinics into Routing Registry.", codeToInfoMap.size());
@@ -76,6 +78,10 @@ public class ClinicRoutingRegistry {
 
     public ClinicRoutingInfo getBySubdomain(String subdomain) {
         return subdomainToInfoMap.get(subdomain);
+    }
+
+    public ClinicRoutingInfo getById(Integer clinicId) {
+        return idToInfoMap.get(clinicId);
     }
 
     public Map<String, ClinicRoutingInfo> getAll() {
