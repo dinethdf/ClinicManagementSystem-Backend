@@ -27,9 +27,9 @@ CREATE DATABASE IF NOT EXISTS clinicmsystem_master
 
 USE clinicmsystem_master;
 
-CREATE TABLE IF NOT EXISTS clinics (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    clinic_code  VARCHAR(36)  NOT NULL,
+CREATE TABLE IF NOT EXISTS tenant_registry (
+                                               id           INT AUTO_INCREMENT PRIMARY KEY,
+                                               clinic_code  VARCHAR(36)  NOT NULL,
     name         VARCHAR(100) NOT NULL,
     subdomain    VARCHAR(50)  NOT NULL,
     schema_name  VARCHAR(100) NOT NULL,          -- "shared" or "clinic_abc123uuid"
@@ -43,15 +43,15 @@ CREATE TABLE IF NOT EXISTS clinics (
     UNIQUE KEY  uk_clinic_code (clinic_code),
     UNIQUE KEY  uk_subdomain   (subdomain),
     INDEX       idx_status     (status, is_deleted)
-) ENGINE=InnoDB;
+    ) ENGINE=InnoDB;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────────
 -- STEP 3: Mirror all existing SHARED mode clinics into the master registry
 --         (So ClinicRoutingRegistry can find them at startup)
 -- ─────────────────────────────────────────────────────────────────────────────────
-INSERT INTO clinicmsystem_master.clinics
-    (clinic_code, name, subdomain, schema_name, tenant_mode, status, plan_code, created_at)
+INSERT INTO clinicmsystem_master.tenant_registry
+(clinic_code, name, subdomain, schema_name, tenant_mode, status, plan_code, created_at)
 SELECT
     clinic_code,
     name,

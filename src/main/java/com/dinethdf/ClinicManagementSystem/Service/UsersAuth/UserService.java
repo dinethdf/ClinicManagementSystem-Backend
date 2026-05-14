@@ -156,6 +156,7 @@ public class UserService {
         } catch (IllegalArgumentException e) {
             // Often thrown if clinicId is null
             throw new ValidationException("Invalid Login Request Data", "INVALID_REQUEST");
+        } finally {
             TenantContext.clear();
         }
     }
