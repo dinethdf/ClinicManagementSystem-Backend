@@ -3,7 +3,7 @@ package com.dinethdf.ClinicManagementSystem.util;
 import org.springframework.stereotype.Service;
 
 @Service
-public class BarcodeService {
+public class FEValueEncryption {
 
     private static final long SECRET_OFFSET = 333333333L;
     private static final long SECRET_KEY = 854716209L;

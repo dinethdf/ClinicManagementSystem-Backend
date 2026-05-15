@@ -5,7 +5,7 @@ import com.dinethdf.ClinicManagementSystem.DTO.Patient.*;
 import com.dinethdf.ClinicManagementSystem.Model.Patient.Patient;
 import com.dinethdf.ClinicManagementSystem.Service.Patient.PatientServiceImpl;
 
-import com.dinethdf.ClinicManagementSystem.util.BarcodeService;
+import com.dinethdf.ClinicManagementSystem.util.FEValueEncryption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +26,7 @@ public class PatientController {
     PatientServiceImpl patientServiceImpl;
 
     @Autowired
-    private BarcodeService barcodeService;
+    private FEValueEncryption FEValueEncryption;
 
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DOCTOR', 'STAFF')")
@@ -41,7 +41,7 @@ public class PatientController {
     @GetMapping("/by-barcode/{barcode}")
     public ResponseEntity<ApiResponse<Patient>> getPatientByBarcode(@PathVariable String barcode) {
 
-        Long decodedId = barcodeService.decodeId(barcode);
+        Long decodedId = FEValueEncryption.decodeId(barcode);
 
         if (decodedId == 0) {
             // FIX: Removed the second 'null' argument to match your DTO
@@ -58,7 +58,7 @@ public class PatientController {
     @GetMapping("/barcode/{id}")
     public ResponseEntity<ApiResponse<String>> getPatientBarcode(@PathVariable Long id) {
 
-        String barcode = barcodeService.encodeId(id);
+        String barcode = FEValueEncryption.encodeId(id);
         return ResponseEntity.ok(
                 ApiResponse.success(barcode, "Barcode generated successfully")
         );
