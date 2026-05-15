@@ -82,13 +82,26 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             Pageable pageable
     );
 
-    // Paginated upcoming schedules with filters
-    // UPDATED: s.status.code AND s.isBookingOpen = true
-    @Query("SELECT s FROM DoctorSchedule s " +
+    // Paginated upcoming schedules with filters — uses JOIN FETCH to prevent N+1 queries
+    // JOIN FETCH eagerly loads status, payoutStatus, doctor and specialization in ONE SQL query
+    @Query(value = "SELECT DISTINCT s FROM DoctorSchedule s " +
+            "JOIN FETCH s.doctor d " +
+            "JOIN FETCH d.specialization sp " +
+            "JOIN FETCH s.status st " +
+            "LEFT JOIN FETCH s.payoutStatus ps " +
+            "WHERE s.clinicId = :clinicId " +
+            "AND st.code = 'ACTIVE' " +
+            "AND s.isBookingOpen = true " +
+            "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
+            "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
+            "AND (:specialization IS NULL OR LOWER(sp.name) LIKE LOWER(CONCAT('%', :specialization, '%'))) " +
+            "AND (:searchDate IS NULL OR s.scheduleDate = :searchDate)",
+           countQuery = "SELECT COUNT(DISTINCT s) FROM DoctorSchedule s " +
             "JOIN s.doctor d " +
             "JOIN d.specialization sp " +
+            "JOIN s.status st " +
             "WHERE s.clinicId = :clinicId " +
-            "AND s.status.code = 'ACTIVE' " +
+            "AND st.code = 'ACTIVE' " +
             "AND s.isBookingOpen = true " +
             "AND ( (s.scheduleDate = :today AND s.endTime > :now) OR (s.scheduleDate > :today) ) " +
             "AND (:doctorName IS NULL OR LOWER(d.firstName) LIKE LOWER(CONCAT('%', :doctorName, '%')) OR LOWER(d.lastName) LIKE LOWER(CONCAT('%', :doctorName, '%'))) " +
