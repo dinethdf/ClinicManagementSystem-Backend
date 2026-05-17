@@ -18,9 +18,9 @@ public class TenantDataSourceProperties {
     private final Pool pool = new Pool();
 
     public static class Pool {
-        private int maximumSize = 10;
-        private int minimumIdle = 2;
-        private long idleTimeout = 600000;
+        private int maximumSize = 3;
+        private int minimumIdle = 1;
+        private long idleTimeout = 120000;
         private long maxLifetime = 1800000;
         private long connectionTimeout = 20000;
 
