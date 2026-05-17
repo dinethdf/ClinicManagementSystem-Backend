@@ -47,7 +47,7 @@ public class UserPrincipal implements UserDetails {
     }
 
     public UserRole getRole() {
-        return userAuth.getRole();
+        return (userAuth != null) ? userAuth.getRole() : null;
     }
 
     public Integer getClinicId() {

@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Service.SystemConfig;
 
+import com.dinethdf.ClinicManagementSystem.Model.SystemConfig.SystemConfig;
 import com.dinethdf.ClinicManagementSystem.Repo.SystemConfig.SystemConfigRepo;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;

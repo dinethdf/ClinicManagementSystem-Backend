@@ -20,12 +20,18 @@ import java.time.LocalDateTime;
 @Transactional
 public class OtpService {
 
-    @Autowired private OtpRepo otpRepository;
-    @Autowired private SmsService smsService;
-    @Autowired private EmailService emailService;
-    @Autowired private MobileFormatUtil mobileFormatUtil;
-    @Autowired private SystemConfigService configService;
-    @Autowired private ClinicService clinicService;
+    @Autowired
+    private OtpRepo otpRepository;
+    @Autowired
+    private SmsService smsService;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private MobileFormatUtil mobileFormatUtil;
+    @Autowired
+    private SystemConfigService configService;
+    @Autowired
+    private ClinicService clinicService;
 
     // Send OTP (Handles SMS limit + Email + Config)
     public String sendOtp(String rawMobile, String email) {
@@ -52,10 +58,11 @@ public class OtpService {
                 && entity.getExpiresAt().isAfter(LocalDateTime.now())
                 && !entity.isVerified()) {
             // Masked OTP for security in response
-            return "Active OTP already exists. Please check your inbox for code: " + entity.getOtpCode().substring(0, 2) + "****";
+            return "Active OTP already exists. Please check your inbox for code: " + entity.getOtpCode().substring(0, 2)
+                    + "****";
         }
 
-        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
 
         // 4. Update/Set Entity Details
         entity.setClinicId(clinicId); // Ensure Clinic ID is set
@@ -70,10 +77,11 @@ public class OtpService {
         boolean reachMaxSms = false;
         if (smsEnabled) {
             if (entity.getDailySmsCount() < 2) {
-                String message = "CureGuard Verification Code: " + otp;
-                
+                String message = "Your Channeling Code: " + otp;
+
                 ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
-                String gateway = clinic.getOtpSmsGateway() != null ? clinic.getOtpSmsGateway() : com.dinethdf.ClinicManagementSystem.util.SmsService.SMS_GATEWAY;
+                String gateway = clinic.getOtpSmsGateway() != null ? clinic.getOtpSmsGateway()
+                        : com.dinethdf.ClinicManagementSystem.util.SmsService.SMS_GATEWAY;
 
                 boolean success = smsService.sendDynamicSms(mobile, message, gateway);
 
@@ -96,7 +104,8 @@ public class OtpService {
         }
 
         // 7. Only save OTP to DB if at least one delivery method succeeded
-        //    If we save even on failure, the user gets "Active OTP already exists" on retry
+        // If we save even on failure, the user gets "Active OTP already exists" on
+        // retry
         if (!smsSent && !emailSent) {
             // Nothing was delivered — do NOT persist the OTP
             if (reachMaxSms) {
@@ -108,10 +117,14 @@ public class OtpService {
         otpRepository.save(entity);
 
         // 8. Construct Response Message
-        if (smsSent && emailSent) return "OTP sent to Mobile and Email.";
-        if (smsSent) return "OTP sent to Mobile.";
-        if (emailSent && reachMaxSms) return "Unable to send SMS (limit reached). OTP sent to your email instead.";
-        if (emailSent) return "OTP sent to Email.";
+        if (smsSent && emailSent)
+            return "OTP sent to Mobile and Email.";
+        if (smsSent)
+            return "OTP sent to Mobile.";
+        if (emailSent && reachMaxSms)
+            return "Unable to send SMS (limit reached). OTP sent to your email instead.";
+        if (emailSent)
+            return "OTP sent to Email.";
 
         return "OTP processing failed (Check system config).";
     }
@@ -121,12 +134,14 @@ public class OtpService {
 
         // Find by Mobile AND Clinic ID (from Context)
         OtpVerification entity = otpRepository.findByMobileNoAndClinicId(
-                mobile, TenantContext.getCurrentTenant()
-        ).orElse(null);
+                mobile, TenantContext.getCurrentTenant()).orElse(null);
 
-        if (entity == null) return false;
-        if (entity.getExpiresAt().isBefore(LocalDateTime.now())) return false;
-        if (!entity.getOtpCode().equals(otp)) return false;
+        if (entity == null)
+            return false;
+        if (entity.getExpiresAt().isBefore(LocalDateTime.now()))
+            return false;
+        if (!entity.getOtpCode().equals(otp))
+            return false;
 
         entity.setVerified(true);
         otpRepository.save(entity);
@@ -138,10 +153,10 @@ public class OtpService {
         String mobile = mobileFormatUtil.formatToLankaInternational(rawMobile);
 
         OtpVerification entity = otpRepository.findByMobileNoAndClinicId(
-                mobile, TenantContext.getCurrentTenant()
-        ).orElse(null);
+                mobile, TenantContext.getCurrentTenant()).orElse(null);
 
-        if (entity == null) return false;
+        if (entity == null)
+            return false;
 
         return entity.isVerified() && entity.getExpiresAt().isAfter(LocalDateTime.now());
     }
@@ -151,11 +166,10 @@ public class OtpService {
         String mobile = mobileFormatUtil.formatToLankaInternational(rawMobile);
 
         otpRepository.findByMobileNoAndClinicId(
-                mobile, TenantContext.getCurrentTenant()
-        ).ifPresent(entity -> {
-            entity.setVerified(false);
-            entity.setExpiresAt(LocalDateTime.now());
-            otpRepository.save(entity);
-        });
+                mobile, TenantContext.getCurrentTenant()).ifPresent(entity -> {
+                    entity.setVerified(false);
+                    entity.setExpiresAt(LocalDateTime.now());
+                    otpRepository.save(entity);
+                });
     }
 }

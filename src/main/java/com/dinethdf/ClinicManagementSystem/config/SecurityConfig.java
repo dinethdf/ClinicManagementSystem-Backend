@@ -2,6 +2,7 @@ package com.dinethdf.ClinicManagementSystem.config;
 
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthenticationProvider;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.JwtFilter;
+import com.dinethdf.ClinicManagementSystem.config.AuthConfig.TenantResolutionFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,9 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
+    @Autowired
+    private TenantResolutionFilter tenantResolutionFilter;
+
     @Value("${cors.allowed.origins:http://localhost:3000}")
     private String allowedOrigins;
 
@@ -53,6 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("register", "login", "signIn", "refresh", "patientSignIn", "validate-token")
                         .permitAll()
+                        .requestMatchers("/api/admin/clinics/login").permitAll()
                         // .anyRequest().authenticated()
                         .requestMatchers("/userSignIn", "/patientSignIn").permitAll()
 
@@ -103,6 +108,7 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(tenantResolutionFilter, JwtFilter.class)
                 .build();
 
     }

@@ -1,0 +1,256 @@
+{
+	"info": {
+		"_postman_id": "8a3b2c1d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+		"name": "CureGuard Multi-Tenancy Tests",
+		"description": "Collection to test Hybrid Multi-Tenancy (Shared vs Schema isolation)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Login (Shared Mode)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin_shared\",\n    \"password\": \"password\",\n    \"loginType\": \"USER\",\n    \"clinicId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/signIn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"signIn"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Schema Mode)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin_isolated\",\n    \"password\": \"password\",\n    \"loginType\": \"USER\",\n    \"subdomain\": \"isolated-clinic\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/signIn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"signIn"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Master System Login (Super Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"system.admin@cureguard.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/clinics/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"clinics",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Registration",
+			"item": [
+				{
+					"name": "Public Clinic Registration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clinicName\": \"Test Dynamic Clinic\",\n    \"subdomain\": \"dynamic-test\",\n    \"mobileNo1\": \"0770000000\",\n    \"address\": \"Test Address\",\n    \"city\": \"Colombo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/public/registration/register-clinic",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"public",
+								"registration",
+								"register-clinic"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Private Clinic Registration (Super Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Isolated Health Center\",\n    \"subdomain\": \"isolated-health\",\n    \"planCode\": \"PLAN_PRO\",\n    \"tenantMode\": \"SCHEMA\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/clinics/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"clinics",
+								"create"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Tenant Data (Authenticated)",
+			"item": [
+				{
+					"name": "Get Clinic Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/clinic/info/details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"clinic",
+								"info",
+								"details"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Public Routing (No Auth)",
+			"item": [
+				{
+					"name": "Check Patient (via Header)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Code",
+								"value": "YOUR_CLINIC_CODE_HERE",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/public/check-patient?query=0771234567&clinicId=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"public",
+								"check-patient"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "0771234567"
+								},
+								{
+									"key": "clinicId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "your_jwt_here",
+			"type": "string"
+		}
+	]
+}

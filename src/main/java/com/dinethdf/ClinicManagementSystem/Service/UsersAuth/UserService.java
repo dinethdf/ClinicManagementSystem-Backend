@@ -16,6 +16,9 @@ import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffServic
 import com.dinethdf.ClinicManagementSystem.Service.Doctor.DoctorService;
 import com.dinethdf.ClinicManagementSystem.config.AuthConfig.CustomAuthToken;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext; // NEW: Context Handling
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingInfo;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingRegistry;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.util.EncryptionUtil;
 import com.dinethdf.ClinicManagementSystem.util.MessageSourceUtil;
@@ -61,6 +64,9 @@ public class UserService {
 
     @Autowired
     private MessageSourceUtil messageSourceUtil;
+    
+    @Autowired
+    private ClinicRoutingRegistry clinicRoutingRegistry;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -91,7 +97,11 @@ public class UserService {
             );
 
             // 2. Authenticate
+
+
+            System.out.println(":asdasdasdasdasd");
             Authentication auth = authManager.authenticate(authToken);
+            System.out.println(auth);
             UserPrincipal user = (UserPrincipal) auth.getPrincipal();
 
             System.out.println("Authenticated: " + auth.isAuthenticated());
@@ -146,21 +156,35 @@ public class UserService {
         } catch (IllegalArgumentException e) {
             // Often thrown if clinicId is null
             throw new ValidationException("Invalid Login Request Data", "INVALID_REQUEST");
+        } finally {
+            TenantContext.clear();
         }
     }
 
     private Clinic resolveClinic(LoginRequest request) {
+        ClinicRoutingInfo info = null;
 
         if (request.getClinicId() != null) {
-            return clinicService.getClinicById(request.getClinicId());
+            info = clinicRoutingRegistry.getById(request.getClinicId());
+        } else if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
+            info = clinicRoutingRegistry.getBySubdomain(request.getSubdomain());
         }
 
-        if (request.getSubdomain() != null && !request.getSubdomain().isEmpty()) {
-            return clinicService.getClinicBySubdomain(request.getSubdomain())
-                    .orElseThrow(() -> new ValidationException("Clinic not found for subdomain: " + request.getSubdomain(), "INVALID_SUBDOMAIN"));
+        if (info == null) {
+            throw new ValidationException("Clinic not found", "INVALID_TENANT_INFO");
         }
 
-        throw new ValidationException("Either Clinic ID or Subdomain is required for login", "MISSING_TENANT_INFO");
+        // Map routing info to a temporary Clinic object for the rest of the login flow
+        Clinic clinic = new Clinic();
+        clinic.setId(info.getClinicId());
+        clinic.setClinicCode(info.getClinicCode());
+        clinic.setSubdomain(info.getSubdomain());
+        clinic.setSchemaName(info.getSchemaName());
+        clinic.setTenantMode(info.isSchemaMode() ? TenantSchemaMode.SCHEMA : TenantSchemaMode.SHARED);
+        
+        clinic.setPlanCode(info.getPlanCode());
+
+        return clinic;
     }
 
 
