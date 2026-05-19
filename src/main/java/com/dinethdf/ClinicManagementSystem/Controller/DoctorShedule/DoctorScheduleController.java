@@ -84,9 +84,9 @@ public class DoctorScheduleController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
-
         try {
-            TenantContext.setCurrentTenant(Integer.valueOf(clinicId));
+            Integer parsedClinicId = Integer.valueOf(clinicId);
+            TenantContext.setCurrentTenant(parsedClinicId);
             Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
                     doctorName,
                     specialization,
@@ -100,6 +100,13 @@ public class DoctorScheduleController {
             );
             return ResponseEntity.ok(response);
 
+        } catch (NumberFormatException e) {
+            // Throw ValidationException so the global exception handler can return a 400 Bad Request
+            throw new com.dinethdf.ClinicManagementSystem.exception.ValidationException(
+                    "Invalid clinic ID format. Must be numeric.",
+                    "INVALID_CLINIC_ID",
+                    HttpStatus.BAD_REQUEST
+            );
         } finally {
             TenantContext.clear();
         }
@@ -253,6 +260,79 @@ public class DoctorScheduleController {
         ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
                 reactivatedSchedule,
                 messageSourceUtil.getMessage("schedule.reactivate.success")
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Close booking for a schedule early without deleting it.
+     */
+    @PostMapping("/{id}/close-booking")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> closeBooking(@PathVariable Long id) {
+        
+        DoctorScheduleResponseDTO updatedSchedule = doctorScheduleService.closeBooking(id);
+        
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                updatedSchedule,
+                "Booking closed successfully."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Force syncs the schedule queue to Firebase in case of failure during creation.
+     */
+    @PostMapping("/{id}/sync-queue")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Object>> syncQueueToFirebase(@PathVariable Long id) {
+        
+        doctorScheduleService.syncQueueToFirebase(id);
+        
+        ApiResponse<Object> response = ApiResponse.success(
+                null,
+                "Schedule queue successfully synced to Firebase."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Manually completes a schedule session.
+     */
+    @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> completeSchedule(@PathVariable Long id) {
+        
+        DoctorScheduleResponseDTO completedSchedule = doctorScheduleService.completeSchedule(id);
+        
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                completedSchedule,
+                "Schedule manually completed successfully."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cascades schedule cancellation by cancelling all active appointments safely.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/cancel-cascade")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> cancelCascadeSchedule(
+            @PathVariable Long id,
+            @RequestBody com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal userPrincipal) {
+
+        Long staffId = userPrincipal.getUserDetailsId();
+        DoctorScheduleResponseDTO cancelledSchedule = doctorScheduleService.cancelCascadeSchedule(id, staffId, cancelDTO);
+
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                cancelledSchedule,
+                "Schedule and all associated active appointments were successfully cancelled."
         );
 
         return ResponseEntity.ok(response);

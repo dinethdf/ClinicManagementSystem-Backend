@@ -83,4 +83,33 @@ public interface DoctorScheduleService {
      * @throws ValidationException if schedule is not found.
      */
     void hardDeleteSchedule(Long id);
+
+    /**
+     * Closes booking for a schedule early.
+     * @param id The ID of the schedule to close booking for.
+     * @return The updated schedule DTO.
+     */
+    DoctorScheduleResponseDTO closeBooking(Long id);
+
+    /**
+     * Force syncs the schedule queue to Firebase in case of failure during creation.
+     * @param id The ID of the schedule.
+     */
+    void syncQueueToFirebase(Long id);
+
+    /**
+     * Manually completes a schedule session.
+     * @param id The ID of the schedule to complete.
+     * @return The updated schedule DTO.
+     */
+    DoctorScheduleResponseDTO completeSchedule(Long id);
+
+    /**
+     * Cascades schedule cancellation by cancelling all active appointments.
+     * @param id The ID of the schedule to cancel.
+     * @param staffId The ID of the staff member performing the cancellation.
+     * @param cancelDTO Cancellation details.
+     * @return The deactivated schedule DTO.
+     */
+    DoctorScheduleResponseDTO cancelCascadeSchedule(Long id, Long staffId, com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO);
 }

@@ -11,6 +11,8 @@ import com.dinethdf.ClinicManagementSystem.Repo.Doctor.DoctorRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.DoctorScheduleRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.PayoutStatusLookupRepo; // Needs to be created
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.ScheduleStatusLookupRepo; // Needs to be created
+import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
+import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.QueueService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -47,6 +49,10 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     // 1. Inject the QueueService
     private final QueueService queueService;
+
+    // Inject AppointmentRepo and AppointmentService for cascading cancellations
+    private final AppointmentRepo appointmentRepo;
+    private final AppointmentService appointmentService;
 
     @Override
     @Transactional(readOnly = true)
@@ -403,6 +409,141 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     public void hardDeleteSchedule(Long id) {
         DoctorSchedule schedule = findScheduleById(id);
         doctorScheduleRepo.delete(schedule);
+    }
+
+    @Override
+    @Transactional
+    public DoctorScheduleResponseDTO closeBooking(Long id) {
+        DoctorSchedule schedule = findScheduleById(id);
+
+        if ("CANCELLED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Cannot close booking for a cancelled schedule",
+                    "INVALID_STATUS",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        if ("COMPLETED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Cannot close booking for a completed schedule",
+                    "INVALID_STATUS",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        schedule.setIsBookingOpen(false);
+        DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
+        return mapper.toResponseDTO(savedSchedule);
+    }
+
+    @Override
+    public void syncQueueToFirebase(Long id) {
+        DoctorSchedule schedule = findScheduleById(id);
+
+        try {
+            String fullDoctorName = schedule.getDoctor().getFirstName() + " " + schedule.getDoctor().getLastName();
+            String timeRange = schedule.getStartTime() + " - " + schedule.getEndTime();
+            String specializationName = String.valueOf(schedule.getDoctor().getSpecialization().getName());
+
+            queueService.initializeSchedule(
+                    Long.valueOf(schedule.getClinicId()),
+                    "Cure Guard",
+                    "045*******", // Assuming we just pass default or fetch clinic phone if available
+                    schedule.getId(),
+                    fullDoctorName,
+                    specializationName,
+                    schedule.getScheduleDate().toString(),
+                    timeRange
+            );
+            System.out.println("Firebase Schedule Successfully Synced for ID: " + schedule.getId());
+        } catch (Exception e) {
+            throw new ValidationException(
+                    "Failed to sync schedule queue to Firebase: " + e.getMessage(),
+                    "SYNC_FAILED",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    public DoctorScheduleResponseDTO completeSchedule(Long id) {
+        DoctorSchedule schedule = findScheduleById(id);
+
+        if ("COMPLETED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Schedule is already completed",
+                    "ALREADY_COMPLETED",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        if ("CANCELLED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Cannot complete a cancelled schedule",
+                    "INVALID_STATUS",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Fetch 'COMPLETED' Schedule Status
+        ScheduleStatusLookup completedSchedule = scheduleStatusRepo.findByCode("COMPLETED")
+                .orElseThrow(() -> new ValidationException("System Error: Schedule Status 'COMPLETED' not found", "CONFIG_ERROR"));
+
+        schedule.setStatus(completedSchedule);
+        schedule.setIsBookingOpen(false); // Make sure booking is closed
+        DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
+        return mapper.toResponseDTO(savedSchedule);
+    }
+
+    @Override
+    @Transactional
+    public DoctorScheduleResponseDTO cancelCascadeSchedule(Long id, Long staffId, com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO) {
+        DoctorSchedule schedule = findScheduleById(id);
+
+        if ("COMPLETED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Cannot cancel a completed schedule",
+                    "INVALID_STATUS",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if ("CANCELLED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Schedule is already cancelled",
+                    "ALREADY_CANCELLED",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // Find all active appointments for this schedule
+        List<Long> activeApptIds = appointmentRepo.findActiveAppointmentIdsForSchedule(id, clinicId);
+
+        // Cancel each appointment
+        for (Long apptId : activeApptIds) {
+            try {
+                appointmentService.cancelAppointment(apptId, cancelDTO, staffId);
+            } catch (Exception e) {
+                // Log and continue, or throw. If one fails, the transaction rolls back.
+                throw new ValidationException(
+                        "Failed to cancel appointment ID " + apptId + ": " + e.getMessage(),
+                        "CASCADING_CANCEL_FAILED",
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+
+        // Deactivate the schedule
+        ScheduleStatusLookup cancelledStatus = scheduleStatusRepo.findByCode("CANCELLED")
+                .orElseThrow(() -> new ValidationException("Status 'CANCELLED' not found", "CONFIG_ERROR"));
+
+        schedule.setStatus(cancelledStatus);
+        schedule.setIsBookingOpen(false);
+        DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
+
+        return mapper.toResponseDTO(savedSchedule);
     }
 
     // --- Private Helper Methods ---

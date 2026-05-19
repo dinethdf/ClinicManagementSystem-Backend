@@ -387,6 +387,9 @@ public interface AppointmentRepo extends JpaRepository<Appointment, Long> {
             @Param("clinicId") Integer clinicId
     );
 
+    @Query("SELECT a.id FROM Appointment a WHERE a.doctorSchedule.id = :scheduleId AND a.clinicId = :clinicId AND a.status.code IN ('BOOKED', 'PENDING_PAYMENT')")
+    List<Long> findActiveAppointmentIdsForSchedule(@Param("scheduleId") Long scheduleId, @Param("clinicId") Integer clinicId);
+
     @Procedure(name = "Appointment.cancel")
     Map<String, Object> sp_CancelAppointment(
             @Param("p_clinic_id") Integer clinicId,
