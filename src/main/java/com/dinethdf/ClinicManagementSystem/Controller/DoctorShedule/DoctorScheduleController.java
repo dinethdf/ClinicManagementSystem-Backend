@@ -20,7 +20,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorReassignDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DelayNotificationDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO;
 
 @RestController
 @RequestMapping("api/schedules") // Specific path for schedules
@@ -336,6 +340,70 @@ public class DoctorScheduleController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Checks if a doctor has an overlapping schedule.
+     * Accessible by ADMIN and STAFF.
+     */
+    @GetMapping("/check-overlap")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Boolean>> checkScheduleOverlap(
+            @RequestParam Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
+            @RequestParam(required = false) Long excludeScheduleId) {
+
+        boolean hasOverlap = doctorScheduleService.checkScheduleOverlap(
+                doctorId, date, startTime, endTime, excludeScheduleId
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                hasOverlap,
+                hasOverlap ? "Warning: Overlapping schedule found." : "No overlapping schedule found."
+        ));
+    }
+
+    /**
+     * Reassigns a schedule to a new doctor.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/reassign")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> reassignDoctor(
+            @PathVariable Long id,
+            @RequestBody DoctorReassignDTO reassignDTO) {
+
+        DoctorScheduleResponseDTO updatedSchedule = doctorScheduleService.reassignDoctor(id, reassignDTO.getNewDoctorId());
+        return ResponseEntity.ok(ApiResponse.success(updatedSchedule, "Schedule reassigned successfully."));
+    }
+
+    /**
+     * Dispatches SMS and Email delay alerts to all active patients in the schedule.
+     * Accessible by ADMIN and STAFF.
+     */
+    @PostMapping("/{id}/notify-delay")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Object>> notifyScheduleDelay(
+            @PathVariable Long id,
+            @RequestBody DelayNotificationDTO delayDTO) {
+
+        doctorScheduleService.notifyScheduleDelay(id, delayDTO);
+        return ResponseEntity.ok(ApiResponse.success(null, "Delay notifications successfully queued for delivery."));
+    }
+
+    /**
+     * Retrieves details of the ongoing patient queue ticket.
+     * Accessible by ADMIN, STAFF, and DOCTOR.
+     */
+    @GetMapping("/{id}/current-ticket")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<CurrentTicketDTO>> getCurrentQueueTicket(
+            @PathVariable Long id) {
+
+        CurrentTicketDTO ticket = doctorScheduleService.getCurrentQueueTicket(id);
+        return ResponseEntity.ok(ApiResponse.success(ticket, "Current queue ticket fetched successfully."));
     }
 
     /**

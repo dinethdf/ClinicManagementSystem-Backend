@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface DoctorScheduleService {
@@ -112,4 +113,24 @@ public interface DoctorScheduleService {
      * @return The deactivated schedule DTO.
      */
     DoctorScheduleResponseDTO cancelCascadeSchedule(Long id, Long staffId, com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO);
+
+    /**
+     * Checks if a doctor has an overlapping schedule.
+     */
+    boolean checkScheduleOverlap(Long doctorId, LocalDate scheduleDate, LocalTime startTime, LocalTime endTime, Long excludeScheduleId);
+
+    /**
+     * Reassigns a schedule to a new doctor of the same specialization.
+     */
+    DoctorScheduleResponseDTO reassignDoctor(Long scheduleId, Long newDoctorId);
+
+    /**
+     * Notifies all booked patients of a schedule delay.
+     */
+    void notifyScheduleDelay(Long scheduleId, com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DelayNotificationDTO delayDTO);
+
+    /**
+     * Retrieves the current ongoing appointment ticket details for a schedule.
+     */
+    com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO getCurrentQueueTicket(Long scheduleId);
 }

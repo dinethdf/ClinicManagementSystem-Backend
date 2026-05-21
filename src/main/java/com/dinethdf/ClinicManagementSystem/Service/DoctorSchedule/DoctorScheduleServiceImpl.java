@@ -13,7 +13,9 @@ import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.PayoutStatusLooku
 import com.dinethdf.ClinicManagementSystem.Repo.DoctorSchedule.ScheduleStatusLookupRepo; // Needs to be created
 import com.dinethdf.ClinicManagementSystem.Repo.Appointment.AppointmentRepo;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentService;
+import com.dinethdf.ClinicManagementSystem.Service.Appointment.AppointmentNotificationService;
 import com.dinethdf.ClinicManagementSystem.Service.Appointment.QueueService;
+import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import com.dinethdf.ClinicManagementSystem.mapper.DoctorScheduleMapper;
@@ -53,6 +55,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     // Inject AppointmentRepo and AppointmentService for cascading cancellations
     private final AppointmentRepo appointmentRepo;
     private final AppointmentService appointmentService;
+    private final AppointmentNotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -544,6 +547,107 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         DoctorSchedule savedSchedule = doctorScheduleRepo.save(schedule);
 
         return mapper.toResponseDTO(savedSchedule);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean checkScheduleOverlap(Long doctorId, LocalDate scheduleDate, LocalTime startTime, LocalTime endTime, Long excludeScheduleId) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+        List<DoctorSchedule> overlaps;
+        if (excludeScheduleId != null) {
+            overlaps = doctorScheduleRepo.findOverlappingSchedulesForUpdate(
+                    doctorId, scheduleDate, startTime, endTime, excludeScheduleId, clinicId
+            );
+        } else {
+            overlaps = doctorScheduleRepo.findOverlappingSchedules(
+                    doctorId, scheduleDate, startTime, endTime, clinicId
+            );
+        }
+        return !overlaps.isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public DoctorScheduleResponseDTO reassignDoctor(Long scheduleId, Long newDoctorId) {
+        DoctorSchedule schedule = findScheduleById(scheduleId);
+        
+        if ("COMPLETED".equals(schedule.getStatus().getCode()) || "CANCELLED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException(
+                    "Cannot reassign a completed or cancelled schedule",
+                    "INVALID_STATUS",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Doctor newDoctor = doctorRepo.findById(newDoctorId)
+                .orElseThrow(() -> new ValidationException("Doctor not found", "DOCTOR_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // Check specialization match
+        if (!newDoctor.getSpecialization().getId().equals(schedule.getDoctor().getSpecialization().getId())) {
+            throw new ValidationException(
+                    "Replacement doctor must have the same specialization",
+                    "SPECIALIZATION_MISMATCH",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Check if new doctor has overlaps
+        boolean hasOverlap = checkScheduleOverlap(
+                newDoctorId, schedule.getScheduleDate(), schedule.getStartTime(), schedule.getEndTime(), scheduleId
+        );
+        if (hasOverlap) {
+            throw new ValidationException(
+                    "Replacement doctor has an overlapping schedule during this time",
+                    "SCHEDULE_OVERLAP",
+                    HttpStatus.CONFLICT
+            );
+        }
+
+        schedule.setDoctor(newDoctor);
+        DoctorSchedule saved = doctorScheduleRepo.save(schedule);
+        return mapper.toResponseDTO(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void notifyScheduleDelay(Long scheduleId, com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DelayNotificationDTO delayDTO) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+        List<Long> activeApptIds = appointmentRepo.findActiveAppointmentIdsForSchedule(scheduleId, clinicId);
+
+        for (Long apptId : activeApptIds) {
+            try {
+                notificationService.sendDelayNotification(apptId, delayDTO.getCustomMessage(), delayDTO.getDelayMinutes(), clinicId);
+            } catch (Exception e) {
+                System.err.println("Failed to dispatch delay notice for appointment ID " + apptId + ": " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO getCurrentQueueTicket(Long scheduleId) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+        // Check if schedule exists
+        findScheduleById(scheduleId);
+
+        List<Appointment> ongoingAppointments = appointmentRepo.findOngoingAppointmentsForSchedule(scheduleId, clinicId);
+        if (ongoingAppointments.isEmpty()) {
+            return com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO.builder()
+                    .appointmentId(null)
+                    .queuePosition(0)
+                    .patientName("No patient currently checked in")
+                    .status("NO_ACTIVE_PATIENT")
+                    .build();
+        }
+
+        Appointment appt = ongoingAppointments.get(0);
+        String patientName = appt.getPatient().getFirstName() + " " + appt.getPatient().getLastName();
+        return com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO.builder()
+                .appointmentId(appt.getId())
+                .queuePosition(appt.getQueuePosition())
+                .patientName(patientName)
+                .status("ONGOING")
+                .build();
     }
 
     // --- Private Helper Methods ---
