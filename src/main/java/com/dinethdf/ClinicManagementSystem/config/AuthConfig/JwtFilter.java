@@ -59,10 +59,17 @@ public class JwtFilter extends OncePerRequestFilter {
             } else if (clinicId != null && clinicCode != null) {
                 // Look up routing info to get the correct schema
                 ClinicRoutingInfo routingInfo = clinicRoutingRegistry.getByCode(clinicCode);
-                String schemaName = (routingInfo != null) ? routingInfo.getSchemaName() : "shared";
                 
-                // Set the FULL context for the dynamic router
-                TenantContext.setFromRoutingInfo(clinicId, clinicCode, schemaName);
+                if (routingInfo != null) {
+                    // Set the FULL context for the dynamic router
+                    TenantContext.setFromRoutingInfo(clinicId, clinicCode, routingInfo.getSchemaName());
+                } else {
+                    // Issue 4: Fail fast with 401 instead of silent fallback to master
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"status\":\"error\",\"message\":\"Invalid Clinic Context\"}");
+                    return;
+                }
             } else if (clinicId != null) {
                 // Fallback for older tokens without clinicCode
                 TenantContext.setCurrentTenant(clinicId);

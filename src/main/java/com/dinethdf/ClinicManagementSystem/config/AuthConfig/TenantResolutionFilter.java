@@ -36,6 +36,7 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
 
         // For public endpoints (like /api/public/**), the frontend must send the clinic code.
         String tenantCode = request.getHeader("X-Tenant-Code");
+        boolean contextSetByUs = false;
 
         if (tenantCode != null && !tenantCode.isEmpty()) {
             ClinicRoutingInfo routingInfo = clinicRoutingRegistry.getByCode(tenantCode);
@@ -46,16 +47,21 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
                         routingInfo.getClinicCode(),
                         routingInfo.getSchemaName()
                 );
+                contextSetByUs = true;
+            } else {
+                // Issue 4: Fail fast with 404 instead of silent fallback to master
+                response.setContentType("application/json");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.getWriter().write("{\"status\":\"error\",\"message\":\"Invalid Tenant Code\"}");
+                return;
             }
         }
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            // We only clear the context here if we were the ones who set it.
-            // If JwtFilter set it, JwtFilter's finally block will clear it.
-            // But to be safe, TenantContext.clear() handles it perfectly if we call it again.
-            if (tenantCode != null && !tenantCode.isEmpty()) {
+            // Issue 5: We only clear the context here if we were the ones who set it.
+            if (contextSetByUs) {
                 TenantContext.clear();
             }
         }
