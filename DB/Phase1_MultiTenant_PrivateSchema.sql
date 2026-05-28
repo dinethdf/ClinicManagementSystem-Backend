@@ -4,8 +4,8 @@
 -- Clinic ID: 6 | Subdomain: isolated-health
 -- =================================================================================
 
-CREATE DATABASE IF NOT EXISTS clinic_274fd4051cf240e288c19d8de19445e4;
-USE clinic_274fd4051cf240e288c19d8de19445e4;
+CREATE DATABASE IF NOT EXISTS clinic_3e8b8921bc404898ba9c669ae4a565d0;
+USE clinic_3e8b8921bc404898ba9c669ae4a565d0;
 
 -- ─────────────────────────────────────────────────────────────────────────────────
 -- 1. FUNDAMENTAL TABLES
