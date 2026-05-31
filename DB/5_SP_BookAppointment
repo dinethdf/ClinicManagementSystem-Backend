@@ -106,7 +106,7 @@ BEGIN
         WHERE a.clinic_id = p_clinic_id
           AND a.doctor_schedule_id = p_doctor_schedule_id
           AND a.patient_id = p_patient_id
-          AND asl.code IN ('BOOKED', 'PENDING_PAYMENT', 'ONGOING', 'COMPLETED');
+          AND asl.code IN ('BOOKED', 'PENDING_PAYMENT', 'ONGOING','PARTIAL', 'COMPLETED');
 
         IF v_patientBookingCount > 0 THEN
             SET o_statusMessage = 'ERROR_DUPLICATE_PATIENT';

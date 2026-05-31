@@ -144,5 +144,11 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(ApiResponse.error(result.getMessage()));
         }
     }
+    @PostMapping("/cancel/{id}/send-sms")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Void>> sendManualCancellationSms(@PathVariable Long id) {
+        appointmentService.sendManualCancellationSms(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Cancellation SMS sent successfully."));
+    }
 
 }

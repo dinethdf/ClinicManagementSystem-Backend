@@ -183,6 +183,47 @@ public class AppointmentNotificationService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public boolean sendCancellationSmsSync(Long appointmentId, String mobileNo, Integer clinicId) {
+        if (mobileNo == null || mobileNo.isEmpty()) return false;
+
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+            if (clinic == null) return false;
+
+            // Re-use appointmentConfirmSmsGateway for cancellation notices
+            String gateway = clinic.getAppointmentConfirmSmsGateway() != null
+                    ? clinic.getAppointmentConfirmSmsGateway()
+                    : SmsService.SMS_GATEWAY;
+
+            if (SmsService.SMS_NONE.equalsIgnoreCase(gateway)) return false;
+
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Cancellation SMS error: appointment not found: " + appointmentId);
+                return false;
+            }
+
+            String message = String.format(
+                    "CureGuard: Your appointment Ref #%d with Dr. %s on %s has been CANCELLED. Contact us for rebooking.",
+                    details.getId(),
+                    details.getDoctorName(),
+                    details.getScheduleDate().toString()
+            );
+
+            boolean isSuccess = smsService.sendDynamicSms(mobileNo, message, gateway);
+            System.out.println("Cancellation SMS sync trigger for " + mobileNo + ". Success: " + isSuccess);
+            return isSuccess;
+
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
     private String generateCancellationHtml(AppointmentFullDetailsDTO details) {
         return String.format("""
             <!DOCTYPE html>
