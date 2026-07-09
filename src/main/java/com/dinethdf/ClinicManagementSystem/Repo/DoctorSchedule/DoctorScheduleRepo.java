@@ -152,4 +152,11 @@ public interface DoctorScheduleRepo extends JpaRepository<DoctorSchedule, Long>,
             @Param("scheduleIdToExclude") Long scheduleIdToExclude,
             @Param("clinicId") Integer clinicId
     );
+
+    @org.springframework.data.jpa.repository.query.Procedure(name = "DoctorSchedule.cancel")
+    java.util.Map<String, Object> sp_CancelSchedule(
+            @Param("p_clinic_id") Integer clinicId,
+            @Param("p_schedule_id") Long scheduleId,
+            @Param("p_cancelled_by") String cancelledBy
+    );
 }

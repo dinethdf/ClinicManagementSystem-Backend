@@ -133,4 +133,7 @@ public interface DoctorScheduleService {
      * Retrieves the current ongoing appointment ticket details for a schedule.
      */
     com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO getCurrentQueueTicket(Long scheduleId);
+
+    // --- NEW: Bulk Schedule Cancellation via Stored Procedure ---
+    com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO cancelScheduleWithPatients(Long scheduleId, String staffName);
 }

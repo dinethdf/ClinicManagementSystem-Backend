@@ -650,6 +650,64 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO cancelScheduleWithPatients(Long scheduleId, String staffName) {
+        DoctorSchedule schedule = findScheduleById(scheduleId);
+
+        if ("COMPLETED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException("Cannot cancel a completed schedule", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        }
+        if ("CANCELLED".equals(schedule.getStatus().getCode())) {
+            throw new ValidationException("Schedule is already cancelled", "ALREADY_CANCELLED", HttpStatus.BAD_REQUEST);
+        }
+
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Fetch affected patients BEFORE running the SP
+        // We look for active appointments: status = 'BOOKED' or 'PENDING_PAYMENT'
+        List<Appointment> activeAppointments = appointmentRepo.findOngoingAppointmentsForSchedule(scheduleId, clinicId);
+        // Note: findOngoingAppointmentsForSchedule looks for 'ONGOING' status. Let's write a custom query or stream.
+        // Actually, we have findActiveAppointmentIdsForSchedule, but it returns only IDs.
+        // I will use doctorScheduleRepo.findAppointmentsByScheduleId (which returns Page) or just raw fetch.
+        // Let's use the injected appointmentRepo.findById in a loop for the activeApptIds since we already have it.
+        List<Long> activeApptIds = appointmentRepo.findActiveAppointmentIdsForSchedule(scheduleId, clinicId);
+        List<com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.AffectedPatientDTO> affectedPatients = activeApptIds.stream()
+                .map(id -> appointmentRepo.findById(id).orElse(null))
+                .filter(Objects::nonNull)
+                .map(appt -> com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.AffectedPatientDTO.builder()
+                        .appointmentId(appt.getId())
+                        .patientName(appt.getPatient().getFirstName() + " " + appt.getPatient().getLastName())
+                        .patientNo(appt.getPatient().getPatientNo())
+                        .patientMobile(appt.getPatient().getMobileNo())
+                        .queuePosition(appt.getQueuePosition())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 2. Call the Stored Procedure
+        java.util.Map<String, Object> spResult = doctorScheduleRepo.sp_CancelSchedule(clinicId, scheduleId, staffName);
+        Boolean isSuccess = (Boolean) spResult.get("o_is_success");
+        String statusMessage = (String) spResult.get("o_status_message");
+
+        if (Boolean.FALSE.equals(isSuccess)) {
+            throw new ValidationException(statusMessage, "SP_CANCEL_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        // 3. Sync with Firebase (Clear/Cancel the queue)
+        try {
+            queueService.updateScheduleState(Long.valueOf(clinicId), scheduleId, "CANCELLED", "Schedule Cancelled");
+        } catch (Exception e) {
+            System.err.println("Failed to cancel schedule in Firebase: " + e.getMessage());
+        }
+
+        return com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO.builder()
+                .success(true)
+                .message(statusMessage)
+                .totalAffected(affectedPatients.size())
+                .affectedPatients(affectedPatients)
+                .build();
+    }
+
     // --- Private Helper Methods ---
 
     private DoctorSchedule findScheduleById(Long id) {

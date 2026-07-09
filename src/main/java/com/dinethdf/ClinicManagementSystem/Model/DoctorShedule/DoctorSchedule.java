@@ -8,6 +8,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+@NamedStoredProcedureQuery(
+        name = "DoctorSchedule.cancel",
+        procedureName = "sp_CancelSchedule",
+        parameters = {
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_clinic_id", type = Integer.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_schedule_id", type = Long.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_cancelled_by", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_is_success", type = Boolean.class)
+        }
+)
 @Entity
 @Table(name = "doctorSchedule", indexes = {
         @Index(name = "idx_schedule_lookup", columnList = "clinic_id, doctor_id, scheduleDate"),

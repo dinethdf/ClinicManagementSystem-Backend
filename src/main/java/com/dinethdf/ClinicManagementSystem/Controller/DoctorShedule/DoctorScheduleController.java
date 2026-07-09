@@ -343,6 +343,27 @@ public class DoctorScheduleController {
     }
 
     /**
+     * Cancels a schedule in bulk via Stored Procedure and returns the affected patients.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/cancel-with-patients")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO>> cancelScheduleWithPatients(
+            @PathVariable Long id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal userPrincipal) {
+
+        String staffName = userPrincipal.getUsername();
+        com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO cancelResponse = doctorScheduleService.cancelScheduleWithPatients(id, staffName);
+
+        ApiResponse<com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO> response = ApiResponse.success(
+                cancelResponse,
+                "Schedule cancelled successfully."
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Checks if a doctor has an overlapping schedule.
      * Accessible by ADMIN and STAFF.
      */
