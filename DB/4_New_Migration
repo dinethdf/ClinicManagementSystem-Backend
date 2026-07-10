@@ -1494,6 +1494,16 @@ CREATE INDEX idx_perf_appt_schedule ON appointments(clinic_id, doctor_schedule_i
 CREATE INDEX idx_perf_pay_invoice ON payments(clinic_id, invoice_id, paymentStatusId);
 CREATE INDEX idx_perf_items_invoice ON invoice_items(clinic_id, invoice_id, item_type_id);
 
+-- For the Invoices table
+ALTER TABLE invoices 
+ADD COLUMN receivedByStaffId BIGINT,
+ADD COLUMN cashierWorkstationId VARCHAR(255);
+
+-- For the Appointments table
+ALTER TABLE appointments 
+ADD COLUMN consultationStartTime DATETIME;
+
+
 -- ==================================================================================
 -- END OF MIGRATION
 -- ==================================================================================

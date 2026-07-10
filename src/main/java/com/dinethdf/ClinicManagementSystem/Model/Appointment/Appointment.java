@@ -68,6 +68,8 @@ public class Appointment extends AuditWrapper {
     @Column(nullable = false)
     private Boolean isApproved = false;
 
+    private java.time.LocalDateTime consultationStartTime;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "statusId", nullable = true)
     private AppointmentStatusLookup status;

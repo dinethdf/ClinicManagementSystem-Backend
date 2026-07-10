@@ -118,5 +118,79 @@ public class AdminAnalysisController {
         ));
     }
 
+    @GetMapping("/pnl")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPnL(
+            @RequestParam String startDate, 
+            @RequestParam String endDate) {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.calculatePnL(startDate, endDate),
+                "Profit and Loss analysis retrieved"
+        ));
+    }
 
+    @GetMapping("/outstanding-invoices")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getOutstandingInvoices() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getOutstandingInvoices(),
+                "Outstanding invoices retrieved"
+        ));
+    }
+
+    @GetMapping("/discount-leakage")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getDiscountLeakageReport() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getDiscountLeakageReport(),
+                "Discount leakage report retrieved"
+        ));
+    }
+
+    @GetMapping("/cashier-reconciliation")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getEodCashierReport(
+            @RequestParam String date, 
+            @RequestParam Long staffId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getEodCashierReport(date, staffId),
+                "EOD Cashier reconciliation retrieved"
+        ));
+    }
+
+    @GetMapping("/schedule-fill-rate")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getScheduleFillRate() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getScheduleFillRate(),
+                "Schedule fill rate retrieved"
+        ));
+    }
+
+    @GetMapping("/utilization-heatmap")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getUtilizationHeatmap() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getUtilizationHeatmap(),
+                "Utilization heatmap retrieved"
+        ));
+    }
+
+    @GetMapping("/wait-time")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getWaitTimeAnalytics() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getWaitTimeAnalytics(),
+                "Wait time analytics retrieved"
+        ));
+    }
+
+    @GetMapping("/punctuality")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getDoctorPunctualityStats() {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminAnalysisService.getDoctorPunctualityStats(),
+                "Doctor punctuality stats retrieved"
+        ));
+    }
 }
