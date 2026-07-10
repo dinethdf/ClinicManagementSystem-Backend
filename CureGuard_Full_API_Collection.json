@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "CureGuard Clinic Management System Full API",
-        "description": "Auto-generated Postman Collection from Spring Boot Controllers",
+        "description": "Auto-generated Postman Collection from Spring Boot Controllers including Request Bodies",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -16,6 +16,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -41,10 +46,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/admin-analysis/revenue-monthly",
+                            "raw": "{{baseUrl}}/api/admin-analysis/revenue-monthly?year=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -52,6 +62,12 @@
                                 "api",
                                 "admin-analysis",
                                 "revenue-monthly"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -64,6 +80,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -89,6 +110,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -112,6 +138,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -137,10 +168,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/admin-analysis/appointments/specialization-summary",
+                            "raw": "{{baseUrl}}/api/admin-analysis/appointments/specialization-summary?year=value&month=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -149,6 +185,16 @@
                                 "admin-analysis",
                                 "appointments",
                                 "specialization-summary"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -162,10 +208,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/admin-analysis/schedules/upcoming",
+                            "raw": "{{baseUrl}}/api/admin-analysis/schedules/upcoming?doctorName=value&specialization=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -174,6 +225,16 @@
                                 "admin-analysis",
                                 "schedules",
                                 "upcoming"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorName",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "specialization",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -186,6 +247,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -216,6 +282,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -230,7 +301,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"doctorScheduleId\": 0,\n    \"patientId\": 0,\n    \"note\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -247,6 +318,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -273,10 +349,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/appointments/list",
+                            "raw": "{{baseUrl}}/api/appointments/list?patientId=value&doctorId=value&scheduleId=value&page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -284,6 +365,28 @@
                                 "api",
                                 "appointments",
                                 "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "patientId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -296,6 +399,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -321,10 +429,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/appointments/schedule/{scheduleId}",
+                            "raw": "{{baseUrl}}/api/appointments/schedule/{scheduleId}?page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -333,6 +446,16 @@
                                 "appointments",
                                 "schedule",
                                 "{scheduleId}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -345,6 +468,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -372,10 +500,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/appointments/check-status",
+                            "raw": "{{baseUrl}}/api/appointments/check-status?scheduleId=value&patientId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -383,6 +516,16 @@
                                 "api",
                                 "appointments",
                                 "check-status"
+                            ],
+                            "query": [
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "patientId",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -395,6 +538,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -412,7 +560,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"reason\": \"string_value\",\n    \"refundMethod\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -429,6 +577,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -447,7 +600,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -464,6 +617,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -491,6 +649,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -507,7 +670,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"appointmentId\": 0,\n    \"patientId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -525,6 +688,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -541,7 +709,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"appointmentId\": 0,\n    \"patientId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -559,6 +727,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -575,7 +748,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"appointmentId\": 0,\n    \"patientId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -593,10 +766,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/init",
+                            "raw": "{{baseUrl}}/api/queue/init?clinicId=value&clinicName=value&clinicContact=value&scheduleId=value&doctorName=value&specialization=value&date=value&time=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -604,11 +782,45 @@
                                 "api",
                                 "queue",
                                 "init"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "clinicName",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "clinicContact",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "doctorName",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "specialization",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "time",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -626,10 +838,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/start",
+                            "raw": "{{baseUrl}}/api/queue/start?clinicId=value&scheduleId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -637,11 +854,21 @@
                                 "api",
                                 "queue",
                                 "start"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -659,10 +886,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/finish",
+                            "raw": "{{baseUrl}}/api/queue/finish?clinicId=value&scheduleId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -670,11 +902,21 @@
                                 "api",
                                 "queue",
                                 "finish"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -692,10 +934,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/add-patient",
+                            "raw": "{{baseUrl}}/api/queue/add-patient?clinicId=value&scheduleId=value&queueNo=value&patientName=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -703,11 +950,29 @@
                                 "api",
                                 "queue",
                                 "add-patient"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "queueNo",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "patientName",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -725,10 +990,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/call",
+                            "raw": "{{baseUrl}}/api/queue/call?clinicId=value&scheduleId=value&tokenNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -736,11 +1006,25 @@
                                 "api",
                                 "queue",
                                 "call"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "tokenNo",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -758,10 +1042,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/complete",
+                            "raw": "{{baseUrl}}/api/queue/complete?clinicId=value&scheduleId=value&tokenNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -769,11 +1058,25 @@
                                 "api",
                                 "queue",
                                 "complete"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "tokenNo",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -791,10 +1094,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/wait-again-patient",
+                            "raw": "{{baseUrl}}/api/queue/wait-again-patient?clinicId=value&scheduleId=value&tokenNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -802,11 +1110,25 @@
                                 "api",
                                 "queue",
                                 "wait-again-patient"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "tokenNo",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -824,10 +1146,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/queue/cancel-patient",
+                            "raw": "{{baseUrl}}/api/queue/cancel-patient?clinicId=value&scheduleId=value&tokenNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -835,11 +1162,25 @@
                                 "api",
                                 "queue",
                                 "cancel-patient"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "tokenNo",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -861,6 +1202,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -887,6 +1233,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -903,7 +1254,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"name\": \"string_value\",\n    \"mobileNo1\": \"string_value\",\n    \"mobileNo2\": \"string_value\",\n    \"landlineNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"logoUrl\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -921,6 +1272,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -937,7 +1293,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"currency\": \"string_value\",\n    \"timezone\": \"string_value\",\n    \"invoicePrefix\": \"string_value\",\n    \"taxRate\": 0,\n    \"multiCurrency\": true,\n    \"language\": \"string_value\",\n    \"secondaryLanguage\": \"string_value\",\n    \"appointmentBookedSmsGateway\": \"string_value\",\n    \"appointmentConfirmSmsGateway\": \"string_value\",\n    \"otpSmsGateway\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -955,6 +1311,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -971,7 +1332,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"newPlanCode\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -988,6 +1349,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1014,6 +1380,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1030,7 +1401,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1048,6 +1419,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1064,7 +1440,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"clinicName\": \"string_value\",\n    \"subdomain\": \"string_value\",\n    \"mobileNo1\": \"string_value\",\n    \"mobileNo2\": \"string_value\",\n    \"landlineNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"adminFirstName\": \"string_value\",\n    \"adminLastName\": \"string_value\",\n    \"email\": \"string_value\",\n    \"password\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1082,6 +1458,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1098,7 +1479,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"username\": \"string_value\",\n    \"password\": \"string_value\",\n    \"loginType\": \"string_value\",\n    \"clinicId\": 0,\n    \"subdomain\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1116,6 +1497,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1132,7 +1518,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"id\": 0,\n    \"clinicCode\": \"string_value\",\n    \"name\": \"string_value\",\n    \"subdomain\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo1\": \"string_value\",\n    \"mobileNo2\": \"string_value\",\n    \"landlineNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"logoUrl\": \"string_value\",\n    \"planCode\": \"string_value\",\n    \"registeredAt\": \"string_value\",\n    \"trialEndsAt\": \"string_value\",\n    \"subscriptionEndsAt\": \"string_value\",\n    \"settings\": [],\n    \"clinicSecret\": \"string_value\",\n    \"encryptedSecrets\": \"string_value\",\n    \"schemaName\": \"string_value\",\n    \"createdAt\": \"string_value\",\n    \"updatedAt\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1149,6 +1535,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1175,6 +1566,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1191,7 +1587,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"id\": 0,\n    \"clinicCode\": \"string_value\",\n    \"name\": \"string_value\",\n    \"subdomain\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo1\": \"string_value\",\n    \"mobileNo2\": \"string_value\",\n    \"landlineNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"logoUrl\": \"string_value\",\n    \"planCode\": \"string_value\",\n    \"registeredAt\": \"string_value\",\n    \"trialEndsAt\": \"string_value\",\n    \"subscriptionEndsAt\": \"string_value\",\n    \"settings\": [],\n    \"clinicSecret\": \"string_value\",\n    \"encryptedSecrets\": \"string_value\",\n    \"schemaName\": \"string_value\",\n    \"createdAt\": \"string_value\",\n    \"updatedAt\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1213,6 +1609,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1238,6 +1639,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1253,7 +1659,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"id\": 0,\n    \"userAuth\": \"object_or_enum\",\n    \"nameWithInitials\": \"string_value\",\n    \"joinDate\": \"string_value\",\n    \"designation\": \"string_value\",\n    \"status\": \"object_or_enum\",\n    \"assignedRoleId\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1271,10 +1677,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/staff/list",
+                            "raw": "{{baseUrl}}/api/staff/list?page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1282,6 +1693,16 @@
                                 "api",
                                 "staff",
                                 "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1294,6 +1715,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1311,7 +1737,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"nameWithInitials\": \"string_value\",\n    \"gender\": 0,\n    \"dob\": \"string_value\",\n    \"nic\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"designation\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1334,10 +1760,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/doctor/list",
+                            "raw": "{{baseUrl}}/api/doctor/list?name=value&mobile=value&slmc=value&specialization=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1345,29 +1776,24 @@
                                 "api",
                                 "doctor",
                                 "list"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "GET /api/doctor",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/doctor",
-                            "host": [
-                                "{{baseUrl}}"
                             ],
-                            "path": [
-                                "api",
-                                "doctor"
+                            "query": [
+                                {
+                                    "key": "name",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "mobile",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "slmc",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "specialization",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1380,6 +1806,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1407,6 +1838,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1431,10 +1867,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/doctor/search",
+                            "raw": "{{baseUrl}}/api/doctor/search?query=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1442,6 +1883,12 @@
                                 "api",
                                 "doctor",
                                 "search"
+                            ],
+                            "query": [
+                                {
+                                    "key": "query",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1454,6 +1901,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1470,7 +1922,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"userAuth\": \"object_or_enum\",\n    \"nameWithInitials\": \"string_value\",\n    \"slmcNumber\": \"string_value\",\n    \"specialization\": \"object_or_enum\",\n    \"qualification\": \"string_value\",\n    \"experienceYears\": 0,\n    \"availabilityStatus\": \"object_or_enum\",\n    \"registrationDate\": \"string_value\",\n    \"id\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1488,6 +1940,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1504,7 +1961,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"nameWithInitials\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"gender\": 0,\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"slmcNumber\": \"string_value\",\n    \"specializationId\": 0,\n    \"qualification\": \"string_value\",\n    \"experienceYears\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1522,10 +1979,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/doctor/status/{id}",
+                            "raw": "{{baseUrl}}/api/doctor/status/{id}?status=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1534,11 +1996,17 @@
                                 "doctor",
                                 "status",
                                 "{id}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1556,6 +2024,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1572,7 +2045,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1589,6 +2062,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1615,10 +2093,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/specialization/list",
+                            "raw": "{{baseUrl}}/api/specialization/list?query=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1626,6 +2109,12 @@
                                 "api",
                                 "specialization",
                                 "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "query",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1638,6 +2127,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1654,7 +2148,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"id\": 0,\n    \"name\": \"string_value\",\n    \"note\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1672,6 +2166,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1688,7 +2187,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"id\": 0,\n    \"name\": \"string_value\",\n    \"note\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1705,6 +2204,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1736,16 +2240,31 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules",
+                            "raw": "{{baseUrl}}/api/schedules?doctorId=value&specializationId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
                             "path": [
                                 "api",
                                 "schedules"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "specializationId",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1759,10 +2278,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules/validate-owner",
+                            "raw": "{{baseUrl}}/api/schedules/validate-owner?doctorId=value&scheduleId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1770,6 +2294,16 @@
                                 "api",
                                 "schedules",
                                 "validate-owner"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "scheduleId",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1783,10 +2317,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules/upcoming-public",
+                            "raw": "{{baseUrl}}/api/schedules/upcoming-public?clinicId=value&doctorName=value&specialization=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1794,6 +2333,20 @@
                                 "api",
                                 "schedules",
                                 "upcoming-public"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "doctorName",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "specialization",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1806,6 +2359,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1821,7 +2379,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"doctorId\": 0,\n    \"scheduleDate\": \"string_value\",\n    \"startTime\": \"string_value\",\n    \"endTime\": \"string_value\",\n    \"doctorFee\": 0,\n    \"clinicFee\": 0,\n    \"maxPatientCount\": 0,\n    \"registeredPatientCount\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1839,6 +2397,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1854,7 +2417,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "[\n    {\n        \"doctorId\": 0,\n        \"scheduleDate\": \"string_value\",\n        \"startTime\": \"string_value\",\n        \"endTime\": \"string_value\",\n        \"doctorFee\": 0,\n        \"clinicFee\": 0,\n        \"maxPatientCount\": 0,\n        \"registeredPatientCount\": 0\n    }\n]",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1871,6 +2434,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1896,10 +2464,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules/all",
+                            "raw": "{{baseUrl}}/api/schedules/all?includeInactive=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1907,6 +2480,12 @@
                                 "api",
                                 "schedules",
                                 "all"
+                            ],
+                            "query": [
+                                {
+                                    "key": "includeInactive",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1920,10 +2499,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules/by-doctor/{doctorId}",
+                            "raw": "{{baseUrl}}/api/schedules/by-doctor/{doctorId}?includeInactive=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -1932,6 +2516,12 @@
                                 "schedules",
                                 "by-doctor",
                                 "{doctorId}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "includeInactive",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -1944,6 +2534,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -1971,6 +2566,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -1986,7 +2586,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"startTime\": \"string_value\",\n    \"endTime\": \"string_value\",\n    \"doctorFee\": 0,\n    \"clinicFee\": 0,\n    \"maxPatientCount\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2003,6 +2603,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2028,6 +2633,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2044,7 +2654,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2062,6 +2672,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2078,7 +2693,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2096,6 +2711,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2112,7 +2732,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2130,6 +2750,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2146,7 +2771,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2164,6 +2789,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2180,7 +2810,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2198,10 +2828,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/schedules/{id}/cancel-with-patients",
+                            "raw": "{{baseUrl}}/api/schedules/{id}/cancel-with-patients?doctorId=value&excludeScheduleId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2210,40 +2845,26 @@
                                 "schedules",
                                 "{id}",
                                 "cancel-with-patients"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "excludeScheduleId",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
                                 }
                             }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /api/schedules/check-overlap",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/schedules/check-overlap",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "schedules",
-                                "check-overlap"
-                            ]
                         }
                     }
                 },
@@ -2255,6 +2876,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2272,7 +2898,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"newDoctorId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2290,6 +2916,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2306,7 +2937,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"delayMinutes\": 0,\n    \"customMessage\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2323,6 +2954,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2348,6 +2984,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2379,6 +3020,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2403,6 +3049,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2430,10 +3081,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/payouts/doctor/search",
+                            "raw": "{{baseUrl}}/api/payouts/doctor/search?doctorId=value&startDate=value&endDate=value&page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2442,6 +3098,28 @@
                                 "payouts",
                                 "doctor",
                                 "search"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2455,10 +3133,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/payouts/doctor/my-payouts",
+                            "raw": "{{baseUrl}}/api/payouts/doctor/my-payouts?startDate=value&endDate=value&page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2467,6 +3150,24 @@
                                 "payouts",
                                 "doctor",
                                 "my-payouts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2480,10 +3181,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/payouts/doctor/list",
+                            "raw": "{{baseUrl}}/api/payouts/doctor/list?startDate=value&endDate=value&page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2492,6 +3198,24 @@
                                 "payouts",
                                 "doctor",
                                 "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2504,6 +3228,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2522,7 +3251,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2540,10 +3269,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/payouts/doctor/pending",
+                            "raw": "{{baseUrl}}/api/payouts/doctor/pending?doctorId=value&page=value&size=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2552,6 +3286,20 @@
                                 "payouts",
                                 "doctor",
                                 "pending"
+                            ],
+                            "query": [
+                                {
+                                    "key": "doctorId",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2564,6 +3312,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2581,7 +3334,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"paymentIds\": 0,\n    \"transactionReference\": \"string_value\",\n    \"totalAmountToPay\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2598,6 +3351,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2616,7 +3374,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2634,10 +3392,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/payouts/summary",
+                            "raw": "{{baseUrl}}/api/payouts/summary?startDate=value&endDate=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2645,6 +3408,16 @@
                                 "api",
                                 "payouts",
                                 "summary"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2657,6 +3430,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2673,7 +3451,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"expenseCategoryId\": 0,\n    \"description\": \"string_value\",\n    \"amount\": 0,\n    \"dueDate\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2696,6 +3474,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2711,7 +3494,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"name\": \"string_value\",\n    \"code\": \"string_value\",\n    \"description\": \"string_value\",\n    \"testFee\": 0,\n    \"clinicFee\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2729,10 +3512,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/lab/types",
+                            "raw": "{{baseUrl}}/api/lab/types?search=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2740,6 +3528,12 @@
                                 "api",
                                 "lab",
                                 "types"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2752,6 +3546,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2769,7 +3568,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"name\": \"string_value\",\n    \"code\": \"string_value\",\n    \"description\": \"string_value\",\n    \"testFee\": 0,\n    \"clinicFee\": 0,\n    \"isActive\": true\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2786,6 +3585,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2804,7 +3608,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2822,6 +3626,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2837,7 +3646,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"patientId\": 0,\n    \"labTestTypeId\": 0,\n    \"appointmentId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2855,10 +3664,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/lab/requests",
+                            "raw": "{{baseUrl}}/api/lab/requests?search=value&status=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2866,6 +3680,16 @@
                                 "api",
                                 "lab",
                                 "requests"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2879,10 +3703,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/lab/requests/types/active",
+                            "raw": "{{baseUrl}}/api/lab/requests/types/active?search=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -2892,6 +3721,12 @@
                                 "requests",
                                 "types",
                                 "active"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -2904,6 +3739,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2929,6 +3769,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -2956,6 +3801,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -2972,7 +3822,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"status\": \"object_or_enum\",\n    \"technicianNotes\": \"string_value\",\n    \"reportUrl\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2989,6 +3839,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3020,6 +3875,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3035,7 +3895,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"mobileNo\": \"string_value\",\n    \"email\": \"string_value\",\n    \"clinicId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3053,6 +3913,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3068,7 +3933,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"mobileNo\": \"string_value\",\n    \"otp\": \"string_value\",\n    \"clinicId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3090,6 +3955,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3117,6 +3987,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3141,6 +4016,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3167,10 +4047,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/patient/search-guardian",
+                            "raw": "{{baseUrl}}/api/patient/search-guardian?nic=value&fullName=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -3178,6 +4063,16 @@
                                 "api",
                                 "patient",
                                 "search-guardian"
+                            ],
+                            "query": [
+                                {
+                                    "key": "nic",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "fullName",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -3191,10 +4086,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/patient/search-patient",
+                            "raw": "{{baseUrl}}/api/patient/search-patient?patientNo=value&nic=value&fullName=value&mobileNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -3202,6 +4102,24 @@
                                 "api",
                                 "patient",
                                 "search-patient"
+                            ],
+                            "query": [
+                                {
+                                    "key": "patientNo",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "nic",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "fullName",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "mobileNo",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -3215,10 +4133,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/patient/search-by-no",
+                            "raw": "{{baseUrl}}/api/patient/search-by-no?patientNo=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -3226,6 +4149,12 @@
                                 "api",
                                 "patient",
                                 "search-by-no"
+                            ],
+                            "query": [
+                                {
+                                    "key": "patientNo",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -3239,10 +4168,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/patient/list",
+                            "raw": "{{baseUrl}}/api/patient/list?patientNo=value&nic=value&mobile=value&name=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -3250,6 +4184,24 @@
                                 "api",
                                 "patient",
                                 "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "patientNo",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "nic",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "mobile",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -3262,6 +4214,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3279,7 +4236,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"patientNo\": \"string_value\",\n    \"fullName\": \"string_value\",\n    \"ethnicity\": 0,\n    \"maritalStatus\": 0,\n    \"landNo\": \"string_value\",\n    \"emergencyContactName\": \"string_value\",\n    \"emergencyContactRelationship\": \"string_value\",\n    \"emergencyContactMobile\": \"string_value\",\n    \"emergencyContactEmail\": \"string_value\",\n    \"bloodGroup\": \"string_value\",\n    \"guardian\": \"object_or_enum\",\n    \"relationshipToGuardian\": \"string_value\",\n    \"height\": 0,\n    \"weight\": 0,\n    \"registrationDate\": \"string_value\",\n    \"insuranceId\": 0,\n    \"id\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3297,6 +4254,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3313,7 +4275,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"patientNo\": \"string_value\",\n    \"fullName\": \"string_value\",\n    \"ethnicity\": 0,\n    \"maritalStatus\": 0,\n    \"landNo\": \"string_value\",\n    \"emergencyContactName\": \"string_value\",\n    \"emergencyContactRelationship\": \"string_value\",\n    \"emergencyContactMobile\": \"string_value\",\n    \"emergencyContactEmail\": \"string_value\",\n    \"bloodGroup\": \"string_value\",\n    \"guardian\": \"object_or_enum\",\n    \"relationshipToGuardian\": \"string_value\",\n    \"height\": 0,\n    \"weight\": 0,\n    \"registrationDate\": \"string_value\",\n    \"insuranceId\": 0,\n    \"id\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3330,6 +4292,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3348,7 +4315,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"patientNo\": \"string_value\",\n    \"fullName\": \"string_value\",\n    \"ethnicity\": 0,\n    \"maritalStatus\": 0,\n    \"landNo\": \"string_value\",\n    \"emergencyContactName\": \"string_value\",\n    \"emergencyContactRelationship\": \"string_value\",\n    \"emergencyContactMobile\": \"string_value\",\n    \"emergencyContactEmail\": \"string_value\",\n    \"bloodGroup\": \"string_value\",\n    \"guardian\": \"object_or_enum\",\n    \"relationshipToGuardian\": \"string_value\",\n    \"height\": 0,\n    \"weight\": 0,\n    \"registrationDate\": \"string_value\",\n    \"insuranceId\": 0,\n    \"id\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3365,6 +4332,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3383,7 +4355,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3401,6 +4373,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3417,7 +4394,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3434,6 +4411,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3461,6 +4443,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3477,7 +4464,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3494,6 +4481,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3520,6 +4512,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3536,7 +4533,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3554,10 +4551,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/patient/{patientId}/toggle-login",
+                            "raw": "{{baseUrl}}/api/patient/{patientId}/toggle-login?action=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -3566,45 +4568,17 @@
                                 "patient",
                                 "{patientId}",
                                 "toggle-login"
-                            ]
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "POST /api/patient/details/self",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/patient/details/self",
-                            "host": [
-                                "{{baseUrl}}"
                             ],
-                            "path": [
-                                "api",
-                                "patient",
-                                "details",
-                                "self"
+                            "query": [
+                                {
+                                    "key": "action",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3622,31 +4596,10 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/patient/health/{patientId}/allergies",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "patient",
-                                "health",
-                                "{patientId}",
-                                "allergies"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "POST /api/patient/health/{patientId}/allergies",
-                    "request": {
-                        "method": "POST",
-                        "header": [
+                            },
                             {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3661,41 +4614,6 @@
                                 "health",
                                 "{patientId}",
                                 "allergies"
-                            ]
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "DELETE /api/patient/health/allergies/{id}",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/patient/health/allergies/{id}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "patient",
-                                "health",
-                                "allergies",
-                                "{id}"
                             ]
                         }
                     }
@@ -3709,31 +4627,10 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/patient/health/{patientId}/diseases",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "patient",
-                                "health",
-                                "{patientId}",
-                                "diseases"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "POST /api/patient/health/{patientId}/diseases",
-                    "request": {
-                        "method": "POST",
-                        "header": [
+                            },
                             {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3748,41 +4645,6 @@
                                 "health",
                                 "{patientId}",
                                 "diseases"
-                            ]
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "DELETE /api/patient/health/diseases/{id}",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/patient/health/diseases/{id}",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "patient",
-                                "health",
-                                "diseases",
-                                "{id}"
                             ]
                         }
                     }
@@ -3800,6 +4662,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3819,7 +4686,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"patientNo\": \"string_value\",\n    \"fullName\": \"string_value\",\n    \"ethnicity\": 0,\n    \"maritalStatus\": 0,\n    \"landNo\": \"string_value\",\n    \"emergencyContactName\": \"string_value\",\n    \"emergencyContactRelationship\": \"string_value\",\n    \"emergencyContactMobile\": \"string_value\",\n    \"emergencyContactEmail\": \"string_value\",\n    \"bloodGroup\": \"string_value\",\n    \"guardian\": \"object_or_enum\",\n    \"relationshipToGuardian\": \"string_value\",\n    \"height\": 0,\n    \"weight\": 0,\n    \"registrationDate\": \"string_value\",\n    \"insuranceId\": 0,\n    \"id\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"gender\": 0,\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"email\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"address\": \"string_value\",\n    \"city\": \"string_value\",\n    \"district\": \"string_value\",\n    \"profileImg\": \"string_value\",\n    \"clinicId\": 0,\n    \"createdDate\": \"string_value\",\n    \"createdBy\": \"string_value\",\n    \"updatedDate\": \"string_value\",\n    \"updatedBy\": \"string_value\",\n    \"approvedDate\": \"string_value\",\n    \"approvedBy\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3836,6 +4703,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3862,6 +4734,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3887,6 +4764,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3911,6 +4793,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -3938,6 +4825,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -3954,7 +4846,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"scheduleId\": 0,\n    \"note\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -3971,6 +4863,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4003,6 +4900,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4019,7 +4921,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"invoiceId\": 0,\n    \"amountPaid\": 0,\n    \"paymentMethod\": \"string_value\",\n    \"paymentLocation\": \"string_value\",\n    \"transactionCode\": \"string_value\",\n    \"paymentGateway\": \"string_value\",\n    \"receivedByStaffId\": 0,\n    \"discounts\": []\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4037,6 +4939,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4053,7 +4960,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"invoiceId\": 0,\n    \"amount\": 0,\n    \"reason\": \"string_value\",\n    \"authorizedBy\": \"string_value\",\n    \"refundCategory\": \"string_value\",\n    \"refundMethod\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4070,6 +4977,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4101,6 +5013,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4115,7 +5032,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"appointmentId\": 0,\n    \"note\": \"string_value\",\n    \"items\": []\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4132,6 +5049,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4158,6 +5080,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4182,6 +5109,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4197,7 +5129,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"appointmentId\": 0,\n    \"note\": \"string_value\",\n    \"items\": []\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4220,10 +5152,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/public/check-patient",
+                            "raw": "{{baseUrl}}/api/public/check-patient?query=value&clinicId=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -4231,6 +5168,16 @@
                                 "api",
                                 "public",
                                 "check-patient"
+                            ],
+                            "query": [
+                                {
+                                    "key": "query",
+                                    "value": "value"
+                                },
+                                {
+                                    "key": "clinicId",
+                                    "value": "value"
+                                }
                             ]
                         }
                     }
@@ -4243,6 +5190,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4259,7 +5211,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"scheduleId\": 0,\n    \"note\": \"string_value\",\n    \"existingPatientId\": 0,\n    \"gender\": 0,\n    \"firstName\": \"string_value\",\n    \"lastName\": \"string_value\",\n    \"nic\": \"string_value\",\n    \"dob\": \"string_value\",\n    \"mobileNo\": \"string_value\",\n    \"email\": \"string_value\",\n    \"clinicId\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4285,10 +5237,15 @@
                                         "key": "Authorization",
                                         "value": "Bearer {{token}}",
                                         "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/revenue",
+                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/revenue?clinicId=value&startDate=value&endDate=value&revenueType=value&lang=value",
                                     "host": [
                                         "{{baseUrl}}"
                                     ],
@@ -4298,6 +5255,28 @@
                                         "admin",
                                         "v1.0",
                                         "revenue"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "clinicId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "startDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "endDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "revenueType",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "lang",
+                                            "value": "value"
+                                        }
                                     ]
                                 }
                             }
@@ -4311,10 +5290,15 @@
                                         "key": "Authorization",
                                         "value": "Bearer {{token}}",
                                         "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/schedule-financials",
+                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/schedule-financials?clinicId=value&scheduleId=value&lang=value",
                                     "host": [
                                         "{{baseUrl}}"
                                     ],
@@ -4325,6 +5309,20 @@
                                         "v1.0",
                                         "reports",
                                         "schedule-financials"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "clinicId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "scheduleId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "lang",
+                                            "value": "value"
+                                        }
                                     ]
                                 }
                             }
@@ -4338,10 +5336,15 @@
                                         "key": "Authorization",
                                         "value": "Bearer {{token}}",
                                         "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/session-summary",
+                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/session-summary?clinicId=value&startDate=value&endDate=value&lang=value",
                                     "host": [
                                         "{{baseUrl}}"
                                     ],
@@ -4352,6 +5355,24 @@
                                         "v1.0",
                                         "reports",
                                         "session-summary"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "clinicId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "startDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "endDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "lang",
+                                            "value": "value"
+                                        }
                                     ]
                                 }
                             }
@@ -4365,10 +5386,15 @@
                                         "key": "Authorization",
                                         "value": "Bearer {{token}}",
                                         "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/doctor-wise-summary",
+                                    "raw": "{{baseUrl}}/api/report/admin/v1.0/reports/doctor-wise-summary?clinicId=value&doctorId=value&startDate=value&endDate=value&lang=value",
                                     "host": [
                                         "{{baseUrl}}"
                                     ],
@@ -4379,6 +5405,28 @@
                                         "v1.0",
                                         "reports",
                                         "doctor-wise-summary"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "clinicId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "doctorId",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "startDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "endDate",
+                                            "value": "value"
+                                        },
+                                        {
+                                            "key": "lang",
+                                            "value": "value"
+                                        }
                                     ]
                                 }
                             }
@@ -4399,6 +5447,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4414,7 +5467,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4431,6 +5484,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4454,6 +5512,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4479,6 +5542,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4503,6 +5571,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4525,6 +5598,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4550,6 +5628,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4574,6 +5657,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4588,7 +5676,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4606,6 +5694,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4621,7 +5714,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4638,6 +5731,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4668,6 +5766,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4692,6 +5795,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4718,10 +5826,15 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/test/multitenancy/evict",
+                            "raw": "{{baseUrl}}/api/test/multitenancy/evict?schema=value",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -4730,11 +5843,17 @@
                                 "test",
                                 "multitenancy",
                                 "evict"
+                            ],
+                            "query": [
+                                {
+                                    "key": "schema",
+                                    "value": "value"
+                                }
                             ]
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4751,6 +5870,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4776,6 +5900,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4806,6 +5935,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4819,7 +5953,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"Id\": 0,\n    \"email\": \"string_value\",\n    \"password\": \"string_value\",\n    \"detailsId\": 0,\n    \"isEnable\": true,\n    \"clinicId\": 0,\n    \"role\": \"object_or_enum\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4837,6 +5971,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4850,7 +5989,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"username\": \"string_value\",\n    \"password\": \"string_value\",\n    \"loginType\": \"string_value\",\n    \"clinicId\": 0,\n    \"subdomain\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4868,6 +6007,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4881,7 +6025,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"username\": \"string_value\",\n    \"password\": \"string_value\",\n    \"loginType\": \"string_value\",\n    \"clinicId\": 0,\n    \"subdomain\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4899,6 +6043,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4912,7 +6061,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"token\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4930,6 +6079,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -4943,7 +6097,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4960,6 +6114,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -4978,7 +6137,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4995,6 +6154,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5013,7 +6177,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5030,6 +6194,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5048,7 +6217,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"email\": \"string_value\",\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5065,6 +6234,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5083,7 +6257,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"email\": \"string_value\",\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5100,6 +6274,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5127,6 +6306,11 @@
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
                                 "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
                             }
                         ],
                         "url": {
@@ -5144,7 +6328,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5161,6 +6345,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5179,7 +6368,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5196,6 +6385,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5214,7 +6408,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5231,6 +6425,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5249,7 +6448,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5266,6 +6465,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5284,7 +6488,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"email\": \"string_value\",\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5301,6 +6505,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5319,7 +6528,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"email\": \"string_value\",\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5336,6 +6545,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5354,7 +6568,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5371,6 +6585,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5389,35 +6608,12 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \n}",
+                            "raw": "{\n    \"otp\": \"string_value\",\n    \"newPassword\": \"string_value\",\n    \"confirmPassword\": \"string_value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
                                 }
                             }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /api/roles",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}",
-                                "type": "text"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/roles",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "roles"
-                            ]
                         }
                     }
                 },
@@ -5429,6 +6625,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
@@ -5453,6 +6654,11 @@
                             {
                                 "key": "Authorization",
                                 "value": "Bearer {{token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
                                 "type": "text"
                             }
                         ],
