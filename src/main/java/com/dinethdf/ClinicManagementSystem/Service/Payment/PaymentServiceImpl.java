@@ -5,6 +5,8 @@ import com.dinethdf.ClinicManagementSystem.DTO.Payment.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Payment.PaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
+import com.dinethdf.ClinicManagementSystem.Model.Invoice.Invoice;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -135,6 +137,23 @@ public class PaymentServiceImpl implements PaymentService {
 
         Integer clinicId = TenantContext.getCurrentTenant();
         String createdBy = "admin_user"; // Or fetch from Auth context
+
+        // --- 2.5 PAYOUT LOCK GUARD ---
+        Invoice invoice = invoiceRepo.findById(refundDTO.getInvoiceId())
+                .orElseThrow(() -> new ValidationException("Invoice not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (invoice.getAppointment() != null) {
+            DoctorSchedule schedule = invoice.getAppointment().getDoctorSchedule();
+            String payoutCode = schedule.getPayoutStatus() != null ? schedule.getPayoutStatus().getCode() : null;
+            
+            if ("PENDING".equals(payoutCode) || "PAID".equals(payoutCode)) {
+                throw new ValidationException(
+                        "Cannot process refund. The doctor's payout bill for this schedule has already been generated.",
+                        "PAYOUT_LOCKED",
+                        HttpStatus.CONFLICT
+                );
+            }
+        }
 
         // 3. Call DB Procedure
         Map<String, Object> spResult = paymentRepo.sp_ProcessRefund(
