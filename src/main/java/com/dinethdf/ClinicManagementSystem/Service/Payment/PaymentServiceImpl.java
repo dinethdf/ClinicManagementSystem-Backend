@@ -34,7 +34,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final ObjectMapper objectMapper;
     private final MessageSourceUtil messageSourceUtil;
     private final ClinicStaffService clinicStaffService;
-    private final TenantContext tenantContext;
 //    private final SmsService smsService;
 
     @Override
