@@ -1,10 +1,7 @@
 package com.dinethdf.ClinicManagementSystem.Controller.Payment;
 
 import com.dinethdf.ClinicManagementSystem.DTO.ApiResponse;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.InvoicePaymentDetailDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.PaymentResponseDTO;
-import com.dinethdf.ClinicManagementSystem.DTO.Payment.RefundRequestDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Payment.*;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.PatientPrincipal;
 import com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal;
 import com.dinethdf.ClinicManagementSystem.Service.Payment.PaymentService;
@@ -66,7 +63,7 @@ public class PaymentController {
     @PostMapping("/refund/admin-override")
     @PreAuthorize("hasAnyAuthority('ADMIN')") // Strict override access
     public ResponseEntity<ApiResponse<Void>> processLateRefundOverride(
-            @Valid @RequestBody com.dinethdf.ClinicManagementSystem.DTO.Payment.LateRefundOverrideDTO refundDTO) {
+            @RequestBody LateRefundOverrideDTO refundDTO) {
 
         paymentService.processLateRefundOverride(refundDTO);
 
