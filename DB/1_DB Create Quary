@@ -693,6 +693,29 @@ CREATE TABLE patient_lab_requests (
     CONSTRAINT fk_lab_req_appt FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT,
     CONSTRAINT fk_lab_req_type FOREIGN KEY (lab_test_type_id) REFERENCES lab_test_types(id)
 ) ENGINE=InnoDB;
-
-
 ALTER TABLE patient ADD COLUMN isTemp TINYINT(1) NOT NULL DEFAULT 0 AFTER isActive;
+
+-- ==================================================================================
+-- LATE REFUND APPROVAL LOG (NEW)
+-- ==================================================================================
+DROP TABLE IF EXISTS late_refund_approval_log;
+
+CREATE TABLE late_refund_approval_log (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    clinic_id       INT            NOT NULL,
+    invoice_id      INT            NOT NULL,
+    schedule_id     INT            NOT NULL,
+    refund_amount   DECIMAL(10,2)  NOT NULL,
+    refund_category VARCHAR(20)    NOT NULL DEFAULT 'CLINIC_LOSS',
+    refund_method   VARCHAR(20)    NOT NULL,
+    approval_note   VARCHAR(500)   NOT NULL,
+    approved_by     VARCHAR(100)   NOT NULL,
+    approved_at     DATETIME       NOT NULL,
+    payment_id      INT            NULL,
+    created_date    DATETIME       NOT NULL,
+
+    CONSTRAINT fk_late_refund_clinic FOREIGN KEY (clinic_id) REFERENCES clinics(id),
+    CONSTRAINT fk_late_refund_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id),
+    CONSTRAINT fk_late_refund_schedule FOREIGN KEY (schedule_id) REFERENCES doctorSchedule(id),
+    CONSTRAINT fk_late_refund_payment FOREIGN KEY (payment_id) REFERENCES payments(id)
+) ENGINE=InnoDB;

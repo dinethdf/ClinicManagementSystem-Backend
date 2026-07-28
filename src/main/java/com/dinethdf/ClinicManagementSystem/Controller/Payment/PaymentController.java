@@ -63,6 +63,21 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refund/admin-override")
+    @PreAuthorize("hasAnyAuthority('ADMIN')") // Strict override access
+    public ResponseEntity<ApiResponse<Void>> processLateRefundOverride(
+            @Valid @RequestBody com.dinethdf.ClinicManagementSystem.DTO.Payment.LateRefundOverrideDTO refundDTO) {
+
+        paymentService.processLateRefundOverride(refundDTO);
+
+        ApiResponse<Void> response = ApiResponse.success(
+                null,
+                "Late refund override processed successfully"
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     // GET /api/payments/history/{invoiceId}
     @GetMapping("/history/{invoiceId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER', 'STAFF', 'DOCTOR')")

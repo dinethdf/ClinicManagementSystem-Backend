@@ -11,6 +11,8 @@ CREATE PROCEDURE sp_ProcessRefund(
     IN p_reason VARCHAR(255),
     IN p_authorized_by VARCHAR(50),
     IN p_created_by VARCHAR(50),
+    IN p_is_admin_override BOOLEAN,
+    IN p_approval_note VARCHAR(500),
     OUT o_refund_id INT,
     OUT o_status_message VARCHAR(255)
 )
@@ -22,6 +24,9 @@ proc_label: BEGIN
     DECLARE v_refund_item_type_id INT; -- Will hold ID 4 or 5
     DECLARE v_refunded_status_id INT;
     DECLARE v_payment_method_id INT;   -- Holds the ID for CASH/CARD
+    DECLARE v_doctor_schedule_id INT;
+    DECLARE v_schedule_payout_status VARCHAR(20);
+    DECLARE v_actual_refund_category VARCHAR(20) DEFAULT p_refund_category;
     DECLARE v_now DATETIME;
 
     -- Error Handling
@@ -51,13 +56,31 @@ proc_label: BEGIN
         ROLLBACK; LEAVE proc_label;
     END IF;
 
+    -- Check schedule status for Late Refund Override
+    SELECT doctor_schedule_id INTO v_doctor_schedule_id FROM appointments WHERE invoice_id = p_invoice_id AND clinic_id = p_clinic_id LIMIT 1;
+    
+    IF v_doctor_schedule_id IS NOT NULL THEN
+        SELECT payoutStatus INTO v_schedule_payout_status FROM doctorSchedule WHERE id = v_doctor_schedule_id;
+        
+        IF (v_schedule_payout_status = 'PENDING' OR v_schedule_payout_status = 'PAID') THEN
+            IF p_is_admin_override = FALSE THEN
+                SET o_status_message = 'ERROR_DOCTOR_ALREADY_PAID: Cannot process refund. The Doctor Payout for this schedule has already been finalized. Special Admin Approval is required.';
+                ROLLBACK; LEAVE proc_label;
+            END IF;
+            -- Admin override is true, force clinic loss
+            SET v_actual_refund_category = 'CLINIC_LOSS';
+        END IF;
+    END IF;
+
     -- 2. SELECT CORRECT ITEM TYPE (Based on your list)
-    IF p_refund_category = 'DOCTOR' THEN
+    IF v_actual_refund_category = 'DOCTOR' THEN
         -- Uses ID 4 (DOCTOR_DISCOUNT)
         SELECT id INTO v_refund_item_type_id FROM item_types WHERE typeName = 'DOCTOR_DISCOUNT' LIMIT 1;
-    ELSEIF p_refund_category = 'CLINIC' THEN
+    ELSEIF v_actual_refund_category = 'CLINIC' THEN
         -- Uses ID 5 (CLINIC_DISCOUNT)
         SELECT id INTO v_refund_item_type_id FROM item_types WHERE typeName = 'CLINIC_DISCOUNT' LIMIT 1;
+    ELSEIF v_actual_refund_category = 'CLINIC_LOSS' THEN
+        SELECT id INTO v_refund_item_type_id FROM item_types WHERE typeName = 'CLINIC_LOSS' LIMIT 1;
     ELSE
         SET o_status_message = 'ERROR_INVALID_REFUND_CATEGORY';
         ROLLBACK; LEAVE proc_label;
@@ -123,8 +146,19 @@ proc_label: BEGIN
         clinic_id, payment_id, invoice_id, actionType, newStatus, newAmount, reason, actionBy, actionDate
     ) VALUES (
         p_clinic_id, o_refund_id, p_invoice_id, 'REFUNDED', 'REFUNDED', p_refund_amount,
-        CONCAT(p_refund_category, ' (', p_refund_method, '): ', p_reason), p_created_by, v_now
+        CONCAT(v_actual_refund_category, ' (', p_refund_method, '): ', p_reason), p_created_by, v_now
     );
+
+    -- 7. Late Refund Approval Log
+    IF p_is_admin_override = TRUE AND v_actual_refund_category = 'CLINIC_LOSS' THEN
+        INSERT INTO late_refund_approval_log (
+            clinic_id, invoice_id, schedule_id, refund_amount, refund_category, refund_method,
+            approval_note, approved_by, approved_at, payment_id, created_date
+        ) VALUES (
+            p_clinic_id, p_invoice_id, v_doctor_schedule_id, p_refund_amount, 'CLINIC_LOSS', p_refund_method,
+            p_approval_note, p_authorized_by, v_now, o_refund_id, v_now
+        );
+    END IF;
 
     SET o_status_message = 'REFUND_SUCCESS';
     COMMIT;

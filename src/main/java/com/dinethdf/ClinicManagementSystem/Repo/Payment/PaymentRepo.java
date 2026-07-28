@@ -38,7 +38,9 @@ public interface PaymentRepo extends JpaRepository<Payment, Long> {
             @Param("p_refund_method") String refundMethod,
             @Param("p_reason") String reason,
             @Param("p_authorized_by") String authorizedBy,
-            @Param("p_created_by") String createdBy
+            @Param("p_created_by") String createdBy,
+            @Param("p_is_admin_override") Boolean isAdminOverride,
+            @Param("p_approval_note") String approvalNote
     );
 
     @Query(nativeQuery = true, value = """

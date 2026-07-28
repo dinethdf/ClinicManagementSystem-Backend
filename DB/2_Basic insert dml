@@ -154,7 +154,8 @@ INSERT INTO item_types (typeName, description) VALUES
 ('PHARMACY', 'Pharmacy Sale or Prescription'),
 ('DOCTOR_DISCOUNT', 'Discount given by the doctor'),
 ('CLINIC_DISCOUNT', 'Discount or promotion from the clinic'),
-('OTHER_DISCOUNT', 'Discount or promotion from outside Buisness');
+('OTHER_DISCOUNT', 'Discount or promotion from outside Buisness'),
+('CLINIC_LOSS', 'Financial loss absorbed by clinic for late refunds');
 
 
 -- 10. System Config (Tenant Specific)

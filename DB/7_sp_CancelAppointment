@@ -20,6 +20,7 @@ BEGIN
     DECLARE v_doctor_schedule_id INT;
     DECLARE v_invoice_id INT;
     DECLARE v_total_paid DECIMAL(10, 2) DEFAULT 0;
+    DECLARE v_schedule_status_code VARCHAR(30);
     DECLARE v_now DATETIME;
 
     -- Refund Processing
@@ -88,7 +89,16 @@ BEGIN
             SET o_status_message = 'Appointment is already cancelled';
             ROLLBACK;
         ELSE
-            -- 3. GET INVOICE TOTAL
+            -- Check if the parent schedule is COMPLETED
+            SELECT ds.status INTO v_schedule_status_code
+            FROM doctorSchedule ds
+            WHERE ds.id = v_doctor_schedule_id;
+
+            IF v_schedule_status_code = 'COMPLETED' THEN
+                SET o_status_message = 'ERROR_SCHEDULE_COMPLETED: This appointment cannot be cancelled because the schedule session is already completed. If the patient needs a refund, please use the Refund option instead.';
+                ROLLBACK;
+            ELSE
+                -- 3. GET INVOICE TOTAL
             SELECT amountPaid INTO v_total_paid FROM invoices WHERE id = v_invoice_id AND clinic_id = p_clinic_id FOR UPDATE;
 
             -- 4. UPDATE APPOINTMENT
@@ -163,6 +173,7 @@ BEGIN
                 SET o_status_message = 'Appointment cancelled & refund processed.';
             END IF;
 
+            END IF;
             SET o_is_success = TRUE;
             COMMIT;
         END IF;

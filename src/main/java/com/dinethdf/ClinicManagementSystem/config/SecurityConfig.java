@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/lab/requests/**")
                         .hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR", "PATIENT")
                         .requestMatchers("/api/appointments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
+                        .requestMatchers("/api/payments/refund/admin-override").hasAnyAuthority("ADMIN")
                         .requestMatchers("/api/payments/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                         .requestMatchers("/api/financials/**").hasAnyAuthority("ADMIN", "USER", "STAFF", "DOCTOR")
                         .requestMatchers("/api/payouts/**").hasAnyAuthority("ADMIN", "USER", "DOCTOR")
