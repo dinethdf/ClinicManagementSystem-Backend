@@ -53,6 +53,8 @@ import java.time.LocalDateTime;
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_reason", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_authorized_by", type = String.class),
                 @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_created_by", type = String.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_is_admin_override", type = Boolean.class),
+                @StoredProcedureParameter(mode = ParameterMode.IN, name = "p_approval_note", type = String.class),
 
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_refund_id", type = Integer.class),
                 @StoredProcedureParameter(mode = ParameterMode.OUT, name = "o_status_message", type = String.class)

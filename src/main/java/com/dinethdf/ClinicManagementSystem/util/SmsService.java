@@ -18,7 +18,7 @@ import java.util.Map;
 @Service
 public class SmsService {
 
-    @Value("${sms.api.token}")
+//    @Value("${sms.api.token}")
     private String apiToken;
 
     private final RestTemplate restTemplate = new RestTemplate();

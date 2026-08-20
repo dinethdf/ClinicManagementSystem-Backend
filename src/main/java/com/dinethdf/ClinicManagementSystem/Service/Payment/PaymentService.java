@@ -11,6 +11,7 @@ public interface PaymentService {
     PaymentResponseDTO processInvoicePayment(InvoicePaymentDTO paymentDTO, Long userId);
 
 
+    void processLateRefundOverride(com.dinethdf.ClinicManagementSystem.DTO.Payment.LateRefundOverrideDTO refundDTO);
     void processRefund(RefundRequestDTO refundDTO);
     List<InvoicePaymentDetailDTO> getPaymentHistory(Long invoiceId);
 }

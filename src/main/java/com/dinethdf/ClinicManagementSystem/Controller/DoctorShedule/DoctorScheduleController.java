@@ -20,7 +20,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DoctorReassignDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DelayNotificationDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO;
 
 @RestController
 @RequestMapping("api/schedules") // Specific path for schedules
@@ -84,9 +88,9 @@ public class DoctorScheduleController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10, sort = "scheduleDate") Pageable pageable
     ) {
-
         try {
-            TenantContext.setCurrentTenant(Integer.valueOf(clinicId));
+            Integer parsedClinicId = Integer.valueOf(clinicId);
+            TenantContext.setCurrentTenant(parsedClinicId);
             Page<DoctorScheduleResponseDTO> schedules = doctorScheduleService.getUpcomingSchedules(
                     doctorName,
                     specialization,
@@ -100,6 +104,13 @@ public class DoctorScheduleController {
             );
             return ResponseEntity.ok(response);
 
+        } catch (NumberFormatException e) {
+            // Throw ValidationException so the global exception handler can return a 400 Bad Request
+            throw new com.dinethdf.ClinicManagementSystem.exception.ValidationException(
+                    "Invalid clinic ID format. Must be numeric.",
+                    "INVALID_CLINIC_ID",
+                    HttpStatus.BAD_REQUEST
+            );
         } finally {
             TenantContext.clear();
         }
@@ -256,6 +267,164 @@ public class DoctorScheduleController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Close booking for a schedule early without deleting it.
+     */
+    @PostMapping("/{id}/close-booking")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> closeBooking(@PathVariable Long id) {
+        
+        DoctorScheduleResponseDTO updatedSchedule = doctorScheduleService.closeBooking(id);
+        
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                updatedSchedule,
+                "Booking closed successfully."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Force syncs the schedule queue to Firebase in case of failure during creation.
+     */
+    @PostMapping("/{id}/sync-queue")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Object>> syncQueueToFirebase(@PathVariable Long id) {
+        
+        doctorScheduleService.syncQueueToFirebase(id);
+        
+        ApiResponse<Object> response = ApiResponse.success(
+                null,
+                "Schedule queue successfully synced to Firebase."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Manually completes a schedule session.
+     */
+    @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> completeSchedule(@PathVariable Long id) {
+        
+        DoctorScheduleResponseDTO completedSchedule = doctorScheduleService.completeSchedule(id);
+        
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                completedSchedule,
+                "Schedule manually completed successfully."
+        );
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cascades schedule cancellation by cancelling all active appointments safely.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/cancel-cascade")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> cancelCascadeSchedule(
+            @PathVariable Long id,
+            @RequestBody com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal userPrincipal) {
+
+        Long staffId = userPrincipal.getUserDetailsId();
+        DoctorScheduleResponseDTO cancelledSchedule = doctorScheduleService.cancelCascadeSchedule(id, staffId, cancelDTO);
+
+        ApiResponse<DoctorScheduleResponseDTO> response = ApiResponse.success(
+                cancelledSchedule,
+                "Schedule and all associated active appointments were successfully cancelled."
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cancels a schedule in bulk via Stored Procedure and returns the affected patients.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/cancel-with-patients")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO>> cancelScheduleWithPatients(
+            @PathVariable Long id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.dinethdf.ClinicManagementSystem.Model.UsersAuth.UserPrincipal userPrincipal) {
+
+        String staffName = userPrincipal.getUsername();
+        com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO cancelResponse = doctorScheduleService.cancelScheduleWithPatients(id, staffName);
+
+        ApiResponse<com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO> response = ApiResponse.success(
+                cancelResponse,
+                "Schedule cancelled successfully."
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Checks if a doctor has an overlapping schedule.
+     * Accessible by ADMIN and STAFF.
+     */
+    @GetMapping("/check-overlap")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Boolean>> checkScheduleOverlap(
+            @RequestParam Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
+            @RequestParam(required = false) Long excludeScheduleId) {
+
+        boolean hasOverlap = doctorScheduleService.checkScheduleOverlap(
+                doctorId, date, startTime, endTime, excludeScheduleId
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                hasOverlap,
+                hasOverlap ? "Warning: Overlapping schedule found." : "No overlapping schedule found."
+        ));
+    }
+
+    /**
+     * Reassigns a schedule to a new doctor.
+     * Accessible by ADMIN.
+     */
+    @PostMapping("/{id}/reassign")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponseDTO>> reassignDoctor(
+            @PathVariable Long id,
+            @RequestBody DoctorReassignDTO reassignDTO) {
+
+        DoctorScheduleResponseDTO updatedSchedule = doctorScheduleService.reassignDoctor(id, reassignDTO.getNewDoctorId());
+        return ResponseEntity.ok(ApiResponse.success(updatedSchedule, "Schedule reassigned successfully."));
+    }
+
+    /**
+     * Dispatches SMS and Email delay alerts to all active patients in the schedule.
+     * Accessible by ADMIN and STAFF.
+     */
+    @PostMapping("/{id}/notify-delay")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<Object>> notifyScheduleDelay(
+            @PathVariable Long id,
+            @RequestBody DelayNotificationDTO delayDTO) {
+
+        doctorScheduleService.notifyScheduleDelay(id, delayDTO);
+        return ResponseEntity.ok(ApiResponse.success(null, "Delay notifications successfully queued for delivery."));
+    }
+
+    /**
+     * Retrieves details of the ongoing patient queue ticket.
+     * Accessible by ADMIN, STAFF, and DOCTOR.
+     */
+    @GetMapping("/{id}/current-ticket")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<CurrentTicketDTO>> getCurrentQueueTicket(
+            @PathVariable Long id) {
+
+        CurrentTicketDTO ticket = doctorScheduleService.getCurrentQueueTicket(id);
+        return ResponseEntity.ok(ApiResponse.success(ticket, "Current queue ticket fetched successfully."));
     }
 
     /**

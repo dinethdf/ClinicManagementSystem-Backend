@@ -5,6 +5,8 @@ import com.dinethdf.ClinicManagementSystem.DTO.Payment.*;
 import com.dinethdf.ClinicManagementSystem.Repo.Payment.PaymentRepo;
 import com.dinethdf.ClinicManagementSystem.Repo.Invoice.InvoiceRepo;
 import com.dinethdf.ClinicManagementSystem.Model.Payment.Payment;
+import com.dinethdf.ClinicManagementSystem.Model.Invoice.Invoice;
+import com.dinethdf.ClinicManagementSystem.Model.DoctorShedule.DoctorSchedule;
 import com.dinethdf.ClinicManagementSystem.Service.ClinicStaff.ClinicStaffService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
@@ -13,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -136,6 +139,23 @@ public class PaymentServiceImpl implements PaymentService {
         Integer clinicId = TenantContext.getCurrentTenant();
         String createdBy = "admin_user"; // Or fetch from Auth context
 
+        // --- 2.5 PAYOUT LOCK GUARD ---
+        Invoice invoice = invoiceRepo.findById(refundDTO.getInvoiceId())
+                .orElseThrow(() -> new ValidationException("Invoice not found", "NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (invoice.getAppointment() != null) {
+            DoctorSchedule schedule = invoice.getAppointment().getDoctorSchedule();
+            String payoutCode = schedule.getPayoutStatus() != null ? schedule.getPayoutStatus().getCode() : null;
+            
+            if ("PENDING".equals(payoutCode) || "PAID".equals(payoutCode)) {
+                throw new ValidationException(
+                        "Cannot process refund. The doctor's payout bill for this schedule has already been generated.",
+                        "PAYOUT_LOCKED",
+                        HttpStatus.CONFLICT
+                );
+            }
+        }
+
         // 3. Call DB Procedure
         Map<String, Object> spResult = paymentRepo.sp_ProcessRefund(
                 clinicId,
@@ -145,7 +165,9 @@ public class PaymentServiceImpl implements PaymentService {
                 method, // NEW: Pass the method to the SP
                 refundDTO.getReason(),
                 refundDTO.getAuthorizedBy(),
-                createdBy
+                createdBy,
+                false, // p_is_admin_override
+                ""     // p_approval_note
         );
 
         // 4. Handle Result & Errors
@@ -158,11 +180,45 @@ public class PaymentServiceImpl implements PaymentService {
             if ("ERROR_REFUND_EXCEEDS_PAYMENT".equals(statusMessage)) displayMessage = "Refund amount cannot exceed the total amount paid.";
             if ("ERROR_INVALID_REFUND_CATEGORY".equals(statusMessage)) displayMessage = "Invalid refund category.";
 
-            throw new ValidationException( // Assuming you have a custom ValidationException/ApiError class
-                    displayMessage,
-                    statusMessage, // Error Code
-                    HttpStatus.BAD_REQUEST
-            );
+            throw new ValidationException(displayMessage, "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void processLateRefundOverride(LateRefundOverrideDTO refundDTO) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+        
+        // Use the system user/admin processing the override
+        String createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Call DB Procedure
+        Map<String, Object> spResult = paymentRepo.sp_ProcessRefund(
+                clinicId,
+                refundDTO.getInvoiceId(),
+                refundDTO.getRefundAmount(),
+                "CLINIC_LOSS", // Automatically overridden by SP anyway, but good to be explicit
+                refundDTO.getRefundMethod(),
+                "Late Refund Admin Override",
+                createdBy, // authorized by self
+                createdBy,
+                true, // p_is_admin_override
+                refundDTO.getApprovalNote() // p_approval_note
+        );
+
+        // Handle Result & Errors
+        String statusMessage = (String) spResult.get("o_status_message");
+
+        if (!"REFUND_SUCCESS".equals(statusMessage)) {
+            String displayMessage = "Failed to process late refund override.";
+            if ("ERROR_INVOICE_NOT_FOUND".equals(statusMessage)) displayMessage = "Invoice not found.";
+            if ("ERROR_REFUND_EXCEEDS_PAYMENT".equals(statusMessage)) displayMessage = "Refund amount cannot exceed the total amount paid.";
+            if ("ERROR_INVALID_REFUND_CATEGORY".equals(statusMessage)) displayMessage = "Invalid refund category.";
+            if (statusMessage != null && statusMessage.startsWith("ERROR_DOCTOR_ALREADY_PAID")) {
+                displayMessage = "Cannot process refund. The doctor has already been paid.";
+            }
+
+            throw new ValidationException(displayMessage, "DB_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

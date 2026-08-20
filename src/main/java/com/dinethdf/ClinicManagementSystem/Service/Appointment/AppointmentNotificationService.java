@@ -7,6 +7,7 @@ import com.dinethdf.ClinicManagementSystem.Service.Clinic.ClinicService;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
 import com.dinethdf.ClinicManagementSystem.util.EmailService;
 import com.dinethdf.ClinicManagementSystem.util.SmsService;
+import com.dinethdf.ClinicManagementSystem.Model.Appointment.Appointment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -182,6 +183,47 @@ public class AppointmentNotificationService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public boolean sendCancellationSmsSync(Long appointmentId, String mobileNo, Integer clinicId) {
+        if (mobileNo == null || mobileNo.isEmpty()) return false;
+
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+            if (clinic == null) return false;
+
+            // Re-use appointmentConfirmSmsGateway for cancellation notices
+            String gateway = clinic.getAppointmentConfirmSmsGateway() != null
+                    ? clinic.getAppointmentConfirmSmsGateway()
+                    : SmsService.SMS_GATEWAY;
+
+            if (SmsService.SMS_NONE.equalsIgnoreCase(gateway)) return false;
+
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) {
+                System.err.println("Cancellation SMS error: appointment not found: " + appointmentId);
+                return false;
+            }
+
+            String message = String.format(
+                    "CureGuard: Your appointment Ref #%d with Dr. %s on %s has been CANCELLED. Contact us for rebooking.",
+                    details.getId(),
+                    details.getDoctorName(),
+                    details.getScheduleDate().toString()
+            );
+
+            boolean isSuccess = smsService.sendDynamicSms(mobileNo, message, gateway);
+            System.out.println("Cancellation SMS sync trigger for " + mobileNo + ". Success: " + isSuccess);
+            return isSuccess;
+
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
     private String generateCancellationHtml(AppointmentFullDetailsDTO details) {
         return String.format("""
             <!DOCTYPE html>
@@ -346,5 +388,55 @@ public class AppointmentNotificationService {
                 doctorFee, clinicFee, totalFee,
                 details.getId()
         );
+    }
+
+    @Async("emailTaskExecutor")
+    @Transactional(readOnly = true)
+    public void sendDelayNotification(Long appointmentId, String customMessage, Integer delayMinutes, Integer clinicId) {
+        TenantContext.setCurrentTenant(clinicId);
+        try {
+            AppointmentFullDetailsDTO details = appointmentRepo
+                    .findAppointmentFullDetails(appointmentId, clinicId)
+                    .orElse(null);
+
+            if (details == null) return;
+
+            // 1. Send SMS
+            String patientMobile = details.getPatientMobile();
+            if (patientMobile != null && !patientMobile.isEmpty()) {
+                ClinicResponseDTO clinic = clinicService.getCurrentClinicDetails();
+                String gateway = (clinic != null && clinic.getAppointmentConfirmSmsGateway() != null)
+                        ? clinic.getAppointmentConfirmSmsGateway()
+                        : SmsService.SMS_GATEWAY;
+
+                if (!SmsService.SMS_NONE.equalsIgnoreCase(gateway)) {
+                    String smsMsg = (customMessage != null && !customMessage.isEmpty()) ? customMessage :
+                            String.format("CureGuard Alert: Dr. %s is running late by %d minutes for schedule on %s. Your appointment ID #%d (Queue #%d) is updated.",
+                                    details.getDoctorName(), delayMinutes, details.getScheduleDate(), details.getId(), details.getQueuePosition());
+                    smsService.sendDynamicSms(patientMobile, smsMsg, gateway);
+                }
+            }
+
+            // 2. Send Email
+            Appointment appt = appointmentRepo.findById(appointmentId).orElse(null);
+            if (appt != null && appt.getPatient() != null && appt.getPatient().getEmail() != null && !appt.getPatient().getEmail().isEmpty()) {
+                String recipientEmail = appt.getPatient().getEmail();
+                String emailBody = String.format("""
+                    <h2>Schedule Delay Notification</h2>
+                    <p>Dear %s,</p>
+                    <p>Please note that Dr. %s is currently running late by about <strong>%d minutes</strong> for their session on %s.</p>
+                    <p>Your Appointment Reference is <strong>#%d</strong> (Queue Position: #%d).</p>
+                    <p><em>Message from Clinic: %s</em></p>
+                    <p>We apologize for any inconvenience caused.</p>
+                    <p>Thank you,<br>CureGuard Medical Team</p>
+                    """, details.getPatientName(), details.getDoctorName(), delayMinutes, details.getScheduleDate(), details.getId(), details.getQueuePosition(), 
+                    (customMessage != null && !customMessage.isEmpty()) ? customMessage : "Doctor is delayed due to clinical reasons.");
+                emailService.sendHtmlEmailSync(recipientEmail, "Schedule Delay Notice - CureGuard", emailBody);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send delay notification for appointment " + appointmentId + ": " + e.getMessage());
+        } finally {
+            TenantContext.clear();
+        }
     }
 }

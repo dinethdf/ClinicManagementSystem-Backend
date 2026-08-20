@@ -44,6 +44,13 @@ public class Invoice extends AuditWrapper {
     @Column(nullable = false)
     private Boolean isApproved = false;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal balanceRemaining;
+
+    private Long receivedByStaffId;
+
+    private String cashierWorkstationId;
+
     // ... Other mappings remain the same ...
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)

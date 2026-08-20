@@ -38,9 +38,10 @@ SELECT
 
     -- 4. Clinic Side Calculations
     COALESCE(SUM(CASE WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount ELSE 0 END), 0) AS ClinicDiscountAmount,
+    COALESCE(SUM(CASE WHEN it.typeName = 'CLINIC_LOSS' THEN ii.amount ELSE 0 END), 0) AS ClinicLossAmount,
     CASE
         WHEN appt_status.code = 'CANCELLED' THEN 0
-        ELSE (ds.clinicFee + COALESCE(SUM(CASE WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount ELSE 0 END), 0))
+        ELSE (ds.clinicFee + COALESCE(SUM(CASE WHEN it.typeName IN ('CLINIC_DISCOUNT', 'CLINIC_LOSS') THEN ii.amount ELSE 0 END), 0))
         END AS NetClinicProfit,
 
     -- 5. Total Bill & Payment Tracking

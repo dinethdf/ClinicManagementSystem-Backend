@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface DoctorScheduleService {
@@ -83,4 +84,56 @@ public interface DoctorScheduleService {
      * @throws ValidationException if schedule is not found.
      */
     void hardDeleteSchedule(Long id);
+
+    /**
+     * Closes booking for a schedule early.
+     * @param id The ID of the schedule to close booking for.
+     * @return The updated schedule DTO.
+     */
+    DoctorScheduleResponseDTO closeBooking(Long id);
+
+    /**
+     * Force syncs the schedule queue to Firebase in case of failure during creation.
+     * @param id The ID of the schedule.
+     */
+    void syncQueueToFirebase(Long id);
+
+    /**
+     * Manually completes a schedule session.
+     * @param id The ID of the schedule to complete.
+     * @return The updated schedule DTO.
+     */
+    DoctorScheduleResponseDTO completeSchedule(Long id);
+
+    /**
+     * Cascades schedule cancellation by cancelling all active appointments.
+     * @param id The ID of the schedule to cancel.
+     * @param staffId The ID of the staff member performing the cancellation.
+     * @param cancelDTO Cancellation details.
+     * @return The deactivated schedule DTO.
+     */
+    DoctorScheduleResponseDTO cancelCascadeSchedule(Long id, Long staffId, com.dinethdf.ClinicManagementSystem.DTO.Appointment.AppointmentCancelDTO cancelDTO);
+
+    /**
+     * Checks if a doctor has an overlapping schedule.
+     */
+    boolean checkScheduleOverlap(Long doctorId, LocalDate scheduleDate, LocalTime startTime, LocalTime endTime, Long excludeScheduleId);
+
+    /**
+     * Reassigns a schedule to a new doctor of the same specialization.
+     */
+    DoctorScheduleResponseDTO reassignDoctor(Long scheduleId, Long newDoctorId);
+
+    /**
+     * Notifies all booked patients of a schedule delay.
+     */
+    void notifyScheduleDelay(Long scheduleId, com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.DelayNotificationDTO delayDTO);
+
+    /**
+     * Retrieves the current ongoing appointment ticket details for a schedule.
+     */
+    com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.CurrentTicketDTO getCurrentQueueTicket(Long scheduleId);
+
+    // --- NEW: Bulk Schedule Cancellation via Stored Procedure ---
+    com.dinethdf.ClinicManagementSystem.DTO.DoctorShedule.ScheduleCancelResponseDTO cancelScheduleWithPatients(Long scheduleId, String staffName);
 }

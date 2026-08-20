@@ -132,6 +132,8 @@ public class PatientAuthService {
             throw new ValidationException(messageSourceUtil.getMessage("auth.failed"),  "INVALID_AUTHENTICATION");
         } catch (IllegalArgumentException e) {
             throw new ValidationException(messageSourceUtil.getMessage("auth.invalid.credentials"),  "INVALID_CREDENTIALS");
+        } finally {
+            TenantContext.clear();
         }
     }
 

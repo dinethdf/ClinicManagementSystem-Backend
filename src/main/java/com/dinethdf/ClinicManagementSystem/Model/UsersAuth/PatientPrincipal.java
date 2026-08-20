@@ -51,7 +51,7 @@ public class PatientPrincipal implements UserDetails {
 //    }
 //
     public UserRole getRole() {
-        return patientAuth.getRole();
+        return (patientAuth != null) ? patientAuth.getRole() : null;
     }
 
     public Integer getClinicId() {

@@ -1,0 +1,99 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_GetDoctorScheduleSummaryReport$$
+
+CREATE PROCEDURE sp_GetDoctorScheduleSummaryReport(
+    IN p_clinic_id INT,
+    IN p_startDate DATETIME,
+    IN p_endDate DATETIME
+)
+BEGIN
+    SELECT
+        -- 1. Schedule & Doctor Details
+        ds.id AS ScheduleID,
+        CONCAT(ds.scheduleDate , ' : ', ds.startTime) AS ScheduleDateTime,
+        CONCAT(d.firstName, ' ', d.lastName) AS DoctorName,
+        spec.name AS Specialization,
+
+        -- 2. Appointment Counts
+        -- Using COUNT(appt.id) is now safe from duplication because of the Subquery below
+        COUNT(appt.id) AS TotalAppointments,
+
+        -- 3. Doctor Financials (Aggregated)
+        (COUNT(appt.id) * ds.doctorFee) AS TotalBaseDoctorFee,
+
+        COALESCE(SUM(ItemAgg.DocDiscount), 0) AS TotalDoctorDiscount,
+
+        (
+            (COUNT(appt.id) * ds.doctorFee) +
+            COALESCE(SUM(ItemAgg.DocDiscount), 0)
+        ) AS NetDoctorPay,
+
+        -- 4. Clinic Financials (Aggregated)
+        (COUNT(appt.id) * ds.clinicFee) AS TotalBaseClinicFee,
+
+        COALESCE(SUM(ItemAgg.ClinicDiscount), 0) AS TotalClinicDiscount,
+
+        (
+            (COUNT(appt.id) * ds.clinicFee) +
+            COALESCE(SUM(ItemAgg.ClinicDiscount), 0)
+        ) AS NetClinicProfit,
+
+        -- 5. Total Collectable (Total Bill for Patients)
+        (
+            (COUNT(appt.id) * (ds.doctorFee + ds.clinicFee)) +
+            COALESCE(SUM(ItemAgg.TotalTrackedDiscount), 0)
+        ) AS TotalPatientPayable
+
+    FROM
+        doctorSchedule ds
+
+    -- Join Doctor & Specialization
+    JOIN doctor d ON ds.doctor_id = d.id
+    JOIN specialization spec ON d.specialization_id = spec.id
+
+    -- Join Appointments
+    JOIN appointments appt ON ds.id = appt.doctor_schedule_id
+        AND appt.clinic_id = p_clinic_id
+
+    -- [NEW FIX] Join to Lookup Table instead of querying dropped ENUM column
+    JOIN appointment_status_lookup asl ON appt.statusId = asl.id
+        AND asl.code != 'CANCELLED'
+
+    -- Join Invoices
+    LEFT JOIN invoices inv ON appt.invoice_id = inv.id
+        AND inv.clinic_id = p_clinic_id
+
+    -- [NEW FIX] Subquery to safely aggregate discounts (Prevents row multiplication bugs)
+    LEFT JOIN (
+        SELECT
+            ii.invoice_id,
+            SUM(CASE WHEN it.typeName = 'DOCTOR_DISCOUNT' THEN ii.amount ELSE 0 END) AS DocDiscount,
+            SUM(CASE WHEN it.typeName = 'CLINIC_DISCOUNT' THEN ii.amount ELSE 0 END) AS ClinicDiscount,
+            SUM(CASE WHEN it.typeName IN ('DOCTOR_DISCOUNT', 'CLINIC_DISCOUNT') THEN ii.amount ELSE 0 END) AS TotalTrackedDiscount
+        FROM invoice_items ii
+        JOIN item_types it ON ii.item_type_id = it.id
+        WHERE ii.clinic_id = p_clinic_id
+        GROUP BY ii.invoice_id
+    ) AS ItemAgg ON inv.id = ItemAgg.invoice_id
+
+    WHERE
+        ds.clinic_id = p_clinic_id
+        AND ds.scheduleDate BETWEEN DATE(p_startDate) AND DATE(p_endDate)
+
+    GROUP BY
+        -- Group by all non-aggregated columns to satisfy strict mode
+        ds.id, ds.scheduleDate, ds.startTime, d.id, d.firstName, d.lastName, spec.name, ds.doctorFee, ds.clinicFee
+
+    ORDER BY
+        ds.scheduleDate DESC, d.firstName ASC;
+END$$
+
+DELIMITER ;
+
+-- ==========================================
+-- TEST EXAMPLES
+-- ==========================================
+
+-- Expectation: Summary of all schedules (with non-cancelled appointments)
+CALL sp_GetDoctorScheduleSummaryReport(1, '2025-01-01 00:00:00', '2027-01-31 23:59:59');

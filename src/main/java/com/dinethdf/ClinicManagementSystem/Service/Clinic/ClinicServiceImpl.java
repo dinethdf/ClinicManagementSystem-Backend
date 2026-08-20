@@ -9,11 +9,15 @@ import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
 import com.dinethdf.ClinicManagementSystem.Repo.Clinic.ClinicRepository;
 import com.dinethdf.ClinicManagementSystem.config.TenantContext;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingInfo;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.ClinicRoutingRegistry;
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,20 +35,25 @@ import java.util.Map;
 public class ClinicServiceImpl implements ClinicService {
 
     private final ClinicRepository clinicRepository;
+    private final ClinicRoutingRegistry clinicRoutingRegistry;
 
     @Autowired
-    public ClinicServiceImpl(ClinicRepository clinicRepository) {
+    @Lazy
+    private ClinicService self;
+
+    @Autowired
+    public ClinicServiceImpl(ClinicRepository clinicRepository, ClinicRoutingRegistry clinicRoutingRegistry) {
         this.clinicRepository = clinicRepository;
+        this.clinicRoutingRegistry = clinicRoutingRegistry;
     }
 
-    @Cacheable(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     @Override
     public String getCurrentEncryptedSecrets() {
-        Clinic clinic = getCurrentClinicEntity();
+        Clinic clinic = self.getClinicById(TenantContext.getCurrentTenant());
         return clinic.getEncryptedSecrets();
     }
 
-    @CacheEvict(value = "clinicSecretsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public void updateEncryptedSecrets(Map<String, String> incomingSecrets) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -80,13 +89,12 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    @Cacheable(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
     @Override
     public ClinicResponseDTO getCurrentClinicDetails() {
-        return ClinicResponseDTO.fromEntity(getCurrentClinicEntity());
+        return ClinicResponseDTO.fromEntity(self.getClinicById(TenantContext.getCurrentTenant()));
     }
 
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -112,10 +120,10 @@ public class ClinicServiceImpl implements ClinicService {
             clinic.setLogoUrl(request.getLogoUrl());
 
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -148,13 +156,13 @@ public class ClinicServiceImpl implements ClinicService {
 
         clinic.setSettings(settings); // Re-set to ensure dirty check triggers
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
     /**
      * Update Subscription Plan
      */
-    @CachePut(value = "clinicDetailsCache", key = "T(com.dinethdf.ClinicManagementSystem.config.TenantContext).getCurrentTenant()")
+    @CacheEvict(value = "clinicByIdCache", keyGenerator = "tenantIdKeyGenerator")
     public ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request) {
         Clinic clinic = getCurrentClinicEntity();
 
@@ -171,7 +179,7 @@ public class ClinicServiceImpl implements ClinicService {
         }
 
         Clinic updated = clinicRepository.save(clinic);
-        return ClinicResponseDTO.fromEntity(updated);
+        return ClinicResponseDTO.fromEntity(self.getClinicById(updated.getId()));
     }
 
     // Helper to get current clinic safely
@@ -190,6 +198,8 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public Clinic createClinic(Clinic clinic) {
+        clinic.setId(null); // Prevent ID injection
+
         if (clinicRepository.existsBySubdomain(clinic.getSubdomain())) {
             throw new RuntimeException("Subdomain '" + clinic.getSubdomain() + "' is already taken.");
         }
@@ -211,7 +221,24 @@ public class ClinicServiceImpl implements ClinicService {
             clinic.setTrialEndsAt(LocalDateTime.now().plusDays(14));
         }
 
-        return clinicRepository.save(clinic);
+        Clinic savedClinic = clinicRepository.save(clinic);
+
+        // --- MULTI-TENANT: Add to Routing Registry dynamically ---
+        String schemaName = (savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA)
+                ? "clinic_" + savedClinic.getClinicCode().replace("-", "")
+                : "shared";
+
+        clinicRoutingRegistry.registerNewClinic(
+                savedClinic.getId(),
+                savedClinic.getClinicCode(),
+                savedClinic.getName(),
+                savedClinic.getSubdomain(),
+                schemaName,
+                savedClinic.getTenantMode() == TenantSchemaMode.SCHEMA,
+                savedClinic.getPlanCode()
+        );
+
+        return savedClinic;
     }
 
     @Override
@@ -220,6 +247,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @Cacheable(value = "clinicByIdCache", key = "#id")
     public Clinic getClinicById(Integer id) {
         return clinicRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("Clinic not found with ID: " + id, "CLINIC_NOT_FOUND"));
@@ -236,6 +264,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @CacheEvict(value = "clinicByIdCache", allEntries = true) // Admin update: clear all to be safe
     public Clinic updateClinic(String clinicCode, Clinic clinicDetails) {
         // Find by code (Admin context)
         Clinic existingClinic = clinicRepository.findByClinicCodeAndDeletedFalse(clinicCode)
@@ -271,6 +300,7 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @CacheEvict(value = "clinicByIdCache", allEntries = true) // Safer to clear all since we only have clinicCode here
     public void deleteClinic(String clinicCode) {
         Clinic clinic = clinicRepository.findByClinicCode(clinicCode)
                 .orElseThrow(() -> new RuntimeException("Clinic not found"));

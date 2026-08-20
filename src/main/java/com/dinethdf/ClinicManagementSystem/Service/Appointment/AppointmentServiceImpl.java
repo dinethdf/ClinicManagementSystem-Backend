@@ -314,11 +314,11 @@ public class AppointmentServiceImpl implements AppointmentService {
                         notificationService.sendCancellationNotification(appointmentId, patientEmail, clinicId);
                     }
 
-                    // Async SMS notification to patient
-                    String patientMobile = appt.getPatient().getMobileNo();
-                    if (patientMobile != null && !patientMobile.isEmpty()) {
-                        notificationService.sendCancellationSms(appointmentId, patientMobile, clinicId);
-                    }
+                    // Async SMS notification to patient (Now manual via separate API)
+                    // String patientMobile = appt.getPatient().getMobileNo();
+                    // if (patientMobile != null && !patientMobile.isEmpty()) {
+                    //     notificationService.sendCancellationSms(appointmentId, patientMobile, clinicId);
+                    // }
                 }
             } catch (Exception e) {
                 System.err.println("Post-cancellation notification failed: " + e.getMessage());
@@ -331,6 +331,32 @@ public class AppointmentServiceImpl implements AppointmentService {
                 message,
                 refundAmount != null ? refundAmount : BigDecimal.ZERO
         );
+    }
+
+    @Override
+    public void sendManualCancellationSms(Long appointmentId) {
+        Integer clinicId = TenantContext.getCurrentTenant();
+
+        // 1. Verify status is actually CANCELLED
+        String statusCode = appointmentRepo.findStatusById(appointmentId, clinicId)
+                .orElseThrow(() -> new ValidationException("Appointment not found", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (!"CANCELLED".equals(statusCode)) {
+            throw new ValidationException("Cannot send cancellation SMS. Appointment is not cancelled.", "INVALID_STATUS", HttpStatus.BAD_REQUEST);
+        }
+
+        Appointment appt = appointmentRepo.findById(appointmentId)
+                .orElseThrow(() -> new ValidationException("Appointment not found", "APPOINTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        String patientMobile = appt.getPatient().getMobileNo();
+        if (patientMobile != null && !patientMobile.isEmpty()) {
+            boolean success = notificationService.sendCancellationSmsSync(appointmentId, patientMobile, clinicId);
+            if (!success) {
+                throw new ValidationException("Failed to send SMS through the gateway.", "SMS_GATEWAY_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            throw new ValidationException("Patient does not have a registered mobile number.", "NO_MOBILE_NUMBER", HttpStatus.BAD_REQUEST);
+        }
     }
 
     private void validateAppointmentCreateDTO(AppointmentCreateDTO createDTO) {

@@ -1,9 +1,13 @@
 package com.dinethdf.ClinicManagementSystem.Service.Clinic;
 
 import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicResponseDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.ClinicUpdateDTO;
+import com.dinethdf.ClinicManagementSystem.DTO.Clinic.PlanChangeDTO;
 import com.dinethdf.ClinicManagementSystem.Model.Clinic.Clinic;
+import com.dinethdf.ClinicManagementSystem.Model.Clinic.ClinicSettings;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ClinicService {
@@ -16,7 +20,15 @@ public interface ClinicService {
 
     String getCurrentEncryptedSecrets();
 
+    void updateEncryptedSecrets(Map<String, String> incomingSecrets);
+
     ClinicResponseDTO getCurrentClinicDetails();
+
+    ClinicResponseDTO updateCurrentClinicDetails(ClinicUpdateDTO request);
+
+    ClinicResponseDTO updateCurrentClinicSettings(ClinicSettings request);
+
+    ClinicResponseDTO updateSubscriptionPlan(PlanChangeDTO request);
 
     Optional<Clinic> getClinicByCode(String clinicCode);
 

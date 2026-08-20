@@ -1,5 +1,6 @@
 package com.dinethdf.ClinicManagementSystem.Model.Clinic;
 
+import com.dinethdf.ClinicManagementSystem.config.multitenant.TenantSchemaMode;
 import com.dinethdf.ClinicManagementSystem.util.AESEncryptorConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -78,6 +79,17 @@ public class Clinic {
     @Column(name = "encrypted_secrets", columnDefinition = "TEXT")
     @Convert(converter = AESEncryptorConverter.class)
     private String encryptedSecrets;
+
+    /**
+     * Routing-only fields — populated in-memory during login from ClinicRoutingRegistry.
+     * These columns exist only in the master tenant_registry table, NOT in the shared/private
+     * clinics table, so @Transient tells JPA to never include them in SQL.
+     */
+    @Transient
+    private TenantSchemaMode tenantMode = TenantSchemaMode.SHARED;
+
+    @Transient
+    private String schemaName;
 
     public String getClinicSecret() { return clinicSecret; }
     public void setClinicSecret(String clinicSecret) { this.clinicSecret = clinicSecret; }
