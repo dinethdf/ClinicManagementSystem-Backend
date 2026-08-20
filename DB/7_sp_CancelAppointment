@@ -90,8 +90,9 @@ BEGIN
             ROLLBACK;
         ELSE
             -- Check if the parent schedule is COMPLETED
-            SELECT ds.status INTO v_schedule_status_code
+            SELECT s.code INTO v_schedule_status_code
             FROM doctorSchedule ds
+            JOIN schedule_status_lookup s ON ds.statusId = s.id
             WHERE ds.id = v_doctor_schedule_id;
 
             IF v_schedule_status_code = 'COMPLETED' THEN
